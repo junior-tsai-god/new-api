@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useState, useEffect, useCallback } from 'react'
+
 import { getTopupInfo } from '../api'
 import {
   generatePresetAmounts,
@@ -54,7 +55,8 @@ function parseJsonArray(data: unknown): unknown[] {
 
 function parsePaymentMethods(
   data: unknown,
-  stripeMinTopup: number
+  stripeMinTopup: number,
+  payPalMinTopup: number
 ): PaymentMethod[] {
   return parseJsonArray(data)
     .filter(
@@ -74,7 +76,9 @@ function parsePaymentMethods(
         min_topup:
           type === 'stripe' && normalizedMinTopup <= 0
             ? stripeMinTopup
-            : normalizedMinTopup,
+            : type === 'paypal' && normalizedMinTopup <= 0
+              ? payPalMinTopup
+              : normalizedMinTopup,
       }
     })
     .filter((item) => item.name && item.type && item.type !== 'waffo')
@@ -183,7 +187,8 @@ export function useTopupInfo() {
         ...response.data,
         pay_methods: parsePaymentMethods(
           response.data.pay_methods,
-          response.data.stripe_min_topup
+          response.data.stripe_min_topup,
+          response.data.paypal_min_topup || 1
         ),
         amount_options: parseAmountOptions(response.data.amount_options),
         discount: parseDiscountMap(response.data.discount),

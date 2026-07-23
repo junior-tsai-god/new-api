@@ -1,3 +1,5 @@
+import i18next from 'i18next'
+import { CreditCard, Landmark } from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -17,10 +19,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { type ReactNode } from 'react'
-import i18next from 'i18next'
-import { CreditCard, Landmark } from 'lucide-react'
-import { SiAlipay, SiWechat, SiStripe } from 'react-icons/si'
+import { SiAlipay, SiPaypal, SiWechat, SiStripe } from 'react-icons/si'
+
 import { ReactIconByName } from '@/components/react-icon-by-name'
+
 import { PAYMENT_TYPES, PAYMENT_ICON_COLORS } from '../constants'
 
 // ============================================================================
@@ -115,6 +117,13 @@ export function getPaymentIcon(
         <SiStripe
           className={className}
           style={{ color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.STRIPE] }}
+        />
+      )
+    case PAYMENT_TYPES.PAYPAL:
+      return (
+        <SiPaypal
+          className={className}
+          style={{ color: PAYMENT_ICON_COLORS[PAYMENT_TYPES.PAYPAL] }}
         />
       )
     case PAYMENT_TYPES.CREEM:

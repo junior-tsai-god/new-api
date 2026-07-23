@@ -60,6 +60,6 @@ export const MOBILE_DRAWER_ANIMATION = {
 export const MOBILE_DRAWER_CONFIG = {
   overlayTransitionDuration: 0.2,
   drawerClassName:
-    'fixed inset-x-0 bottom-3 z-50 mx-auto w-[95%] rounded-xl border border-border bg-background p-4 shadow-lg md:hidden',
+    'fixed inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 mx-auto max-h-[calc(100dvh-2rem)] w-[95%] overflow-y-auto overscroll-contain rounded-xl border border-border bg-background p-4 shadow-lg md:hidden',
   overlayClassName: 'fixed inset-0 z-40 bg-black/50 backdrop-blur-sm',
 } as const

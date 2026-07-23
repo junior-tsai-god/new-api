@@ -1,3 +1,6 @@
+import { useQuery } from '@tanstack/react-query'
+import { VChart } from '@visactor/react-vchart'
+import { Users, Loader2 } from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -17,15 +20,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useEffect, useMemo, useState, useRef, useCallback } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { VChart } from '@visactor/react-vchart'
-import { Users, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { getRollingDateRange, type TimeGranularity } from '@/lib/time'
-import { VCHART_OPTION } from '@/lib/vchart'
-import { useTheme } from '@/context/theme-provider'
+
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useTheme } from '@/context/theme-provider'
 import { getUserQuotaDataByUsers } from '@/features/dashboard/api'
 import {
   TIME_GRANULARITY_OPTIONS,
@@ -40,6 +39,8 @@ import type {
   ProcessedUserChartData,
   UserChartsFilters,
 } from '@/features/dashboard/types'
+import { getRollingDateRange, type TimeGranularity } from '@/lib/time'
+import { useVChartOption } from '@/lib/vchart'
 
 let themeManagerPromise: Promise<
   (typeof import('@visactor/vchart'))['ThemeManager']
@@ -71,6 +72,7 @@ interface UserChartsProps {
 
 export function UserCharts(props: UserChartsProps) {
   const { t } = useTranslation()
+  const vchartOption = useVChartOption()
   const { resolvedTheme } = useTheme()
   const [themeReady, setThemeReady] = useState(false)
   const themeManagerRef = useRef<
@@ -246,7 +248,7 @@ export function UserCharts(props: UserChartsProps) {
                         theme: resolvedTheme === 'dark' ? 'dark' : 'light',
                         background: 'transparent',
                       }}
-                      option={VCHART_OPTION}
+                      option={vchartOption}
                     />
                   )
                 )}

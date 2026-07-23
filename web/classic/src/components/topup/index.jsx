@@ -78,6 +78,7 @@ const TopUp = () => {
   const [enableStripeTopUp, setEnableStripeTopUp] = useState(
     statusState?.status?.enable_stripe_topup || false,
   );
+  const [enablePayPalTopUp, setEnablePayPalTopUp] = useState(false);
   const [statusLoading, setStatusLoading] = useState(true);
 
   // Creem 相关状态
@@ -102,6 +103,7 @@ const TopUp = () => {
   const [payMethods, setPayMethods] = useState([]);
 
   const affFetchedRef = useRef(false);
+  const handledPayPalOrderRef = useRef('');
 
   // 邀请相关状态
   const [affLink, setAffLink] = useState('');
@@ -154,6 +156,9 @@ const TopUp = () => {
   const requestAmountByPayment = async (payment, value) => {
     if (payment === 'stripe') {
       return getStripeAmount(value);
+    }
+    if (payment === 'paypal') {
+      return getPayPalAmount(value);
     }
     if (payment === 'waffo_pancake') {
       return getWaffoPancakeAmount(value);
@@ -212,6 +217,11 @@ const TopUp = () => {
     if (payment === 'stripe') {
       if (!enableStripeTopUp) {
         showError(t('管理员未开启Stripe充值！'));
+        return;
+      }
+    } else if (payment === 'paypal') {
+      if (!enablePayPalTopUp) {
+        showError(t('管理员未开启在线充值！'));
         return;
       }
     } else if (payment === 'waffo_pancake') {
@@ -278,6 +288,10 @@ const TopUp = () => {
       if (amount === 0) {
         await getStripeAmount();
       }
+    } else if (payWay === 'paypal') {
+      if (amount === 0) {
+        await getPayPalAmount();
+      }
     } else {
       // 普通支付处理
       if (amount === 0) {
@@ -298,6 +312,11 @@ const TopUp = () => {
           amount: parseInt(topUpCount),
           payment_method: 'stripe',
         });
+      } else if (payWay === 'paypal') {
+        res = await API.post('/api/user/paypal/pay', {
+          amount: parseInt(topUpCount),
+          payment_method: 'paypal',
+        });
       } else {
         // 普通支付请求
         res = await API.post('/api/user/pay', {
@@ -312,6 +331,8 @@ const TopUp = () => {
           if (payWay === 'stripe') {
             // Stripe 支付回调处理
             window.open(data.pay_link, '_blank');
+          } else if (payWay === 'paypal') {
+            window.location.assign(data.pay_link);
           } else {
             // 普通支付表单提交
             let params = data;
@@ -633,6 +654,16 @@ const TopUp = () => {
                 }
               }
 
+              if (
+                method.type === 'paypal' &&
+                (!method.min_topup || method.min_topup <= 0)
+              ) {
+                const payPalMin = Number(data.paypal_min_topup);
+                if (Number.isFinite(payPalMin)) {
+                  method.min_topup = payPalMin;
+                }
+              }
+
               if (!method.color) {
                 if (method.type === 'alipay') {
                   method.color = 'rgba(var(--semi-blue-5), 1)';
@@ -655,6 +686,7 @@ const TopUp = () => {
 
           setPayMethods(payMethods);
           const enableStripeTopUp = data.enable_stripe_topup || false;
+          const enablePayPalTopUp = data.enable_paypal_topup || false;
           const enableOnlineTopUp = data.enable_online_topup || false;
           const enableCreemTopUp = data.enable_creem_topup || false;
           const enableWaffoTopUp = data.enable_waffo_topup || false;
@@ -664,13 +696,16 @@ const TopUp = () => {
             ? data.min_topup
             : enableStripeTopUp
               ? data.stripe_min_topup
-              : enableWaffoTopUp
-                ? data.waffo_min_topup
-                : enableWaffoPancakeTopUp
-                  ? data.waffo_pancake_min_topup
-                  : 1;
+              : enablePayPalTopUp
+                ? data.paypal_min_topup
+                : enableWaffoTopUp
+                  ? data.waffo_min_topup
+                  : enableWaffoPancakeTopUp
+                    ? data.waffo_pancake_min_topup
+                    : 1;
           setEnableOnlineTopUp(enableOnlineTopUp);
           setEnableStripeTopUp(enableStripeTopUp);
+          setEnablePayPalTopUp(enablePayPalTopUp);
           setEnableCreemTopUp(enableCreemTopUp);
           setEnableWaffoTopUp(enableWaffoTopUp);
           setWaffoPayMethods(data.waffo_pay_methods || []);
@@ -679,7 +714,19 @@ const TopUp = () => {
           setWaffoPancakeMinTopUp(data.waffo_pancake_min_topup || 1);
           setMinTopUp(minTopUpValue);
           setTopUpCount(minTopUpValue);
-          setTopUpLink(data.topup_link || '');
+          const configuredTopUpLink = data.topup_link || '';
+          let isLegacyPayPalLink = false;
+          try {
+            const parsedTopUpLink = new URL(configuredTopUpLink);
+            isLegacyPayPalLink =
+              parsedTopUpLink.protocol === 'https:' &&
+              (parsedTopUpLink.hostname === 'paypal.com' ||
+                parsedTopUpLink.hostname.endsWith('.paypal.com')) &&
+              parsedTopUpLink.pathname.startsWith('/ncp/');
+          } catch {
+            isLegacyPayPalLink = false;
+          }
+          setTopUpLink(isLegacyPayPalLink ? '' : configuredTopUpLink);
           setTopupInfo((prev) => ({
             ...prev,
             enable_redemption: data.enable_redemption !== false,
@@ -771,6 +818,37 @@ const TopUp = () => {
   }, []);
 
   useEffect(() => {
+    const payPalStatus = searchParams.get('paypal');
+    const orderId = searchParams.get('token') || '';
+    if (
+      payPalStatus !== 'success' ||
+      !orderId ||
+      handledPayPalOrderRef.current === orderId
+    ) {
+      return;
+    }
+    handledPayPalOrderRef.current = orderId;
+
+    API.post('/api/user/paypal/capture', { order_id: orderId })
+      .then((res) => {
+        if (res.data?.success || res.data?.message === 'success') {
+          showSuccess(t('支付成功'));
+          getUserQuota().then();
+        } else {
+          showError(res.data?.message || t('支付失败'));
+        }
+      })
+      .catch(() => showError(t('支付失败')))
+      .finally(() => {
+        const nextSearchParams = new URLSearchParams(searchParams);
+        nextSearchParams.delete('paypal');
+        nextSearchParams.delete('token');
+        nextSearchParams.delete('PayerID');
+        setSearchParams(nextSearchParams, { replace: true });
+      });
+  }, []);
+
+  useEffect(() => {
     // 始终获取最新用户数据，确保余额等统计信息准确
     getUserQuota().then();
     setTransferAmount(getQuotaPerUnit());
@@ -849,6 +927,29 @@ const TopUp = () => {
         }
       } else {
         showError(res);
+      }
+    } catch (err) {
+      // amount fetch failed silently
+    } finally {
+      setAmountLoading(false);
+    }
+  };
+
+  const getPayPalAmount = async (value) => {
+    if (value === undefined) {
+      value = topUpCount;
+    }
+    setAmountLoading(true);
+    try {
+      const res = await API.post('/api/user/paypal/amount', {
+        amount: parseFloat(value),
+      });
+      const { message, data } = res.data;
+      if (message === 'success') {
+        setAmount(parseFloat(data));
+      } else {
+        setAmount(0);
+        Toast.error({ content: '错误：' + data, id: 'getAmount' });
       }
     } catch (err) {
       // amount fetch failed silently
@@ -975,6 +1076,7 @@ const TopUp = () => {
           t={t}
           enableOnlineTopUp={enableOnlineTopUp}
           enableStripeTopUp={enableStripeTopUp}
+          enablePayPalTopUp={enablePayPalTopUp}
           enableCreemTopUp={enableCreemTopUp}
           creemProducts={creemProducts}
           creemPreTopUp={creemPreTopUp}

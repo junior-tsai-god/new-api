@@ -1,3 +1,4 @@
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -17,23 +18,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { useAuthStore } from '@/stores/auth-store'
-import { cn } from '@/lib/utils'
-import { useNotifications } from '@/hooks/use-notifications'
-import { useSystemConfig } from '@/hooks/use-system-config'
-import { useTopNavLinks } from '@/hooks/use-top-nav-links'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
+
+import { AivantaBrand } from '@/components/aivanta-brand'
 import { Dialog } from '@/components/dialog'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { NotificationPopover } from '@/components/notification-popover'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useNotifications } from '@/hooks/use-notifications'
+import { useSystemConfig } from '@/hooks/use-system-config'
+import { useTopNavLinks } from '@/hooks/use-top-nav-links'
+import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
+
 import { defaultTopNavLinks } from '../config/top-nav.config'
 import type { TopNavLink } from '../types'
-import { HeaderLogo } from './header-logo'
 
 const AUTH_PROMPT_SECONDS = 5
 
@@ -80,12 +82,7 @@ export function PublicHeader(props: PublicHeaderProps) {
   const [authPromptSecondsLeft, setAuthPromptSecondsLeft] =
     useState(AUTH_PROMPT_SECONDS)
   const { auth } = useAuthStore()
-  const {
-    systemName,
-    logo: systemLogo,
-    loading,
-    logoLoaded,
-  } = useSystemConfig()
+  const { systemName, logo: systemLogo, loading } = useSystemConfig()
   const dynamicLinks = useTopNavLinks()
   const notifications = useNotifications()
   const routerState = useRouterState()
@@ -95,6 +92,59 @@ export function PublicHeader(props: PublicHeaderProps) {
   const isAuthenticated = !!user
   const displaySiteName = customSiteName || systemName
   const links = dynamicLinks.length > 0 ? dynamicLinks : navLinks
+  const isHomePage = pathname === '/'
+  const isBrandSurface = isHomePage || pathname.startsWith('/pricing')
+
+  let brandContent: React.ReactNode
+  if (loading) {
+    brandContent = (
+      <>
+        <Skeleton className='size-7 shrink-0 rounded-lg' />
+        <span className='grid gap-1'>
+          <Skeleton className='h-3.5 w-16' />
+          <Skeleton className='h-2 w-20' />
+        </span>
+      </>
+    )
+  } else if (customLogo) {
+    brandContent = (
+      <>
+        <span className='flex size-7 shrink-0 items-center justify-center transition-transform duration-300 group-hover:scale-105'>
+          {customLogo}
+        </span>
+        <span className='max-w-28 truncate text-sm font-semibold tracking-tight sm:max-w-40'>
+          {displaySiteName}
+        </span>
+      </>
+    )
+  } else {
+    brandContent = (
+      <AivantaBrand
+        projectName={displaySiteName}
+        projectLogo={systemLogo}
+        className='max-w-36 sm:max-w-52'
+        markClassName='size-7 rounded-md transition-transform duration-300 group-hover:scale-105'
+        nameClassName='text-sm'
+      />
+    )
+  }
+
+  let authControl: React.ReactNode
+  if (loading) {
+    authControl = <Skeleton className='h-8 w-20 rounded-lg' />
+  } else if (isAuthenticated) {
+    authControl = <ProfileDropdown />
+  } else {
+    authControl = (
+      <Button
+        size='sm'
+        className='h-8 rounded-lg px-3.5 text-xs font-medium'
+        render={<Link to='/sign-in' />}
+      >
+        {t('Sign in')}
+      </Button>
+    )
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -171,55 +221,69 @@ export function PublicHeader(props: PublicHeaderProps) {
     [t]
   )
 
+  let headerContainerClassName =
+    'max-w-7xl px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-4 md:px-6'
+  let headerNavClassName =
+    'bg-background/80 ring-border/50 h-13 rounded-2xl px-3 shadow-[0_8px_32px_-18px_rgba(0,0,0,0.28)] ring-[0.5px] backdrop-blur-2xl sm:px-4'
+
+  if (isBrandSurface) {
+    headerContainerClassName =
+      'w-[min(calc(100%_-_2rem),96rem)] px-3 pt-[max(1rem,env(safe-area-inset-top))] md:pt-6'
+    headerNavClassName =
+      'h-13 rounded-full border border-[var(--aivanta-rule)] bg-[var(--aivanta-panel)]/88 px-3 shadow-[0_12px_40px_-24px_rgba(0,0,0,0.5)] backdrop-blur-xl sm:px-4'
+  } else if (scrolled) {
+    headerContainerClassName = 'max-w-[52rem] px-3 pt-3'
+    headerNavClassName =
+      'bg-background/60 ring-border/50 h-12 rounded-2xl pr-1.5 pl-4 shadow-[0_2px_16px_-6px_rgba(0,0,0,0.08),0_0_0_0.5px_rgba(0,0,0,0.02)] ring-[0.5px] backdrop-blur-2xl dark:shadow-[0_2px_16px_-6px_rgba(0,0,0,0.4)]'
+  }
+
   return (
     <>
-      <header className='pointer-events-none fixed inset-x-0 top-0 z-50'>
+      <header
+        className={cn(
+          'pointer-events-none fixed inset-x-0 top-0 z-50',
+          isBrandSurface && 'aivanta-public-header'
+        )}
+      >
         <div
           className={cn(
             'pointer-events-auto mx-auto transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]',
-            scrolled ? 'max-w-[52rem] px-3 pt-3' : 'max-w-7xl px-4 pt-0 md:px-6'
+            headerContainerClassName
           )}
         >
           <nav
             className={cn(
               'flex items-center justify-between transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]',
-              scrolled
-                ? 'bg-background/60 ring-border/50 h-12 rounded-2xl pr-1.5 pl-4 shadow-[0_2px_16px_-6px_rgba(0,0,0,0.08),0_0_0_0.5px_rgba(0,0,0,0.02)] ring-[0.5px] backdrop-blur-2xl dark:shadow-[0_2px_16px_-6px_rgba(0,0,0,0.4)]'
-                : 'h-16 px-2'
+              headerNavClassName
             )}
           >
             {/* Logo */}
             <Link
               to={homeUrl}
-              className='group flex shrink-0 items-center gap-2.5'
+              className='group flex min-w-0 shrink items-center gap-2.5'
             >
-              <div className='flex size-7 shrink-0 items-center justify-center transition-all duration-300 group-hover:scale-105'>
-                {loading ? (
-                  <Skeleton className='size-full rounded-lg' />
-                ) : customLogo ? (
-                  customLogo
-                ) : (
-                  <HeaderLogo
-                    src={systemLogo}
-                    loading={loading}
-                    logoLoaded={logoLoaded}
-                    className='size-full rounded-lg object-contain'
-                  />
-                )}
-              </div>
-              <span className='text-sm font-semibold tracking-tight'>
-                {loading ? <Skeleton className='h-4 w-16' /> : displaySiteName}
-              </span>
+              {brandContent}
             </Link>
 
             {/* Desktop nav */}
             <div className='hidden items-center gap-0.5 sm:flex'>
-              {links.map((link, i) => {
-                const isActive = pathname === link.href
+              {links.map((link) => {
+                const isActive =
+                  pathname === link.href ||
+                  (link.href !== '/' && pathname.startsWith(`${link.href}/`))
+                const linkKey = `${link.href}-${link.title}`
+                let linkStateClassName =
+                  'text-muted-foreground hover:text-foreground'
+                if (isActive && isBrandSurface) {
+                  linkStateClassName =
+                    'bg-[var(--aivanta-ink)] text-[var(--aivanta-paper)]'
+                } else if (isActive) {
+                  linkStateClassName = 'text-foreground'
+                }
                 if (link.external) {
                   return (
                     <a
-                      key={i}
+                      key={linkKey}
                       href={link.href}
                       target='_blank'
                       rel='noopener noreferrer'
@@ -227,7 +291,9 @@ export function PublicHeader(props: PublicHeaderProps) {
                       tabIndex={link.disabled ? -1 : undefined}
                       onClick={(event) => handleNavLinkClick(event, link)}
                       className={cn(
-                        'text-muted-foreground hover:text-foreground rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors duration-200',
+                        'text-muted-foreground hover:text-foreground rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors duration-200',
+                        isBrandSurface &&
+                          'hover:bg-[var(--aivanta-paper)] hover:text-[var(--aivanta-ink)]',
                         link.disabled && 'pointer-events-none opacity-50'
                       )}
                     >
@@ -237,15 +303,16 @@ export function PublicHeader(props: PublicHeaderProps) {
                 }
                 return (
                   <Link
-                    key={i}
+                    key={linkKey}
                     to={link.href}
                     disabled={link.disabled}
                     onClick={(event) => handleNavLinkClick(event, link)}
                     className={cn(
-                      'rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors duration-200',
-                      isActive
-                        ? 'text-foreground'
-                        : 'text-muted-foreground hover:text-foreground',
+                      'rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors duration-200',
+                      linkStateClassName,
+                      isBrandSurface &&
+                        !isActive &&
+                        'hover:bg-[var(--aivanta-paper)] hover:text-[var(--aivanta-ink)]',
                       link.disabled && 'pointer-events-none opacity-50'
                     )}
                   >
@@ -278,19 +345,7 @@ export function PublicHeader(props: PublicHeaderProps) {
               {showAuthButtons && (
                 <>
                   <div className='bg-border/40 mx-1 h-4 w-px' />
-                  {loading ? (
-                    <Skeleton className='h-8 w-20 rounded-lg' />
-                  ) : isAuthenticated ? (
-                    <ProfileDropdown />
-                  ) : (
-                    <Button
-                      size='sm'
-                      className='h-8 rounded-lg px-3.5 text-xs font-medium'
-                      render={<Link to='/sign-in' />}
-                    >
-                      {t('Sign in')}
-                    </Button>
-                  )}
+                  {authControl}
                 </>
               )}
             </div>
@@ -339,6 +394,7 @@ export function PublicHeader(props: PublicHeaderProps) {
       <div
         className={cn(
           'bg-background/98 fixed inset-0 z-40 backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] sm:pointer-events-none sm:hidden',
+          isBrandSurface && 'aivanta-public-header',
           mobileOpen
             ? 'pointer-events-auto opacity-100'
             : 'pointer-events-none opacity-0'
@@ -347,7 +403,10 @@ export function PublicHeader(props: PublicHeaderProps) {
         <div className='flex h-full flex-col justify-between px-8 pt-20 pb-10'>
           <nav className='flex flex-col gap-1'>
             {links.map((link, i) => {
-              const isActive = pathname === link.href
+              const isActive =
+                pathname === link.href ||
+                (link.href !== '/' && pathname.startsWith(`${link.href}/`))
+              const linkKey = `${link.href}-${link.title}`
               const linkClassName = cn(
                 'flex items-center gap-3 py-3 text-base font-medium tracking-tight transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
                 mobileOpen
@@ -362,7 +421,7 @@ export function PublicHeader(props: PublicHeaderProps) {
               if (link.external) {
                 return (
                   <a
-                    key={i}
+                    key={linkKey}
                     href={link.href}
                     target='_blank'
                     rel='noopener noreferrer'
@@ -378,7 +437,7 @@ export function PublicHeader(props: PublicHeaderProps) {
               }
               return (
                 <Link
-                  key={i}
+                  key={linkKey}
                   to={link.href}
                   disabled={link.disabled}
                   onClick={(event) => handleNavLinkClick(event, link, true)}

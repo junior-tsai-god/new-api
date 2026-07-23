@@ -1,3 +1,5 @@
+import { VChart } from '@visactor/react-vchart'
+import { PieChart as PieChartIcon } from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -17,12 +19,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useEffect, useMemo, useState, useRef } from 'react'
-import { VChart } from '@visactor/react-vchart'
-import { PieChart as PieChartIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useThemeRadiusPx } from '@/lib/theme-radius'
-import type { TimeGranularity } from '@/lib/time'
-import { VCHART_OPTION } from '@/lib/vchart'
+
 import { useThemeCustomization } from '@/context/theme-customization-provider'
 import { useTheme } from '@/context/theme-provider'
 import {
@@ -34,6 +32,9 @@ import type {
   ModelAnalyticsChartTab,
   QuotaDataItem,
 } from '@/features/dashboard/types'
+import { useThemeRadiusPx } from '@/lib/theme-radius'
+import type { TimeGranularity } from '@/lib/time'
+import { useVChartOption } from '@/lib/vchart'
 
 let themeManagerPromise: Promise<
   (typeof import('@visactor/vchart'))['ThemeManager']
@@ -56,6 +57,7 @@ interface ModelChartsProps {
 
 export function ModelCharts(props: ModelChartsProps) {
   const { t } = useTranslation()
+  const vchartOption = useVChartOption()
   const { resolvedTheme } = useTheme()
   const { customization } = useThemeCustomization()
   const chartRadius = useThemeRadiusPx(
@@ -156,7 +158,7 @@ export function ModelCharts(props: ModelChartsProps) {
               theme: resolvedTheme === 'dark' ? 'dark' : 'light',
               background: 'transparent',
             }}
-            option={VCHART_OPTION}
+            option={vchartOption}
           />
         )}
       </div>

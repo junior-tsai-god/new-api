@@ -42,6 +42,15 @@ func EmbedFolder(fsEmbed embed.FS, targetPath string) static.ServeFileSystem {
 	}
 }
 
+// DiskFolder exposes a built frontend directory while preserving the same
+// root-page behavior as embedded assets. The router still handles index.html,
+// so SPA routes and response headers remain consistent in both modes.
+func DiskFolder(targetPath string) static.ServeFileSystem {
+	return &embedFileSystem{
+		FileSystem: http.Dir(targetPath),
+	}
+}
+
 // themeAwareFileSystem delegates to the appropriate embedded FS based on
 // the current theme (via GetTheme). This enables runtime theme switching
 // without restarting the server.

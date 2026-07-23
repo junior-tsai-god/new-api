@@ -1,3 +1,4 @@
+import i18next from 'i18next'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -17,18 +18,22 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useState, useCallback } from 'react'
-import i18next from 'i18next'
 import { toast } from 'sonner'
+
 import {
   calculateAmount,
+  calculatePayPalAmount,
   calculateStripeAmount,
   calculateWaffoPancakeAmount,
   requestPayment,
+  requestPayPalPayment,
   requestStripePayment,
+  capturePayPalOrder,
   isApiSuccess,
 } from '../api'
 import {
   isStripePayment,
+  isPayPalPayment,
   isWaffoPancakePayment,
   submitPaymentForm,
 } from '../lib'
@@ -49,12 +54,15 @@ export function usePayment() {
         setCalculating(true)
 
         const isStripe = isStripePayment(paymentType)
+        const isPayPal = isPayPalPayment(paymentType)
         const isPancake = isWaffoPancakePayment(paymentType)
         const response = isStripe
           ? await calculateStripeAmount({ amount: topupAmount })
-          : isPancake
-            ? await calculateWaffoPancakeAmount({ amount: topupAmount })
-            : await calculateAmount({ amount: topupAmount })
+          : isPayPal
+            ? await calculatePayPalAmount({ amount: topupAmount })
+            : isPancake
+              ? await calculateWaffoPancakeAmount({ amount: topupAmount })
+              : await calculateAmount({ amount: topupAmount })
 
         if (isApiSuccess(response) && response.data) {
           const calculatedAmount = parseFloat(response.data)
@@ -82,6 +90,7 @@ export function usePayment() {
         setProcessing(true)
 
         const isStripe = isStripePayment(paymentType)
+        const isPayPal = isPayPalPayment(paymentType)
         const amount = Math.floor(topupAmount)
 
         const response = isStripe
@@ -89,10 +98,15 @@ export function usePayment() {
               amount,
               payment_method: 'stripe',
             })
-          : await requestPayment({
-              amount,
-              payment_method: paymentType,
-            })
+          : isPayPal
+            ? await requestPayPalPayment({
+                amount,
+                payment_method: 'paypal',
+              })
+            : await requestPayment({
+                amount,
+                payment_method: paymentType,
+              })
 
         if (!isApiSuccess(response)) {
           toast.error(response.message || i18next.t('Payment request failed'))
@@ -106,8 +120,13 @@ export function usePayment() {
           return true
         }
 
+        if (isPayPal && response.data?.pay_link) {
+          window.location.assign(response.data.pay_link as string)
+          return true
+        }
+
         // Handle non-Stripe payment
-        if (!isStripe && response.data) {
+        if (!isStripe && !isPayPal && response.data) {
           const url = (response as unknown as { url?: string }).url
           if (url) {
             submitPaymentForm(url, response.data)
@@ -127,12 +146,33 @@ export function usePayment() {
     []
   )
 
+  const capturePayPalPayment = useCallback(async (orderId: string) => {
+    try {
+      setProcessing(true)
+      const response = await capturePayPalOrder(orderId)
+      if (!isApiSuccess(response)) {
+        toast.error(
+          response.message || i18next.t('PayPal payment confirmation failed')
+        )
+        return false
+      }
+      toast.success(i18next.t('PayPal payment completed'))
+      return true
+    } catch (_error) {
+      toast.error(i18next.t('PayPal payment confirmation failed'))
+      return false
+    } finally {
+      setProcessing(false)
+    }
+  }, [])
+
   return {
     amount,
     calculating,
     processing,
     calculatePaymentAmount,
     processPayment,
+    capturePayPalPayment,
     setAmount,
   }
 }

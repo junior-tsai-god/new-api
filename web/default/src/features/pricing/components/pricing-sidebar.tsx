@@ -1,3 +1,4 @@
+import { ChevronDown, RotateCcw } from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -17,10 +18,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { ReactNode } from 'react'
-import { ChevronDown, RotateCcw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { getLobeIcon } from '@/lib/lobe-icon'
-import { cn } from '@/lib/utils'
+
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -28,6 +27,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
+import { getLobeIcon } from '@/lib/lobe-icon'
+import { cn } from '@/lib/utils'
+
 import {
   ENDPOINT_TYPES,
   FILTER_ALL,
@@ -244,7 +246,7 @@ export function PricingSidebar(props: PricingSidebarProps) {
   ]
 
   return (
-    <aside className={cn('rounded-xl border p-3', props.className)}>
+    <aside className={cn('aivanta-panel p-3', props.className)}>
       <div className='mb-2.5 flex items-center justify-between gap-2'>
         <div>
           <h2 className='text-foreground text-sm font-bold'>{t('Filter')}</h2>
@@ -271,7 +273,7 @@ export function PricingSidebar(props: PricingSidebarProps) {
         </Badge>
       )}
 
-      <div className='space-y-1'>
+      <div className='flex flex-col gap-1'>
         <FilterSection
           title={t('Groups')}
           value={props.groupFilter}

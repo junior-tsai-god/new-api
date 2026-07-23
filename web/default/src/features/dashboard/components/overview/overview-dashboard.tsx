@@ -1,22 +1,3 @@
-/*
-Copyright (C) 2023-2026 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
-import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import {
@@ -38,21 +19,43 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
+/*
+Copyright (C) 2023-2026 QuantumNous
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
+*/
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { getUserModels } from '@/lib/api'
-import { MOTION_TRANSITION } from '@/lib/motion'
-import { ROLE } from '@/lib/roles'
-import { cn } from '@/lib/utils'
-import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
-import { Button } from '@/components/ui/button'
+
 import {
   CardStaggerContainer,
   CardStaggerItem,
 } from '@/components/page-transition'
+import { Button } from '@/components/ui/button'
 import { fetchTokenKey, getApiKeys } from '@/features/keys/api'
 import type { ApiKey } from '@/features/keys/types'
+import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
+import { getUserModels } from '@/lib/api'
+import { formatNumber } from '@/lib/format'
+import { MOTION_TRANSITION } from '@/lib/motion'
+import { ROLE } from '@/lib/roles'
+import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
+
 import {
   useApiInfo,
   useDashboardContentVisibility,
@@ -318,7 +321,7 @@ function RequestPreview(props: {
       initial={shouldReduceMotion ? false : { opacity: 0, y: 10, scale: 0.98 }}
       animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
       transition={MOTION_TRANSITION.slow}
-      className='bg-background/75 relative overflow-hidden rounded-2xl border p-3 shadow-sm backdrop-blur'
+      className='bg-card relative overflow-hidden rounded-3xl border p-4'
     >
       {!shouldReduceMotion && (
         <motion.div
@@ -371,9 +374,9 @@ function RequestPreview(props: {
           <span className='bg-success size-2 rounded-full' />
         </div>
         <div className='flex flex-col gap-1 overflow-hidden'>
-          {previewLines.map((line, index) => (
+          {previewLines.map((line) => (
             <code
-              key={`${line}-${index}`}
+              key={line}
               className='text-muted-foreground truncate'
               title={line}
             >
@@ -418,7 +421,7 @@ function QuickActionItem(props: { action: QuickAction }) {
   return (
     <Button
       variant='outline'
-      className='h-auto justify-start rounded-xl px-3 py-3 text-left'
+      className='bg-card/75 h-auto justify-start rounded-2xl px-3 py-3 text-left'
       render={<Link to={props.action.to} />}
     >
       <span className='bg-muted flex size-9 shrink-0 items-center justify-center rounded-lg'>
@@ -449,6 +452,169 @@ function CompactQuickAction(props: { action: QuickAction }) {
       <Icon data-icon='inline-start' />
       <span>{props.action.title}</span>
     </Button>
+  )
+}
+
+function DispatchHero(props: {
+  requestCount: number
+  apiKeyCount: number
+  modelCount: number
+  loadingKeys: boolean
+  loadingModels: boolean
+  endpoint: string
+  signals: HeroSignal[]
+}) {
+  const { t } = useTranslation()
+  const metrics = [
+    {
+      label: t('Requests'),
+      value: formatNumber(props.requestCount),
+      icon: RadioTower,
+    },
+    {
+      label: t('API Keys'),
+      value: props.loadingKeys ? '—' : formatNumber(props.apiKeyCount),
+      icon: KeyRound,
+    },
+    {
+      label: t('Models'),
+      value: props.loadingModels ? '—' : formatNumber(props.modelCount),
+      icon: ListChecks,
+    },
+  ]
+
+  return (
+    <CardStaggerContainer className='grid items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]'>
+      <CardStaggerItem className='route-dispatch-main bg-primary text-primary-foreground relative min-h-[22rem] overflow-hidden rounded-[2rem] border-0 p-5 sm:p-7'>
+        <div className='route-dispatch-grid pointer-events-none absolute inset-0 opacity-60' />
+        <div
+          className='route-dispatch-orbit pointer-events-none absolute -top-24 -right-16 size-80 rounded-full'
+          aria-hidden='true'
+        />
+
+        <div className='relative flex h-full min-h-[18.5rem] flex-col justify-between gap-8'>
+          <div className='flex flex-wrap items-start justify-between gap-4'>
+            <div className='max-w-2xl'>
+              <div className='text-primary-foreground/55 flex items-center gap-2 font-mono text-[10px] tracking-[0.22em] uppercase'>
+                <span className='gateway-status-dot bg-warning size-2 rounded-full' />
+                AIVANTA / ROUTE 01
+              </div>
+              <h3 className='mt-4 text-3xl font-normal tracking-[-0.055em] sm:text-5xl'>
+                {t('Routing desk')}
+              </h3>
+              <p className='text-primary-foreground/60 mt-3 max-w-xl text-sm leading-relaxed sm:text-base'>
+                {t('Monitor balance, usage, and request volume')}
+              </p>
+            </div>
+
+            <Button
+              className='bg-warning text-warning-foreground hover:bg-warning/90 rounded-xl'
+              render={<Link to='/playground' />}
+            >
+              <TerminalSquare data-icon='inline-start' />
+              {t('Playground')}
+              <ArrowRight data-icon='inline-end' />
+            </Button>
+          </div>
+
+          <div className='grid gap-2 sm:grid-cols-3'>
+            {metrics.map((metric, index) => {
+              const Icon = metric.icon
+
+              return (
+                <div
+                  key={metric.label}
+                  className='route-dispatch-metric relative overflow-hidden rounded-2xl px-4 py-3.5'
+                >
+                  <div className='flex items-center justify-between gap-3'>
+                    <span className='text-primary-foreground/55 flex items-center gap-2 text-xs font-medium'>
+                      <Icon className='size-3.5' aria-hidden='true' />
+                      {metric.label}
+                    </span>
+                    <span className='font-mono text-[9px] text-white/35 tabular-nums'>
+                      0{index + 1}
+                    </span>
+                  </div>
+                  <div className='deck-metric mt-3 text-3xl'>
+                    {metric.value}
+                  </div>
+                  <div
+                    className='mt-3 flex items-center gap-1'
+                    aria-hidden='true'
+                  >
+                    <span className='bg-warning h-1 flex-1 rounded-full' />
+                    <span className='h-1 w-8 rounded-full bg-white/20' />
+                    <span className='h-1 w-3 rounded-full bg-white/10' />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </CardStaggerItem>
+
+      <CardStaggerItem className='route-dispatch-signal relative overflow-hidden rounded-[2rem] p-5 sm:p-6'>
+        <div className='relative flex h-full min-h-[20rem] flex-col'>
+          <div className='flex items-start justify-between gap-3'>
+            <div>
+              <div className='font-mono text-[10px] tracking-[0.18em] uppercase opacity-55'>
+                NODE / 01
+              </div>
+              <h3 className='mt-2 text-lg font-semibold'>
+                {t('Route active')}
+              </h3>
+            </div>
+            <span className='flex size-10 items-center justify-center rounded-full bg-black/10'>
+              <RadioTower className='size-4' aria-hidden='true' />
+            </span>
+          </div>
+
+          <div className='mt-6 flex items-baseline gap-2'>
+            <span className='deck-metric text-5xl'>{t('Online')}</span>
+            <span
+              className='bg-success size-2 rounded-full'
+              aria-hidden='true'
+            />
+          </div>
+
+          <div className='mt-6 grid gap-2'>
+            {props.signals.map((signal, index) => {
+              const Icon = signal.icon
+
+              return (
+                <div
+                  key={signal.label}
+                  className='flex items-center justify-between gap-3 border-t border-black/15 pt-2.5'
+                >
+                  <span className='flex min-w-0 items-center gap-2 text-xs font-medium'>
+                    <span className='font-mono text-[9px] opacity-45'>
+                      0{index + 1}
+                    </span>
+                    <Icon className='size-3.5 shrink-0' aria-hidden='true' />
+                    <span className='truncate'>{signal.label}</span>
+                  </span>
+                  <span className='max-w-28 truncate text-xs opacity-65'>
+                    {signal.value}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+
+          <div className='mt-auto pt-6'>
+            <div className='text-[10px] font-medium opacity-55'>
+              {t('Current domain')}
+            </div>
+            <div
+              className='mt-1.5 truncate font-mono text-[10px]'
+              title={props.endpoint}
+            >
+              {props.endpoint}
+            </div>
+          </div>
+        </div>
+      </CardStaggerItem>
+    </CardStaggerContainer>
   )
 }
 
@@ -612,11 +778,23 @@ export function OverviewDashboard() {
   }
 
   return (
-    <div className='flex flex-col gap-4'>
+    <div className='flex flex-col gap-5'>
+      <DispatchHero
+        requestCount={requestCount}
+        apiKeyCount={apiKeysQuery.data?.length ?? 0}
+        modelCount={modelsQuery.data?.length ?? 0}
+        loadingKeys={apiKeysQuery.isLoading}
+        loadingModels={modelsQuery.isLoading}
+        endpoint={requestExample.endpoint}
+        signals={heroSignals}
+      />
+
+      <SummaryCards />
+
       {setupGuideExpanded ? (
-        <CardStaggerContainer className='grid items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]'>
-          <CardStaggerItem className='bg-card h-full overflow-hidden rounded-2xl border shadow-xs'>
-            <div className='relative h-full overflow-hidden p-4 sm:p-5'>
+        <CardStaggerContainer className='grid items-stretch gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]'>
+          <CardStaggerItem className='bg-card h-full overflow-hidden rounded-3xl border'>
+            <div className='relative h-full overflow-hidden p-5 sm:p-6'>
               <SetupGuideBackdrop />
               <div className='relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_21rem]'>
                 <div className='flex min-w-0 flex-col gap-5'>
@@ -651,7 +829,7 @@ export function OverviewDashboard() {
                     </div>
                   </div>
 
-                  <ol className='bg-background/45 rounded-2xl border p-2 backdrop-blur'>
+                  <ol className='bg-background/45 rounded-3xl border p-2'>
                     {startSteps.map((step, index) => (
                       <StartStepItem
                         key={step.title}
@@ -671,7 +849,7 @@ export function OverviewDashboard() {
             </div>
           </CardStaggerItem>
 
-          <CardStaggerItem className='bg-card h-full rounded-2xl border p-4 shadow-xs sm:p-5'>
+          <CardStaggerItem className='bg-card h-full rounded-3xl border p-5 sm:p-6'>
             <div className='flex h-full flex-col gap-4'>
               <div className='flex flex-col gap-1'>
                 <div className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
@@ -691,7 +869,7 @@ export function OverviewDashboard() {
         </CardStaggerContainer>
       ) : (
         <CardStaggerContainer>
-          <CardStaggerItem className='bg-card overflow-hidden rounded-2xl border shadow-xs'>
+          <CardStaggerItem className='bg-card overflow-hidden rounded-3xl border'>
             <div className='relative overflow-hidden px-4 py-3 sm:px-5'>
               <SetupGuideBackdrop compact />
               <div className='relative flex flex-wrap items-center justify-between gap-3'>
@@ -742,8 +920,6 @@ export function OverviewDashboard() {
           </CardStaggerItem>
         </CardStaggerContainer>
       )}
-
-      <SummaryCards />
 
       {showContentPanels && (
         <CardStaggerContainer

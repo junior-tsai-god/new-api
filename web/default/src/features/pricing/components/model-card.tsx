@@ -1,3 +1,4 @@
+import { ChevronRight, Copy } from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -17,12 +18,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { memo } from 'react'
-import { ChevronRight, Copy } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+
+import { StatusBadge } from '@/components/status-badge'
+import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { getLobeIcon } from '@/lib/lobe-icon'
 import { cn } from '@/lib/utils'
-import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
-import { StatusBadge } from '@/components/status-badge'
+
 import { DEFAULT_TOKEN_UNIT } from '../constants'
 import {
   getDynamicDisplayGroupRatio,
@@ -85,10 +87,111 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
     copyToClipboard(props.model.model_name || '')
   }
 
+  let pricingContent: React.ReactNode
+  if (dynamicSummary) {
+    if (dynamicSummary.isSpecialExpression) {
+      pricingContent = (
+        <span className='min-w-0'>
+          <span className='text-amber-700 dark:text-amber-300'>
+            {t('Special billing expression')}
+          </span>
+          <code className='text-muted-foreground/70 mt-0.5 line-clamp-1 block font-mono text-[11px] break-all'>
+            {dynamicSummary.rawExpression}
+          </code>
+        </span>
+      )
+    } else if (dynamicSummary.primaryEntries.length > 0) {
+      pricingContent = (
+        <>
+          {dynamicSummary.primaryEntries.map((entry) => (
+            <span
+              key={entry.key}
+              className='text-muted-foreground whitespace-nowrap'
+            >
+              {t(entry.shortLabel)}{' '}
+              <span className='text-foreground font-mono font-semibold'>
+                {entry.formatted}
+              </span>
+              /{tokenUnitLabel}
+            </span>
+          ))}
+        </>
+      )
+    } else {
+      pricingContent = (
+        <span className='text-muted-foreground text-xs'>
+          {t('Dynamic Pricing')}
+        </span>
+      )
+    }
+  } else if (isTokenBased) {
+    pricingContent = (
+      <>
+        <span className='text-muted-foreground whitespace-nowrap'>
+          {t('Input')}{' '}
+          <span className='text-foreground font-mono font-semibold'>
+            {formatPrice(
+              props.model,
+              'input',
+              tokenUnit,
+              showRechargePrice,
+              priceRate,
+              usdExchangeRate
+            )}
+          </span>
+          /{tokenUnitLabel}
+        </span>
+        <span className='text-muted-foreground whitespace-nowrap'>
+          {t('Output')}{' '}
+          <span className='text-foreground font-mono font-semibold'>
+            {formatPrice(
+              props.model,
+              'output',
+              tokenUnit,
+              showRechargePrice,
+              priceRate,
+              usdExchangeRate
+            )}
+          </span>
+          /{tokenUnitLabel}
+        </span>
+        {hasCachedPrice && (
+          <span className='text-muted-foreground/60 whitespace-nowrap'>
+            {t('Cached')}{' '}
+            <span className='font-mono'>
+              {formatPrice(
+                props.model,
+                'cache',
+                tokenUnit,
+                showRechargePrice,
+                priceRate,
+                usdExchangeRate
+              )}
+            </span>
+          </span>
+        )}
+      </>
+    )
+  } else {
+    pricingContent = (
+      <span className='text-muted-foreground whitespace-nowrap'>
+        <span className='text-foreground font-mono font-semibold'>
+          {formatRequestPrice(
+            props.model,
+            showRechargePrice,
+            priceRate,
+            usdExchangeRate
+          )}
+        </span>{' '}
+        / {t('request')}
+      </span>
+    )
+  }
+
   return (
     <div
       className={cn(
-        'group relative flex flex-col rounded-xl border p-3 transition-colors sm:p-5',
+        'aivanta-panel group relative flex flex-col p-3 transition-colors sm:p-5',
         'hover:bg-muted/20'
       )}
     >
@@ -107,95 +210,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
               {props.model.model_name}
             </h3>
             <div className='mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs sm:mt-1 sm:gap-x-3'>
-              {dynamicSummary ? (
-                dynamicSummary.isSpecialExpression ? (
-                  <span className='min-w-0'>
-                    <span className='text-amber-700 dark:text-amber-300'>
-                      {t('Special billing expression')}
-                    </span>
-                    <code className='text-muted-foreground/70 mt-0.5 line-clamp-1 block font-mono text-[11px] break-all'>
-                      {dynamicSummary.rawExpression}
-                    </code>
-                  </span>
-                ) : dynamicSummary.primaryEntries.length > 0 ? (
-                  <>
-                    {dynamicSummary.primaryEntries.map((entry) => (
-                      <span
-                        key={entry.key}
-                        className='text-muted-foreground whitespace-nowrap'
-                      >
-                        {t(entry.shortLabel)}{' '}
-                        <span className='text-foreground font-mono font-semibold'>
-                          {entry.formatted}
-                        </span>
-                        /{tokenUnitLabel}
-                      </span>
-                    ))}
-                  </>
-                ) : (
-                  <span className='text-muted-foreground text-xs'>
-                    {t('Dynamic Pricing')}
-                  </span>
-                )
-              ) : isTokenBased ? (
-                <>
-                  <span className='text-muted-foreground whitespace-nowrap'>
-                    {t('Input')}{' '}
-                    <span className='text-foreground font-mono font-semibold'>
-                      {formatPrice(
-                        props.model,
-                        'input',
-                        tokenUnit,
-                        showRechargePrice,
-                        priceRate,
-                        usdExchangeRate
-                      )}
-                    </span>
-                    /{tokenUnitLabel}
-                  </span>
-                  <span className='text-muted-foreground whitespace-nowrap'>
-                    {t('Output')}{' '}
-                    <span className='text-foreground font-mono font-semibold'>
-                      {formatPrice(
-                        props.model,
-                        'output',
-                        tokenUnit,
-                        showRechargePrice,
-                        priceRate,
-                        usdExchangeRate
-                      )}
-                    </span>
-                    /{tokenUnitLabel}
-                  </span>
-                  {hasCachedPrice && (
-                    <span className='text-muted-foreground/60 whitespace-nowrap'>
-                      {t('Cached')}{' '}
-                      <span className='font-mono'>
-                        {formatPrice(
-                          props.model,
-                          'cache',
-                          tokenUnit,
-                          showRechargePrice,
-                          priceRate,
-                          usdExchangeRate
-                        )}
-                      </span>
-                    </span>
-                  )}
-                </>
-              ) : (
-                <span className='text-muted-foreground whitespace-nowrap'>
-                  <span className='text-foreground font-mono font-semibold'>
-                    {formatRequestPrice(
-                      props.model,
-                      showRechargePrice,
-                      priceRate,
-                      usdExchangeRate
-                    )}
-                  </span>{' '}
-                  / {t('request')}
-                </span>
-              )}
+              {pricingContent}
             </div>
           </div>
         </div>

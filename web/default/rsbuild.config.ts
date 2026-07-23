@@ -15,6 +15,7 @@ export default defineConfig(({ envMode }) => {
     'http://localhost:3000'
 
   const isProd = envMode === 'production'
+  const outputRoot = process.env.FRONTEND_BUILD_OUTPUT_DIR || 'dist'
   const devProxy = Object.fromEntries(
     (['/api', '/mj', '/pg'] as const).map((key) => [
       key,
@@ -74,7 +75,7 @@ export default defineConfig(({ envMode }) => {
       minify: isProd,
       target: 'web',
       distPath: {
-        root: 'dist',
+        root: outputRoot,
       },
       // Rely on Rsbuild default legalComments ("linked" → per-chunk *.LICENSE.txt) in all modes.
       // Do not set "none" in production: that strips minifier-preserved third-party notices and

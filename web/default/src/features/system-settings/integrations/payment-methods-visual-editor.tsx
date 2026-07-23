@@ -97,15 +97,6 @@ export function PaymentMethodsVisualEditor({
         type: 'waffo_pancake',
       },
     },
-    {
-      name: t('Custom Epay method'),
-      template: {
-        icon: 'LuCreditCard',
-        min_topup: '50',
-        name: '自定义1',
-        type: 'custom1',
-      },
-    },
   ]
   const [searchText, setSearchText] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)

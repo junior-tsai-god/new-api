@@ -26,6 +26,7 @@ type TopUp struct {
 
 const (
 	PaymentMethodStripe       = "stripe"
+	PaymentMethodPayPal       = "paypal"
 	PaymentMethodCreem        = "creem"
 	PaymentMethodWaffo        = "waffo"
 	PaymentMethodWaffoPancake = "waffo_pancake"
@@ -35,6 +36,7 @@ const (
 const (
 	PaymentProviderEpay         = "epay"
 	PaymentProviderStripe       = "stripe"
+	PaymentProviderPayPal       = "paypal"
 	PaymentProviderCreem        = "creem"
 	PaymentProviderWaffo        = "waffo"
 	PaymentProviderWaffoPancake = "waffo_pancake"
@@ -522,6 +524,62 @@ func RechargeWaffo(tradeNo string, callerIp string) (err error) {
 
 	if quotaToAdd > 0 {
 		RecordTopupLog(topUp.UserId, fmt.Sprintf("Waffo充值成功，充值额度: %v，支付金额: %.2f", logger.FormatQuota(quotaToAdd), topUp.Money), callerIp, topUp.PaymentMethod, PaymentMethodWaffo)
+	}
+
+	return nil
+}
+
+func RechargePayPal(tradeNo string, callerIp string) (err error) {
+	if tradeNo == "" {
+		return errors.New("未提供支付单号")
+	}
+
+	var quotaToAdd int
+	topUp := &TopUp{}
+
+	refCol := "`trade_no`"
+	if common.UsingMainDatabase(common.DatabaseTypePostgreSQL) {
+		refCol = `"trade_no"`
+	}
+
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Set("gorm:query_option", "FOR UPDATE").Where(refCol+" = ?", tradeNo).First(topUp).Error; err != nil {
+			return errors.New("充值订单不存在")
+		}
+
+		if topUp.PaymentProvider != PaymentProviderPayPal {
+			return ErrPaymentMethodMismatch
+		}
+
+		if topUp.Status == common.TopUpStatusSuccess {
+			return nil
+		}
+
+		if topUp.Status != common.TopUpStatusPending {
+			return errors.New("充值订单状态错误")
+		}
+
+		quotaToAdd = int(decimal.NewFromInt(topUp.Amount).Mul(decimal.NewFromFloat(common.QuotaPerUnit)).IntPart())
+		if quotaToAdd <= 0 {
+			return errors.New("无效的充值额度")
+		}
+
+		topUp.CompleteTime = common.GetTimestamp()
+		topUp.Status = common.TopUpStatusSuccess
+		if err := tx.Save(topUp).Error; err != nil {
+			return err
+		}
+
+		return tx.Model(&User{}).Where("id = ?", topUp.UserId).Update("quota", gorm.Expr("quota + ?", quotaToAdd)).Error
+	})
+
+	if err != nil {
+		common.SysError("paypal topup failed: " + err.Error())
+		return errors.New("充值失败，请稍后重试")
+	}
+
+	if quotaToAdd > 0 {
+		RecordTopupLog(topUp.UserId, fmt.Sprintf("PayPal充值成功，充值额度: %v，支付金额: %.2f USD", logger.FormatQuota(quotaToAdd), topUp.Money), callerIp, topUp.PaymentMethod, PaymentMethodPayPal)
 	}
 
 	return nil

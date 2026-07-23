@@ -1,3 +1,5 @@
+import { Link, useLocation } from '@tanstack/react-router'
+import { ChevronRight } from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -17,8 +19,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { type ReactNode, useState, useEffect } from 'react'
-import { Link, useLocation } from '@tanstack/react-router'
-import { ChevronRight } from 'lucide-react'
+
 import { Badge } from '@/components/ui/badge'
 import {
   Collapsible,
@@ -45,12 +46,13 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+
 import { checkIsActive } from '../lib/url-utils'
-import {
-  type NavCollapsible,
-  type NavChatPresets,
-  type NavLink,
-  type NavGroup as NavGroupProps,
+import type {
+  NavChatPresets,
+  NavCollapsible,
+  NavGroup as NavGroupProps,
+  NavLink,
 } from '../types'
 import { ChatPresetsItem } from './chat-presets-item'
 
@@ -58,14 +60,21 @@ import { ChatPresetsItem } from './chat-presets-item'
  * Sidebar navigation group component
  * Renders a group of navigation items, supporting regular links and collapsible submenus
  */
-export function NavGroup({ title, items }: NavGroupProps) {
+export function NavGroup({
+  title,
+  items,
+  routeIndex,
+}: NavGroupProps & { routeIndex?: number }) {
   const { state, isMobile } = useSidebar()
   const href = useLocation({ select: (location) => location.href })
 
   return (
-    <SidebarGroup className='px-2 py-1'>
-      <SidebarGroupLabel className='text-muted-foreground/70 px-2 text-[11px] font-medium tracking-wider uppercase'>
-        {title}
+    <SidebarGroup className='route-nav-group px-3 py-1.5'>
+      <SidebarGroupLabel className='route-nav-label text-muted-foreground/70 gap-2 px-2 font-mono text-[10px] font-medium tracking-[0.14em] uppercase'>
+        <span className='text-foreground/35 tabular-nums'>
+          {String(routeIndex ?? 1).padStart(2, '0')}
+        </span>
+        <span className='truncate'>{title}</span>
       </SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
@@ -125,8 +134,10 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
       <SidebarMenuButton
         isActive={checkIsActive(href, item)}
         tooltip={item.title}
+        className='route-menu-link h-10 rounded-xl px-2.5'
         render={<Link to={item.url} onClick={() => setOpenMobile(false)} />}
       >
+        <span className='route-menu-node size-1.5 shrink-0 rounded-full' />
         {item.icon && <item.icon className='shrink-0' />}
         <span className='min-w-0 flex-1 truncate'>{item.title}</span>
         {item.badge && <NavBadge>{item.badge}</NavBadge>}
@@ -168,8 +179,14 @@ function SidebarMenuCollapsible({
     >
       <CollapsibleTrigger
         className='group/collapsible-trigger'
-        render={<SidebarMenuButton tooltip={item.title} />}
+        render={
+          <SidebarMenuButton
+            tooltip={item.title}
+            className='route-menu-link h-10 rounded-xl px-2.5'
+          />
+        }
       >
+        <span className='route-menu-node size-1.5 shrink-0 rounded-full' />
         {item.icon && <item.icon className='shrink-0' />}
         <span className='min-w-0 flex-1 truncate'>{item.title}</span>
         {item.badge && <NavBadge>{item.badge}</NavBadge>}

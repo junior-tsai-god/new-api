@@ -1,3 +1,4 @@
+import { useLocation } from '@tanstack/react-router'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -23,6 +24,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react'
+
 import { Main } from './main'
 import { PageFooterProvider } from './page-footer'
 
@@ -54,9 +56,16 @@ export type SectionPageLayoutProps = {
 }
 
 export function SectionPageLayout(props: SectionPageLayoutProps) {
+  const pathname = useLocation({ select: (location) => location.pathname })
   const [footerContainer, setFooterContainer] = useState<HTMLDivElement | null>(
     null
   )
+  const routeCode = pathname
+    .split('/')
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(' / ')
+    .toUpperCase()
 
   let title: ReactNode = null
   let actions: ReactNode = null
@@ -66,27 +75,46 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
   Children.forEach(props.children, (node) => {
     if (!isValidElement(node)) return
     const child = node as ReactElement<SlotProps>
-    if (child.type === SectionPageLayoutTitle) title = child.props.children
-    else if (child.type === SectionPageLayoutActions)
+    if (child.type === SectionPageLayoutTitle) {
+      title = child.props.children
+    } else if (child.type === SectionPageLayoutActions) {
       actions = child.props.children
-    else if (child.type === SectionPageLayoutContent)
+    } else if (child.type === SectionPageLayoutContent) {
       content = child.props.children
-    else if (child.type === SectionPageLayoutBreadcrumb)
+    } else if (child.type === SectionPageLayoutBreadcrumb) {
       breadcrumb = child.props.children
+    }
   })
 
   return (
     <PageFooterProvider container={footerContainer}>
       <Main>
-        <div className='shrink-0 px-3 pt-3 pb-2.5 sm:px-4 sm:pt-5 sm:pb-3'>
+        <div className='route-page-heading shrink-0 px-4 pt-5 pb-3 sm:px-6 sm:pt-7 sm:pb-4 lg:px-8'>
           {breadcrumb != null && (
             <div className='mb-2 sm:mb-3'>{breadcrumb}</div>
           )}
-          <div className='flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:gap-x-4'>
-            <div className='min-w-0 flex-1'>
-              <h2 className='truncate text-base font-bold tracking-tight sm:text-lg'>
-                {title}
-              </h2>
+          <div className='flex flex-wrap items-end justify-between gap-x-4 gap-y-3'>
+            <div className='flex min-w-0 flex-1 items-stretch gap-3 sm:gap-4'>
+              <div className='route-page-index hidden w-11 shrink-0 flex-col items-center justify-center rounded-2xl sm:flex'>
+                <span className='font-mono text-[9px] tracking-[0.12em]'>
+                  RT
+                </span>
+                <span className='mt-0.5 font-mono text-xs font-semibold'>
+                  01
+                </span>
+              </div>
+              <div className='min-w-0 flex-1'>
+                <div className='text-muted-foreground truncate font-mono text-[9px] tracking-[0.2em] uppercase'>
+                  ROUTE / {routeCode || 'CONSOLE'}
+                </div>
+                <h2 className='mt-1 truncate text-2xl font-normal tracking-[-0.04em] sm:text-3xl'>
+                  {title}
+                </h2>
+                <div className='route-page-track mt-3 flex h-1.5 w-full max-w-md overflow-hidden rounded-full'>
+                  <span className='bg-warning w-2/5 rounded-full' />
+                  <span className='route-page-track-stripes flex-1' />
+                </div>
+              </div>
             </div>
             {actions != null && (
               <div className='flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-x-4'>
@@ -99,8 +127,8 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
         <div
           className={
             props.fixedContent
-              ? 'min-h-0 flex-1 overflow-hidden px-3 pt-1 pb-3 sm:px-4 sm:pt-1.5 sm:pb-4'
-              : 'min-h-0 flex-1 overflow-auto px-3 pt-1 pb-3 sm:px-4 sm:pt-1.5 sm:pb-4'
+              ? 'route-page-content min-h-0 flex-1 overflow-hidden px-4 pt-1 pb-4 sm:px-6 sm:pb-6 lg:px-8'
+              : 'route-page-content min-h-0 flex-1 overflow-auto px-4 pt-1 pb-4 sm:px-6 sm:pb-6 lg:px-8'
           }
         >
           {content}

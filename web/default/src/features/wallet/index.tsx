@@ -16,12 +16,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getSelf } from '@/lib/api'
+
+import { SectionPageLayout } from '@/components/layout'
 import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
-import { SectionPageLayout } from '@/components/layout'
+import { getSelf } from '@/lib/api'
+
 import { AffiliateRewardsCard } from './components/affiliate-rewards-card'
 import { BillingHistoryDialog } from './components/dialogs/billing-history-dialog'
 import { CreemConfirmDialog } from './components/dialogs/creem-confirm-dialog'
@@ -90,7 +92,9 @@ export function Wallet(props: WalletProps) {
     processing,
     calculatePaymentAmount,
     processPayment,
+    capturePayPalPayment,
   } = usePayment()
+  const handledPayPalOrderRef = useRef('')
   const {
     affiliateLink,
     loading: affiliateLoading,
@@ -122,6 +126,34 @@ export function Wallet(props: WalletProps) {
   useEffect(() => {
     fetchUser()
   }, [fetchUser])
+
+  useEffect(() => {
+    const currentURL = new URL(window.location.href)
+    const payPalStatus = currentURL.searchParams.get('paypal')
+    const orderID = currentURL.searchParams.get('token') || ''
+    if (payPalStatus !== 'success' || !orderID) {
+      return
+    }
+    if (handledPayPalOrderRef.current === orderID) {
+      return
+    }
+    handledPayPalOrderRef.current = orderID
+
+    void (async () => {
+      const success = await capturePayPalPayment(orderID)
+      currentURL.searchParams.delete('paypal')
+      currentURL.searchParams.delete('token')
+      currentURL.searchParams.delete('PayerID')
+      window.history.replaceState(
+        {},
+        '',
+        `${currentURL.pathname}${currentURL.search}${currentURL.hash}`
+      )
+      if (success) {
+        await fetchUser()
+      }
+    })()
+  }, [capturePayPalPayment, fetchUser])
 
   useEffect(() => {
     if (props.initialShowHistory) {
@@ -262,14 +294,14 @@ export function Wallet(props: WalletProps) {
       <SectionPageLayout>
         <SectionPageLayout.Title>{t('Wallet')}</SectionPageLayout.Title>
         <SectionPageLayout.Content>
-          <div className='mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-5'>
+          <div className='mx-auto flex w-full max-w-7xl flex-col gap-5 sm:gap-6'>
             <WalletStatsCard user={user} loading={userLoading} />
 
             <div
               className={
                 showSubscriptionPanel
-                  ? 'grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] xl:items-start'
-                  : 'grid gap-4'
+                  ? 'grid gap-5 xl:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] xl:items-start'
+                  : 'grid gap-5'
               }
             >
               <div id='wallet-add-funds' className='scroll-mt-4'>

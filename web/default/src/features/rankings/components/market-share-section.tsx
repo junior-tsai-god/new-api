@@ -1,3 +1,5 @@
+import { VChart } from '@visactor/react-vchart'
+import { PieChart } from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -17,11 +19,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useMemo } from 'react'
-import { VChart } from '@visactor/react-vchart'
-import { PieChart } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+
 import { useChartTheme } from '@/lib/use-chart-theme'
-import { VCHART_OPTION } from '@/lib/vchart'
+import { useVChartOption } from '@/lib/vchart'
+
 import { formatShare, formatTokens } from '../lib/format'
 import type { RankingPeriod, VendorRanking, VendorShareSeries } from '../types'
 import { VendorLink } from './entity-links'
@@ -100,6 +102,7 @@ type MarketShareSectionProps = {
  */
 export function MarketShareSection(props: MarketShareSectionProps) {
   const { t } = useTranslation()
+  const vchartOption = useVChartOption()
   const { resolvedTheme, themeReady } = useChartTheme()
   const chartTextColor =
     resolvedTheme === 'dark'
@@ -232,7 +235,7 @@ export function MarketShareSection(props: MarketShareSectionProps) {
                 theme: resolvedTheme === 'dark' ? 'dark' : 'light',
                 background: 'transparent',
               }}
-              option={VCHART_OPTION}
+              option={vchartOption}
             />
           ) : (
             <div className='text-muted-foreground/80 flex h-full items-center justify-center text-xs'>

@@ -1,3 +1,4 @@
+import { ArrowUpDown, Check, Filter, Grid2X2, Table2 } from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -17,9 +18,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useCallback, useState } from 'react'
-import { ArrowUpDown, Check, Filter, Grid2X2, Table2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { cn } from '@/lib/utils'
+
+import {
+  sideDrawerContentClassName,
+  sideDrawerFormClassName,
+  sideDrawerHeaderClassName,
+} from '@/components/drawer-layout'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -40,11 +45,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import {
-  sideDrawerContentClassName,
-  sideDrawerFormClassName,
-  sideDrawerHeaderClassName,
-} from '@/components/drawer-layout'
+import { cn } from '@/lib/utils'
+
 import {
   VIEW_MODES,
   getSortLabels,
@@ -132,7 +134,7 @@ function SegmentedControl(props: {
 
         return (
           <Tooltip key={option.value}>
-            <TooltipTrigger render={button}></TooltipTrigger>
+            <TooltipTrigger render={button} />
             <TooltipContent side='bottom' className='text-xs'>
               {option.tooltip}
             </TooltipContent>
@@ -164,7 +166,7 @@ export function PricingToolbar(props: PricingToolbarProps) {
   )
 
   return (
-    <div className='rounded-xl border p-3'>
+    <div className='aivanta-panel p-3'>
       <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
         <div className='flex items-center gap-2'>
           <Button

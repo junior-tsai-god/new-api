@@ -37,6 +37,7 @@ import { useDashboardCharts } from '../../hooks/dashboard/useDashboardCharts';
 
 import {
   CHART_CONFIG,
+  MOBILE_CHART_CONFIG,
   CARD_PROPS,
   FLEX_CENTER_GAP2,
   ILLUSTRATION_SIZE,
@@ -59,6 +60,9 @@ const Dashboard = () => {
 
   // ========== 主要数据管理 ==========
   const dashboardData = useDashboardData(userState, userDispatch, statusState);
+  const chartConfig = dashboardData.isMobile
+    ? MOBILE_CHART_CONFIG
+    : CHART_CONFIG;
 
   // ========== 图表管理 ==========
   const dashboardCharts = useDashboardCharts(
@@ -179,7 +183,8 @@ const Dashboard = () => {
         loading={dashboardData.loading}
         getTrendSpec={getTrendSpec}
         CARD_PROPS={CARD_PROPS}
-        CHART_CONFIG={CHART_CONFIG}
+        chartConfig={chartConfig}
+        showTrendCharts={!dashboardData.isMobile}
       />
 
       {/* API信息和图表面板 */}
@@ -198,7 +203,7 @@ const Dashboard = () => {
             spec_user_trend={dashboardCharts.spec_user_trend}
             isAdminUser={dashboardData.isAdminUser}
             CARD_PROPS={CARD_PROPS}
-            CHART_CONFIG={CHART_CONFIG}
+            chartConfig={chartConfig}
             FLEX_CENTER_GAP2={FLEX_CENTER_GAP2}
             hasApiInfoPanel={dashboardData.hasApiInfoPanel}
             t={dashboardData.t}

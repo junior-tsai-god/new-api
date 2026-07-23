@@ -92,7 +92,10 @@ export function mapStatusDataToConfig(
   }
 
   return {
-    systemName: data.system_name || DEFAULT_SYSTEM_NAME,
+    systemName:
+      !data.system_name || data.system_name === 'New API'
+        ? DEFAULT_SYSTEM_NAME
+        : data.system_name,
     logo: data.logo || DEFAULT_LOGO,
     footerHtml: data.footer_html,
     demoSiteEnabled: data.demo_site_enabled,

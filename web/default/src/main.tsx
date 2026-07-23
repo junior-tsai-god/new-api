@@ -1,3 +1,11 @@
+import {
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query'
+import { RouterProvider, createRouter } from '@tanstack/react-router'
+import { AxiosError } from 'axios'
+import i18next from 'i18next'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -18,28 +26,24 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
-import { AxiosError } from 'axios'
-import {
-  QueryCache,
-  QueryClient,
-  QueryClientProvider,
-} from '@tanstack/react-query'
-import { RouterProvider, createRouter } from '@tanstack/react-router'
-import i18next from 'i18next'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
+
 import { getStatus } from '@/lib/api'
 import { installBuildMetadata } from '@/lib/build-metadata'
+import { DEFAULT_LOGO, DEFAULT_SYSTEM_NAME } from '@/lib/constants'
 import '@/lib/dayjs'
 import { applyFaviconToDom } from '@/lib/dom-utils'
 import { initializeFrontendCache } from '@/lib/frontend-cache'
 import { handleServerError } from '@/lib/handle-server-error'
+import { useAuthStore } from '@/stores/auth-store'
+
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
 import { ThemeProvider } from './context/theme-provider'
 import './i18n/config'
 // Generated Routes
 import { routeTree } from './routeTree.gen'
+
 // Styles
 import './styles/index.css'
 
@@ -113,18 +117,30 @@ declare module '@tanstack/react-router' {
 }
 
 // Render the app
-const rootElement = document.getElementById('root')!
+const rootElement = document.querySelector<HTMLElement>('#root')
+if (!rootElement) {
+  throw new Error('Root element not found')
+}
 // Set document.title and favicon from cached status, then refresh from network
 ;(function initSystemBranding() {
   try {
     if (typeof window === 'undefined' || typeof document === 'undefined') return
+    const resolveTitle = (name?: string | null) => {
+      if (!name || name === 'New API' || name === 'NewAPI') {
+        return DEFAULT_SYSTEM_NAME
+      }
+      return name
+    }
     const apply = (name: string) => {
-      document.title = name
+      const title = resolveTitle(name)
+      document.title = title
       const metaTitle = document.querySelector(
         'meta[name="title"]'
       ) as HTMLMetaElement | null
-      if (metaTitle) metaTitle.setAttribute('content', name)
+      if (metaTitle) metaTitle.setAttribute('content', title)
     }
+    // Default before cache/network resolve
+    apply(DEFAULT_SYSTEM_NAME)
     // Cache-first
     try {
       const saved = localStorage.getItem('status')
@@ -132,10 +148,12 @@ const rootElement = document.getElementById('root')!
         const s = JSON.parse(saved)
         if (s?.system_name) apply(s.system_name)
         if (s?.logo) applyFaviconToDom(s.logo)
+        else applyFaviconToDom(DEFAULT_LOGO)
       }
     } catch {
       /* empty */
     }
+    applyFaviconToDom(DEFAULT_LOGO)
     // Background refresh
     getStatus()
       .then((s) => {
@@ -146,11 +164,14 @@ const rootElement = document.getElementById('root')!
           } catch {
             /* empty */
           }
+        } else {
+          apply(DEFAULT_SYSTEM_NAME)
         }
-        if (s?.logo) applyFaviconToDom(s.logo as string)
+        applyFaviconToDom((s?.logo as string) || DEFAULT_LOGO)
       })
       .catch(() => {
-        /* empty */
+        apply(DEFAULT_SYSTEM_NAME)
+        applyFaviconToDom(DEFAULT_LOGO)
       })
   } catch {
     /* empty */

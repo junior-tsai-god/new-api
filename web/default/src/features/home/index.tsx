@@ -24,7 +24,7 @@ import { RichContent } from '@/components/rich-content'
 import { isLikelyHtml } from '@/lib/content-format'
 import { useAuthStore } from '@/stores/auth-store'
 
-import { CTA, Features, Hero, HowItWorks, Stats } from './components'
+import { Hero } from './components/sections/hero'
 import { useHomePageContent } from './hooks'
 
 export function Home() {
@@ -36,7 +36,7 @@ export function Home() {
   if (!isLoaded) {
     return (
       <PublicLayout showMainContainer={false}>
-        <main className='flex min-h-screen items-center justify-center'>
+        <main className='flex min-h-svh items-center justify-center'>
           <div className='text-muted-foreground'>{t('Loading...')}</div>
         </main>
       </PublicLayout>
@@ -72,12 +72,10 @@ export function Home() {
 
   return (
     <PublicLayout showMainContainer={false}>
-      <Hero isAuthenticated={isAuthenticated} />
-      <Stats />
-      <Features />
-      <HowItWorks />
-      <CTA isAuthenticated={isAuthenticated} />
-      <Footer />
+      <div className='aivanta-home'>
+        <Hero isAuthenticated={isAuthenticated} />
+        <Footer className='mx-auto mt-3 w-[min(calc(100%_-_1rem),96rem)] rounded-t-[2rem] border border-[var(--aivanta-rule)] bg-[var(--aivanta-paper)]' />
+      </div>
     </PublicLayout>
   )
 }

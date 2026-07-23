@@ -11,16 +11,20 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UserAgreementRouteImport } from './routes/user-agreement'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as authRouteRouteImport } from './routes/(auth)/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SetupIndexRouteImport } from './routes/setup/index'
 import { Route as RankingsIndexRouteImport } from './routes/rankings/index'
 import { Route as PricingIndexRouteImport } from './routes/pricing/index'
+import { Route as DocsIndexRouteImport } from './routes/docs/index'
+import { Route as ConsoleIndexRouteImport } from './routes/console/index'
 import { Route as AboutIndexRouteImport } from './routes/about/index'
 import { Route as OauthProviderRouteImport } from './routes/oauth/$provider'
 import { Route as ConsoleTopupRouteImport } from './routes/console/topup'
 import { Route as ConsoleLogRouteImport } from './routes/console/log'
+import { Route as ConsoleLegacyPathRouteImport } from './routes/console/$legacyPath'
 import { Route as AuthenticatedChat2linkRouteImport } from './routes/_authenticated/chat2link'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
@@ -36,6 +40,7 @@ import { Route as authOauthRouteImport } from './routes/(auth)/oauth'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
 import { Route as AuthenticatedSystemSettingsRouteRouteImport } from './routes/_authenticated/system-settings/route'
 import { Route as PricingModelIdIndexRouteImport } from './routes/pricing/$modelId/index'
+import { Route as ConsoleChatIndexRouteImport } from './routes/console/chat/index'
 import { Route as AuthenticatedWalletIndexRouteImport } from './routes/_authenticated/wallet/index'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedUsageLogsIndexRouteImport } from './routes/_authenticated/usage-logs/index'
@@ -49,6 +54,8 @@ import { Route as AuthenticatedModelsIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedKeysIndexRouteImport } from './routes/_authenticated/keys/index'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
 import { Route as AuthenticatedChannelsIndexRouteImport } from './routes/_authenticated/channels/index'
+import { Route as AuthenticatedArchitectureIndexRouteImport } from './routes/_authenticated/architecture/index'
+import { Route as ConsoleChatChatIdRouteImport } from './routes/console/chat/$chatId'
 import { Route as AuthenticatedUsageLogsSectionRouteImport } from './routes/_authenticated/usage-logs/$section'
 import { Route as AuthenticatedModelsSectionRouteImport } from './routes/_authenticated/models/$section'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
@@ -80,6 +87,11 @@ const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
   path: '/privacy-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -108,6 +120,16 @@ const PricingIndexRoute = PricingIndexRouteImport.update({
   path: '/pricing/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocsIndexRoute = DocsIndexRouteImport.update({
+  id: '/docs/',
+  path: '/docs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsoleIndexRoute = ConsoleIndexRouteImport.update({
+  id: '/console/',
+  path: '/console/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AboutIndexRoute = AboutIndexRouteImport.update({
   id: '/about/',
   path: '/about/',
@@ -126,6 +148,11 @@ const ConsoleTopupRoute = ConsoleTopupRouteImport.update({
 const ConsoleLogRoute = ConsoleLogRouteImport.update({
   id: '/console/log',
   path: '/console/log',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsoleLegacyPathRoute = ConsoleLegacyPathRouteImport.update({
+  id: '/console/$legacyPath',
+  path: '/console/$legacyPath',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedChat2linkRoute = AuthenticatedChat2linkRouteImport.update({
@@ -204,6 +231,11 @@ const PricingModelIdIndexRoute = PricingModelIdIndexRouteImport.update({
   path: '/pricing/$modelId/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConsoleChatIndexRoute = ConsoleChatIndexRouteImport.update({
+  id: '/console/chat/',
+  path: '/console/chat/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedWalletIndexRoute =
   AuthenticatedWalletIndexRouteImport.update({
     id: '/wallet/',
@@ -280,6 +312,17 @@ const AuthenticatedChannelsIndexRoute =
     path: '/channels/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedArchitectureIndexRoute =
+  AuthenticatedArchitectureIndexRouteImport.update({
+    id: '/architecture/',
+    path: '/architecture/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const ConsoleChatChatIdRoute = ConsoleChatChatIdRouteImport.update({
+  id: '/console/chat/$chatId',
+  path: '/console/chat/$chatId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedUsageLogsSectionRoute =
   AuthenticatedUsageLogsSectionRouteImport.update({
     id: '/usage-logs/$section',
@@ -401,6 +444,7 @@ const AuthenticatedSystemSettingsAuthSectionRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/user-agreement': typeof UserAgreementRoute
   '/system-settings': typeof AuthenticatedSystemSettingsRouteRouteWithChildren
@@ -417,10 +461,13 @@ export interface FileRoutesByFullPath {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/chat2link': typeof AuthenticatedChat2linkRoute
+  '/console/$legacyPath': typeof ConsoleLegacyPathRoute
   '/console/log': typeof ConsoleLogRoute
   '/console/topup': typeof ConsoleTopupRoute
   '/oauth/$provider': typeof OauthProviderRoute
   '/about/': typeof AboutIndexRoute
+  '/console/': typeof ConsoleIndexRoute
+  '/docs/': typeof DocsIndexRoute
   '/pricing/': typeof PricingIndexRoute
   '/rankings/': typeof RankingsIndexRoute
   '/setup/': typeof SetupIndexRoute
@@ -430,6 +477,8 @@ export interface FileRoutesByFullPath {
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/models/$section': typeof AuthenticatedModelsSectionRoute
   '/usage-logs/$section': typeof AuthenticatedUsageLogsSectionRoute
+  '/console/chat/$chatId': typeof ConsoleChatChatIdRoute
+  '/architecture/': typeof AuthenticatedArchitectureIndexRoute
   '/channels/': typeof AuthenticatedChannelsIndexRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/keys/': typeof AuthenticatedKeysIndexRoute
@@ -443,6 +492,7 @@ export interface FileRoutesByFullPath {
   '/usage-logs/': typeof AuthenticatedUsageLogsIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
   '/wallet/': typeof AuthenticatedWalletIndexRoute
+  '/console/chat/': typeof ConsoleChatIndexRoute
   '/pricing/$modelId/': typeof PricingModelIdIndexRoute
   '/system-settings/auth/$section': typeof AuthenticatedSystemSettingsAuthSectionRoute
   '/system-settings/billing/$section': typeof AuthenticatedSystemSettingsBillingSectionRoute
@@ -461,6 +511,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/user-agreement': typeof UserAgreementRoute
   '/forgot-password': typeof authForgotPasswordRoute
@@ -476,10 +527,13 @@ export interface FileRoutesByTo {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/chat2link': typeof AuthenticatedChat2linkRoute
+  '/console/$legacyPath': typeof ConsoleLegacyPathRoute
   '/console/log': typeof ConsoleLogRoute
   '/console/topup': typeof ConsoleTopupRoute
   '/oauth/$provider': typeof OauthProviderRoute
   '/about': typeof AboutIndexRoute
+  '/console': typeof ConsoleIndexRoute
+  '/docs': typeof DocsIndexRoute
   '/pricing': typeof PricingIndexRoute
   '/rankings': typeof RankingsIndexRoute
   '/setup': typeof SetupIndexRoute
@@ -489,6 +543,8 @@ export interface FileRoutesByTo {
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/models/$section': typeof AuthenticatedModelsSectionRoute
   '/usage-logs/$section': typeof AuthenticatedUsageLogsSectionRoute
+  '/console/chat/$chatId': typeof ConsoleChatChatIdRoute
+  '/architecture': typeof AuthenticatedArchitectureIndexRoute
   '/channels': typeof AuthenticatedChannelsIndexRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/keys': typeof AuthenticatedKeysIndexRoute
@@ -502,6 +558,7 @@ export interface FileRoutesByTo {
   '/usage-logs': typeof AuthenticatedUsageLogsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
   '/wallet': typeof AuthenticatedWalletIndexRoute
+  '/console/chat': typeof ConsoleChatIndexRoute
   '/pricing/$modelId': typeof PricingModelIdIndexRoute
   '/system-settings/auth/$section': typeof AuthenticatedSystemSettingsAuthSectionRoute
   '/system-settings/billing/$section': typeof AuthenticatedSystemSettingsBillingSectionRoute
@@ -523,6 +580,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/(auth)': typeof authRouteRouteWithChildren
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/login': typeof LoginRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/user-agreement': typeof UserAgreementRoute
   '/_authenticated/system-settings': typeof AuthenticatedSystemSettingsRouteRouteWithChildren
@@ -539,10 +597,13 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
   '/_authenticated/chat2link': typeof AuthenticatedChat2linkRoute
+  '/console/$legacyPath': typeof ConsoleLegacyPathRoute
   '/console/log': typeof ConsoleLogRoute
   '/console/topup': typeof ConsoleTopupRoute
   '/oauth/$provider': typeof OauthProviderRoute
   '/about/': typeof AboutIndexRoute
+  '/console/': typeof ConsoleIndexRoute
+  '/docs/': typeof DocsIndexRoute
   '/pricing/': typeof PricingIndexRoute
   '/rankings/': typeof RankingsIndexRoute
   '/setup/': typeof SetupIndexRoute
@@ -552,6 +613,8 @@ export interface FileRoutesById {
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/models/$section': typeof AuthenticatedModelsSectionRoute
   '/_authenticated/usage-logs/$section': typeof AuthenticatedUsageLogsSectionRoute
+  '/console/chat/$chatId': typeof ConsoleChatChatIdRoute
+  '/_authenticated/architecture/': typeof AuthenticatedArchitectureIndexRoute
   '/_authenticated/channels/': typeof AuthenticatedChannelsIndexRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/keys/': typeof AuthenticatedKeysIndexRoute
@@ -565,6 +628,7 @@ export interface FileRoutesById {
   '/_authenticated/usage-logs/': typeof AuthenticatedUsageLogsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/wallet/': typeof AuthenticatedWalletIndexRoute
+  '/console/chat/': typeof ConsoleChatIndexRoute
   '/pricing/$modelId/': typeof PricingModelIdIndexRoute
   '/_authenticated/system-settings/auth/$section': typeof AuthenticatedSystemSettingsAuthSectionRoute
   '/_authenticated/system-settings/billing/$section': typeof AuthenticatedSystemSettingsBillingSectionRoute
@@ -585,6 +649,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
     | '/privacy-policy'
     | '/user-agreement'
     | '/system-settings'
@@ -601,10 +666,13 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/chat2link'
+    | '/console/$legacyPath'
     | '/console/log'
     | '/console/topup'
     | '/oauth/$provider'
     | '/about/'
+    | '/console/'
+    | '/docs/'
     | '/pricing/'
     | '/rankings/'
     | '/setup/'
@@ -614,6 +682,8 @@ export interface FileRouteTypes {
     | '/errors/$error'
     | '/models/$section'
     | '/usage-logs/$section'
+    | '/console/chat/$chatId'
+    | '/architecture/'
     | '/channels/'
     | '/dashboard/'
     | '/keys/'
@@ -627,6 +697,7 @@ export interface FileRouteTypes {
     | '/usage-logs/'
     | '/users/'
     | '/wallet/'
+    | '/console/chat/'
     | '/pricing/$modelId/'
     | '/system-settings/auth/$section'
     | '/system-settings/billing/$section'
@@ -645,6 +716,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
     | '/privacy-policy'
     | '/user-agreement'
     | '/forgot-password'
@@ -660,10 +732,13 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/chat2link'
+    | '/console/$legacyPath'
     | '/console/log'
     | '/console/topup'
     | '/oauth/$provider'
     | '/about'
+    | '/console'
+    | '/docs'
     | '/pricing'
     | '/rankings'
     | '/setup'
@@ -673,6 +748,8 @@ export interface FileRouteTypes {
     | '/errors/$error'
     | '/models/$section'
     | '/usage-logs/$section'
+    | '/console/chat/$chatId'
+    | '/architecture'
     | '/channels'
     | '/dashboard'
     | '/keys'
@@ -686,6 +763,7 @@ export interface FileRouteTypes {
     | '/usage-logs'
     | '/users'
     | '/wallet'
+    | '/console/chat'
     | '/pricing/$modelId'
     | '/system-settings/auth/$section'
     | '/system-settings/billing/$section'
@@ -706,6 +784,7 @@ export interface FileRouteTypes {
     | '/'
     | '/(auth)'
     | '/_authenticated'
+    | '/login'
     | '/privacy-policy'
     | '/user-agreement'
     | '/_authenticated/system-settings'
@@ -722,10 +801,13 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_authenticated/chat2link'
+    | '/console/$legacyPath'
     | '/console/log'
     | '/console/topup'
     | '/oauth/$provider'
     | '/about/'
+    | '/console/'
+    | '/docs/'
     | '/pricing/'
     | '/rankings/'
     | '/setup/'
@@ -735,6 +817,8 @@ export interface FileRouteTypes {
     | '/_authenticated/errors/$error'
     | '/_authenticated/models/$section'
     | '/_authenticated/usage-logs/$section'
+    | '/console/chat/$chatId'
+    | '/_authenticated/architecture/'
     | '/_authenticated/channels/'
     | '/_authenticated/dashboard/'
     | '/_authenticated/keys/'
@@ -748,6 +832,7 @@ export interface FileRouteTypes {
     | '/_authenticated/usage-logs/'
     | '/_authenticated/users/'
     | '/_authenticated/wallet/'
+    | '/console/chat/'
     | '/pricing/$modelId/'
     | '/_authenticated/system-settings/auth/$section'
     | '/_authenticated/system-settings/billing/$section'
@@ -769,6 +854,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   authRouteRoute: typeof authRouteRouteWithChildren
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  LoginRoute: typeof LoginRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   UserAgreementRoute: typeof UserAgreementRoute
   errors401Route: typeof errors401Route
@@ -776,13 +862,18 @@ export interface RootRouteChildren {
   errors404Route: typeof errors404Route
   errors500Route: typeof errors500Route
   errors503Route: typeof errors503Route
+  ConsoleLegacyPathRoute: typeof ConsoleLegacyPathRoute
   ConsoleLogRoute: typeof ConsoleLogRoute
   ConsoleTopupRoute: typeof ConsoleTopupRoute
   OauthProviderRoute: typeof OauthProviderRoute
   AboutIndexRoute: typeof AboutIndexRoute
+  ConsoleIndexRoute: typeof ConsoleIndexRoute
+  DocsIndexRoute: typeof DocsIndexRoute
   PricingIndexRoute: typeof PricingIndexRoute
   RankingsIndexRoute: typeof RankingsIndexRoute
   SetupIndexRoute: typeof SetupIndexRoute
+  ConsoleChatChatIdRoute: typeof ConsoleChatChatIdRoute
+  ConsoleChatIndexRoute: typeof ConsoleChatIndexRoute
   PricingModelIdIndexRoute: typeof PricingModelIdIndexRoute
 }
 
@@ -800,6 +891,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy-policy'
       fullPath: '/privacy-policy'
       preLoaderRoute: typeof PrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -844,6 +942,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PricingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/docs/': {
+      id: '/docs/'
+      path: '/docs'
+      fullPath: '/docs/'
+      preLoaderRoute: typeof DocsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/console/': {
+      id: '/console/'
+      path: '/console'
+      fullPath: '/console/'
+      preLoaderRoute: typeof ConsoleIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about/': {
       id: '/about/'
       path: '/about'
@@ -870,6 +982,13 @@ declare module '@tanstack/react-router' {
       path: '/console/log'
       fullPath: '/console/log'
       preLoaderRoute: typeof ConsoleLogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/console/$legacyPath': {
+      id: '/console/$legacyPath'
+      path: '/console/$legacyPath'
+      fullPath: '/console/$legacyPath'
+      preLoaderRoute: typeof ConsoleLegacyPathRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/chat2link': {
@@ -977,6 +1096,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PricingModelIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/console/chat/': {
+      id: '/console/chat/'
+      path: '/console/chat'
+      fullPath: '/console/chat/'
+      preLoaderRoute: typeof ConsoleChatIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/wallet/': {
       id: '/_authenticated/wallet/'
       path: '/wallet'
@@ -1067,6 +1193,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/channels/'
       preLoaderRoute: typeof AuthenticatedChannelsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/architecture/': {
+      id: '/_authenticated/architecture/'
+      path: '/architecture'
+      fullPath: '/architecture/'
+      preLoaderRoute: typeof AuthenticatedArchitectureIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/console/chat/$chatId': {
+      id: '/console/chat/$chatId'
+      path: '/console/chat/$chatId'
+      fullPath: '/console/chat/$chatId'
+      preLoaderRoute: typeof ConsoleChatChatIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/usage-logs/$section': {
       id: '/_authenticated/usage-logs/$section'
@@ -1302,6 +1442,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedModelsSectionRoute: typeof AuthenticatedModelsSectionRoute
   AuthenticatedUsageLogsSectionRoute: typeof AuthenticatedUsageLogsSectionRoute
+  AuthenticatedArchitectureIndexRoute: typeof AuthenticatedArchitectureIndexRoute
   AuthenticatedChannelsIndexRoute: typeof AuthenticatedChannelsIndexRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedKeysIndexRoute: typeof AuthenticatedKeysIndexRoute
@@ -1325,6 +1466,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedModelsSectionRoute: AuthenticatedModelsSectionRoute,
   AuthenticatedUsageLogsSectionRoute: AuthenticatedUsageLogsSectionRoute,
+  AuthenticatedArchitectureIndexRoute: AuthenticatedArchitectureIndexRoute,
   AuthenticatedChannelsIndexRoute: AuthenticatedChannelsIndexRoute,
   AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
   AuthenticatedKeysIndexRoute: AuthenticatedKeysIndexRoute,
@@ -1347,6 +1489,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   authRouteRoute: authRouteRouteWithChildren,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  LoginRoute: LoginRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   UserAgreementRoute: UserAgreementRoute,
   errors401Route: errors401Route,
@@ -1354,13 +1497,18 @@ const rootRouteChildren: RootRouteChildren = {
   errors404Route: errors404Route,
   errors500Route: errors500Route,
   errors503Route: errors503Route,
+  ConsoleLegacyPathRoute: ConsoleLegacyPathRoute,
   ConsoleLogRoute: ConsoleLogRoute,
   ConsoleTopupRoute: ConsoleTopupRoute,
   OauthProviderRoute: OauthProviderRoute,
   AboutIndexRoute: AboutIndexRoute,
+  ConsoleIndexRoute: ConsoleIndexRoute,
+  DocsIndexRoute: DocsIndexRoute,
   PricingIndexRoute: PricingIndexRoute,
   RankingsIndexRoute: RankingsIndexRoute,
   SetupIndexRoute: SetupIndexRoute,
+  ConsoleChatChatIdRoute: ConsoleChatChatIdRoute,
+  ConsoleChatIndexRoute: ConsoleChatIndexRoute,
   PricingModelIdIndexRoute: PricingModelIdIndexRoute,
 }
 export const routeTree = rootRouteImport

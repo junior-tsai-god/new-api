@@ -30,6 +30,554 @@ For commercial licensing, please contact support@quantumnous.com
 @import './theme.css';
 @import './theme-presets.css';
 
+@layer components {
+  .aivanta-home,
+  .aivanta-public-surface,
+  .aivanta-public-header {
+    --aivanta-canvas: var(--deck-canvas);
+    --aivanta-paper: var(--deck-shell);
+    --aivanta-panel: var(--deck-panel);
+    --aivanta-ink: var(--deck-ink);
+    --aivanta-secondary: color-mix(
+      in oklch,
+      var(--deck-ink) 66%,
+      var(--deck-steel)
+    );
+    --aivanta-faint: var(--deck-steel);
+    --aivanta-signal: var(--deck-signal);
+    --aivanta-rule: var(--deck-line);
+    --aivanta-mark: var(--aivanta-signal);
+    --aivanta-mark-ink: var(--aivanta-ink);
+    --background: var(--aivanta-paper);
+    --foreground: var(--aivanta-ink);
+    --card: var(--aivanta-paper);
+    --card-foreground: var(--aivanta-ink);
+    --primary: var(--aivanta-ink);
+    --primary-foreground: var(--aivanta-paper);
+    --secondary: color-mix(in oklch, var(--aivanta-ink) 7%, transparent);
+    --secondary-foreground: var(--aivanta-ink);
+    --muted: color-mix(in oklch, var(--aivanta-ink) 6%, transparent);
+    --muted-foreground: var(--aivanta-secondary);
+    --accent: var(--aivanta-signal);
+    --accent-foreground: var(--aivanta-ink);
+    --border: var(--aivanta-rule);
+    --input: var(--aivanta-rule);
+    --ring: var(--aivanta-signal);
+  }
+
+  .aivanta-home,
+  .aivanta-public-surface {
+    background-color: var(--aivanta-canvas);
+    color: var(--foreground);
+  }
+
+  .aivanta-public-surface {
+    background-image: radial-gradient(
+      circle at 90% 4%,
+      color-mix(in oklch, var(--aivanta-signal) 24%, transparent),
+      transparent 32rem
+    );
+  }
+
+  .aivanta-public-frame {
+    width: min(calc(100% - 1rem), 96rem);
+    margin-inline: auto;
+    border: 1px solid var(--aivanta-rule);
+    border-radius: clamp(1.5rem, 4vw, 3rem);
+    background: var(--aivanta-paper);
+    box-shadow: var(--deck-shadow);
+  }
+
+  .aivanta-paper-grid {
+    background-image: radial-gradient(
+      circle at 88% 7%,
+      color-mix(in oklch, var(--aivanta-signal) 38%, transparent),
+      transparent 28rem
+    );
+  }
+
+  .aivanta-ink-section {
+    --aivanta-rule: oklch(0.965 0.018 78 / 0.16);
+    --aivanta-secondary: oklch(0.78 0.015 92);
+    --background: var(--aivanta-ink);
+    --foreground: var(--aivanta-paper);
+    --primary: var(--aivanta-signal);
+    --primary-foreground: var(--aivanta-ink);
+    --border: var(--aivanta-rule);
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+
+  .aivanta-signal-section {
+    --background: var(--aivanta-signal);
+    --foreground: var(--aivanta-ink);
+    --primary: var(--aivanta-ink);
+    --primary-foreground: var(--aivanta-paper);
+    --border: oklch(0.18 0.025 52 / 0.32);
+    --input: var(--border);
+    --ring: var(--aivanta-ink);
+    --aivanta-mark: var(--aivanta-ink);
+    --aivanta-mark-ink: var(--aivanta-signal);
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+
+  .aivanta-route-thread {
+    background: linear-gradient(
+      90deg,
+      var(--aivanta-signal) 0 33%,
+      var(--aivanta-rule) 33% 36%,
+      var(--aivanta-signal) 36% 66%,
+      var(--aivanta-rule) 66% 69%,
+      var(--aivanta-signal) 69% 100%
+    );
+  }
+
+  @media (max-width: 640px) {
+    .aivanta-paper-grid {
+      background-image: linear-gradient(
+        90deg,
+        var(--aivanta-rule) 1px,
+        transparent 1px
+      );
+      background-size: 25vw 100%;
+    }
+  }
+
+  .aivanta-home-section {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 760px;
+  }
+
+  .routing-deck {
+    min-height: 100svh;
+    background: var(--deck-canvas);
+    padding: clamp(0rem, 1.6vw, 1.5rem);
+  }
+
+  .routing-deck-shell {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    height: calc(100svh - clamp(0rem, 3.2vw, 3rem));
+    width: min(100%, 112rem);
+    margin-inline: auto;
+    overflow: hidden;
+    border: 1px solid color-mix(in oklch, var(--deck-ink) 8%, transparent);
+    border-radius: clamp(0rem, 2.4vw, 2.5rem);
+    background:
+      radial-gradient(
+        circle at 91% 3%,
+        color-mix(in oklch, var(--deck-signal) 24%, transparent),
+        transparent 31rem
+      ),
+      var(--deck-shell);
+    box-shadow: var(--deck-shadow);
+  }
+
+  .routing-deck-stage {
+    position: relative;
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in oklch, var(--deck-ink) 4%, transparent) 1px,
+        transparent 1px
+      ),
+      transparent;
+    background-size: 25% 100%;
+  }
+
+  .routing-deck-shell [data-slot='sidebar-container'] {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    height: 100%;
+  }
+
+  .routing-deck-shell [data-slot='sidebar-inner'] {
+    overflow: hidden;
+    background: var(--deck-panel);
+  }
+
+  .routing-deck-shell [data-slot='sidebar-inset'] {
+    background: transparent;
+  }
+
+  .routing-deck-shell [data-sidebar='menu-button'][data-active] {
+    background: var(--deck-ink);
+    color: var(--deck-panel);
+  }
+
+  .route-sidebar-frame {
+    background: var(--deck-panel);
+  }
+
+  .route-spine {
+    --aivanta-mark: var(--deck-signal);
+    --aivanta-mark-ink: oklch(0.18 0.008 80);
+    background:
+      linear-gradient(
+        to bottom,
+        transparent 0 4.75rem,
+        color-mix(in oklch, white 9%, transparent) 4.75rem calc(4.75rem + 1px),
+        transparent calc(4.75rem + 1px)
+      ),
+      var(--deck-ink);
+    color: var(--deck-panel);
+  }
+
+  .route-spine-brand {
+    background: color-mix(in oklch, white 8%, transparent);
+  }
+
+  .route-zone-link {
+    color: color-mix(in oklch, var(--deck-panel) 60%, transparent);
+  }
+
+  .route-zone-link:hover {
+    background: color-mix(in oklch, white 8%, transparent);
+    color: var(--deck-panel);
+  }
+
+  .route-zone-link[data-active] {
+    background: var(--deck-signal);
+    color: oklch(0.18 0.008 80);
+  }
+
+  .route-zone-link[data-active]::after {
+    position: absolute;
+    top: 50%;
+    right: -0.5rem;
+    width: 0.75rem;
+    height: 1px;
+    background: var(--deck-signal);
+    content: '';
+  }
+
+  .route-zone-index {
+    opacity: 0.55;
+  }
+
+  .route-zone-link[data-active] .route-zone-index {
+    opacity: 0.75;
+  }
+
+  .route-directory {
+    background:
+      linear-gradient(
+        to bottom,
+        color-mix(in oklch, var(--deck-signal) 7%, transparent),
+        transparent 12rem
+      ),
+      var(--deck-panel);
+    border-right: 1px solid var(--deck-line);
+  }
+
+  .route-directory-heading,
+  .route-status-bridge {
+    border-color: var(--deck-line);
+  }
+
+  .route-directory-status,
+  .route-header-status {
+    border-color: var(--deck-line);
+    background: color-mix(in oklch, var(--deck-panel) 68%, transparent);
+  }
+
+  .route-nav-group + .route-nav-group {
+    margin-top: 0.35rem;
+  }
+
+  .route-nav-label::after {
+    height: 1px;
+    flex: 1;
+    background: var(--deck-line);
+    content: '';
+  }
+
+  .route-menu-node {
+    background: color-mix(in oklch, var(--deck-ink) 20%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--deck-ink) 5%, transparent);
+  }
+
+  .route-menu-link:hover .route-menu-node {
+    background: var(--deck-signal);
+  }
+
+  .route-menu-link[data-active] .route-menu-node {
+    background: var(--deck-signal);
+    box-shadow: 0 0 0 3px
+      color-mix(in oklch, var(--deck-signal) 18%, transparent);
+  }
+
+  .route-header-code,
+  .route-page-index {
+    background: var(--deck-ink);
+    color: var(--deck-panel);
+  }
+
+  .route-status-bridge {
+    background: color-mix(in oklch, var(--deck-shell) 82%, transparent);
+    backdrop-filter: blur(18px);
+  }
+
+  .route-page-heading {
+    background: linear-gradient(
+      to bottom,
+      color-mix(in oklch, var(--deck-panel) 28%, transparent),
+      transparent
+    );
+  }
+
+  .route-page-track {
+    background: color-mix(in oklch, var(--deck-ink) 8%, transparent);
+  }
+
+  .route-page-track-stripes {
+    background-image: repeating-linear-gradient(
+      118deg,
+      color-mix(in oklch, var(--deck-ink) 16%, transparent) 0 1px,
+      transparent 1px 8px
+    );
+  }
+
+  .route-page-content::before {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--deck-line) 12% 88%,
+      transparent
+    );
+    content: '';
+  }
+
+  .route-page-content {
+    position: relative;
+  }
+
+  .routing-deck-shell [data-sidebar='menu-button'][data-active] svg,
+  .routing-deck-shell
+    [data-sidebar='menu-button'][data-active]
+    [data-slot='badge'] {
+    color: currentColor;
+  }
+
+  .deck-panel {
+    border: 1px solid var(--deck-line);
+    border-radius: calc(var(--radius) * 1.65);
+    background: var(--deck-panel);
+  }
+
+  .deck-track {
+    height: 0.5rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--deck-ink) 9%, transparent);
+  }
+
+  .deck-track::before {
+    display: block;
+    width: var(--deck-track-value, 62%);
+    height: 100%;
+    border-radius: inherit;
+    background: var(--deck-signal);
+    content: '';
+  }
+
+  .deck-track-striped {
+    background-image: repeating-linear-gradient(
+      118deg,
+      color-mix(in oklch, var(--deck-ink) 14%, transparent) 0 1px,
+      transparent 1px 8px
+    );
+  }
+
+  .deck-metric {
+    font-variant-numeric: tabular-nums;
+    font-weight: 350;
+    letter-spacing: -0.055em;
+  }
+
+  .route-dispatch-main {
+    box-shadow: inset 0 0 0 1px color-mix(in oklch, white 8%, transparent);
+  }
+
+  .route-dispatch-grid {
+    background-image:
+      linear-gradient(
+        to right,
+        color-mix(in oklch, white 7%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in oklch, white 6%, transparent) 1px,
+        transparent 1px
+      );
+    background-size: 4.5rem 4.5rem;
+    mask-image: linear-gradient(110deg, black, transparent 72%);
+  }
+
+  .route-dispatch-orbit {
+    border: 2.5rem solid
+      color-mix(in oklch, var(--deck-signal) 17%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in oklch, var(--deck-signal) 30%, transparent),
+      inset 0 0 0 1px color-mix(in oklch, var(--deck-signal) 24%, transparent);
+  }
+
+  .route-dispatch-metric {
+    border: 1px solid color-mix(in oklch, white 9%, transparent);
+    background: color-mix(in oklch, white 6%, transparent);
+    backdrop-filter: blur(10px);
+  }
+
+  .route-dispatch-signal {
+    background: var(--deck-signal);
+    color: oklch(0.18 0.008 80);
+    box-shadow: inset 0 0 0 1px color-mix(in oklch, black 10%, transparent);
+  }
+
+  .aivanta-workbench {
+    width: min(calc(100% - 1rem), 96rem);
+    margin-inline: auto;
+    overflow: hidden;
+    border: 1px solid var(--aivanta-rule);
+    border-radius: clamp(1.5rem, 4vw, 3rem);
+    background:
+      radial-gradient(
+        circle at 91% 6%,
+        color-mix(in oklch, var(--aivanta-signal) 30%, transparent),
+        transparent 30rem
+      ),
+      var(--aivanta-paper);
+    box-shadow: var(--deck-shadow);
+  }
+
+  .aivanta-panel {
+    border: 1px solid var(--aivanta-rule);
+    border-radius: clamp(1.25rem, 2.2vw, 2rem);
+    background: var(--aivanta-panel);
+  }
+
+  .gateway-route-rail {
+    box-shadow: inset 0 0 0 1px var(--aivanta-rule);
+  }
+
+  .gateway-load-bar {
+    transform-origin: bottom;
+    animation: gateway-load-rise 700ms cubic-bezier(0.25, 1, 0.5, 1) both;
+  }
+
+  .gateway-uptime-track::before {
+    width: 99.99%;
+  }
+
+  .gateway-latency-ring {
+    background: conic-gradient(
+      from 225deg,
+      var(--aivanta-signal) 0deg 270deg,
+      color-mix(in oklch, var(--aivanta-ink) 8%, transparent) 270deg 360deg
+    );
+    box-shadow: inset 0 0 0 1px var(--aivanta-rule);
+  }
+
+  .gateway-live-stream::before {
+    position: absolute;
+    top: 1rem;
+    bottom: 1rem;
+    left: 2.25rem;
+    width: 1px;
+    background: color-mix(in oklch, var(--aivanta-signal) 44%, transparent);
+    content: '';
+  }
+
+  .gateway-timeline-grid {
+    background-image:
+      linear-gradient(
+        to bottom,
+        transparent calc(25% - 1px),
+        var(--aivanta-rule) calc(25% - 1px),
+        var(--aivanta-rule) 25%,
+        transparent 25%
+      ),
+      linear-gradient(
+        to right,
+        transparent calc(25% - 1px),
+        var(--aivanta-rule) calc(25% - 1px),
+        var(--aivanta-rule) 25%,
+        transparent 25%
+      );
+    background-size:
+      100% 25%,
+      25% 100%;
+  }
+
+  .gateway-status-dot {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--aivanta-signal), transparent);
+    animation: gateway-status-pulse 2.4s ease-out infinite;
+  }
+
+  @keyframes gateway-load-rise {
+    from {
+      transform: scaleY(0.18);
+      opacity: 0.35;
+    }
+    to {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes gateway-status-pulse {
+    0% {
+      box-shadow: 0 0 0 0
+        color-mix(in oklch, var(--aivanta-signal) 52%, transparent);
+    }
+    70%,
+    100% {
+      box-shadow: 0 0 0 0.5rem transparent;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .aivanta-home {
+      padding-block: 1.5rem;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .routing-deck {
+      padding: 0;
+    }
+
+    .routing-deck-shell {
+      height: 100svh;
+      border-inline: 0;
+      border-radius: 0;
+    }
+
+    .routing-deck-stage {
+      background-size: 50% 100%;
+    }
+
+    .route-directory {
+      border-right: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gateway-load-bar,
+    .gateway-status-dot {
+      animation: none;
+    }
+  }
+}
+
 /* Shiki dual themes: token colors follow dark theme (pre background stays `bg-background` on the block) */
 @layer components {
   .shiki span {
@@ -57,7 +605,8 @@ For commercial licensing, please contact support@quantumnous.com
     @apply overflow-x-hidden font-sans;
   }
   body {
-    @apply bg-background text-foreground has-[div[data-variant='inset']]:bg-sidebar min-h-svh w-full;
+    @apply text-foreground min-h-svh w-full;
+    background: var(--deck-canvas);
     /* Font is driven by the theme's font axis via `--font-body`
      * (defined in theme.css, swapped by `[data-theme-font='...']` blocks
      * in theme-presets.css). Defaults to the project's humanist sans. */

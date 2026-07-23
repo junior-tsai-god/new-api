@@ -102,6 +102,32 @@ func TestRechargeWaffoPancake_RejectsMismatchedPaymentMethod(t *testing.T) {
 	assert.Equal(t, 0, getUserQuotaForPaymentGuardTest(t, 101))
 }
 
+func TestRechargePayPal_CreditsOnceAndRejectsProviderMismatch(t *testing.T) {
+	t.Run("credits exactly once", func(t *testing.T) {
+		truncateTables(t)
+		insertUserForPaymentGuardTest(t, 102, 7)
+		insertTopUpForPaymentGuardTest(t, "paypal-idempotent", 102, PaymentProviderPayPal)
+
+		require.NoError(t, RechargePayPal("paypal-idempotent", "127.0.0.1"))
+		quotaAfterFirstCapture := getUserQuotaForPaymentGuardTest(t, 102)
+		require.NoError(t, RechargePayPal("paypal-idempotent", "127.0.0.1"))
+
+		assert.Equal(t, 7+int(2*common.QuotaPerUnit), quotaAfterFirstCapture)
+		assert.Equal(t, quotaAfterFirstCapture, getUserQuotaForPaymentGuardTest(t, 102))
+		assert.Equal(t, common.TopUpStatusSuccess, getTopUpStatusForPaymentGuardTest(t, "paypal-idempotent"))
+	})
+
+	t.Run("rejects a different provider", func(t *testing.T) {
+		truncateTables(t)
+		insertUserForPaymentGuardTest(t, 103, 0)
+		insertTopUpForPaymentGuardTest(t, "paypal-provider-guard", 103, PaymentProviderStripe)
+
+		require.Error(t, RechargePayPal("paypal-provider-guard", "127.0.0.1"))
+		assert.Equal(t, common.TopUpStatusPending, getTopUpStatusForPaymentGuardTest(t, "paypal-provider-guard"))
+		assert.Zero(t, getUserQuotaForPaymentGuardTest(t, 103))
+	})
+}
+
 func TestUpdatePendingTopUpStatus_RejectsMismatchedPaymentProvider(t *testing.T) {
 	testCases := []struct {
 		name                    string

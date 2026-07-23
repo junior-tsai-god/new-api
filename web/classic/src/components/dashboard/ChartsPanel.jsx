@@ -33,7 +33,7 @@ const ChartsPanel = ({
   spec_user_trend,
   isAdminUser,
   CARD_PROPS,
-  CHART_CONFIG,
+  chartConfig,
   FLEX_CENTER_GAP2,
   hasApiInfoPanel,
   t,
@@ -70,22 +70,22 @@ const ChartsPanel = ({
     >
       <div className='h-96 p-2'>
         {activeChartTab === '1' && (
-          <VChart spec={spec_line} option={CHART_CONFIG} />
+          <VChart spec={spec_line} option={chartConfig} />
         )}
         {activeChartTab === '2' && (
-          <VChart spec={spec_model_line} option={CHART_CONFIG} />
+          <VChart spec={spec_model_line} option={chartConfig} />
         )}
         {activeChartTab === '3' && (
-          <VChart spec={spec_pie} option={CHART_CONFIG} />
+          <VChart spec={spec_pie} option={chartConfig} />
         )}
         {activeChartTab === '4' && (
-          <VChart spec={spec_rank_bar} option={CHART_CONFIG} />
+          <VChart spec={spec_rank_bar} option={chartConfig} />
         )}
         {activeChartTab === '5' && isAdminUser && (
-          <VChart spec={spec_user_rank} option={CHART_CONFIG} />
+          <VChart spec={spec_user_rank} option={chartConfig} />
         )}
         {activeChartTab === '6' && isAdminUser && (
-          <VChart spec={spec_user_trend} option={CHART_CONFIG} />
+          <VChart spec={spec_user_trend} option={chartConfig} />
         )}
       </div>
     </Card>

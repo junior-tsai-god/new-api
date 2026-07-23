@@ -46,6 +46,7 @@ export type ActiveApiKey = {
 }
 
 const HTTP_REGEX = /^https?:\/\//i
+const HTML_DATA_URL_REGEX = /^data:text\/html(?:;[^,]*)?,/i
 
 function toBase64(value: string) {
   if (typeof window !== 'undefined' && typeof window.btoa === 'function') {
@@ -75,7 +76,7 @@ function toBase64(value: string) {
 }
 
 export function detectChatLinkType(url: string): ChatLinkType {
-  if (HTTP_REGEX.test(url)) {
+  if (HTTP_REGEX.test(url) || HTML_DATA_URL_REGEX.test(url)) {
     return 'web'
   }
   if (url.toLowerCase().startsWith('fluent')) {

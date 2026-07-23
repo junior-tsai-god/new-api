@@ -16,73 +16,82 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Settings, Zap, BarChart3 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+
 import { AnimateInView } from '@/components/animate-in-view'
 
 export function HowItWorks() {
   const { t } = useTranslation()
-
   const steps = [
     {
-      num: '1',
+      number: '01',
       title: t('Configure'),
-      desc: t(
+      description: t(
         'Add your API keys, set up channels and configure access permissions'
       ),
-      icon: <Settings className='size-6' strokeWidth={1.5} />,
     },
     {
-      num: '2',
+      number: '02',
       title: t('Connect'),
-      desc: t(
+      description: t(
         'Connect through OpenAI, Claude, Gemini, and other compatible API routes'
       ),
-      icon: <Zap className='size-6' strokeWidth={1.5} />,
     },
     {
-      num: '3',
+      number: '03',
       title: t('Monitor'),
-      desc: t('Track usage, costs and performance with real-time analytics'),
-      icon: <BarChart3 className='size-6' strokeWidth={1.5} />,
+      description: t(
+        'Track usage, costs and performance with real-time analytics'
+      ),
     },
   ]
 
   return (
-    <section className='border-border/40 relative z-10 border-t px-6 py-24 md:py-32'>
-      <div className='mx-auto max-w-6xl'>
-        <AnimateInView className='mb-16 text-center md:mb-20'>
-          <p className='text-muted-foreground mb-3 text-xs font-medium tracking-widest uppercase'>
-            {t('How It Works')}
+    <section className='aivanta-home-section aivanta-ink-section mx-auto mt-4 w-[min(calc(100%_-_1rem),96rem)] rounded-[2rem] py-16 md:py-24'>
+      <div className='px-4 sm:px-6 lg:px-8'>
+        <AnimateInView className='grid gap-8 pb-12 md:grid-cols-12 md:pb-16'>
+          <p className='font-mono text-[10px] tracking-[0.18em] uppercase md:col-span-3'>
+            {t('How It Works')} / 01—03
           </p>
-          <h2 className='text-2xl font-bold tracking-tight md:text-3xl'>
+          <h2 className='max-w-4xl text-4xl leading-[0.95] font-light tracking-[-0.055em] sm:text-6xl md:col-span-8 md:col-start-5'>
             {t('Three steps to get started')}
           </h2>
         </AnimateInView>
 
-        <div className='grid gap-8 md:grid-cols-3 md:gap-12'>
-          {steps.map((step, i) => (
+        <div className='relative grid overflow-hidden rounded-3xl border border-[var(--aivanta-rule)] md:grid-cols-3'>
+          <span
+            aria-hidden='true'
+            className='aivanta-route-thread absolute top-12 right-0 left-0 hidden h-px md:block'
+          />
+          {steps.map((step, index) => (
             <AnimateInView
-              key={step.num}
-              delay={i * 150}
+              key={step.number}
               animation='fade-up'
-              className='relative flex flex-col items-center text-center'
+              delay={index * 100}
+              className='relative border-b border-[var(--aivanta-rule)] p-8 md:min-h-72 md:border-r md:border-b-0 md:last:border-r-0'
             >
-              <div className='relative mb-6'>
-                <div className='text-muted-foreground border-border/50 bg-muted/30 flex size-16 items-center justify-center rounded-2xl border transition-colors'>
-                  {step.icon}
-                </div>
-                <div className='bg-foreground text-background absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full text-xs font-bold'>
-                  {step.num}
-                </div>
+              <div className='mb-12 flex items-center gap-3 font-mono text-[10px] tracking-[0.16em] uppercase'>
+                <span className='size-2 rounded-full bg-[var(--aivanta-signal)]' />
+                {step.number}
               </div>
-              <h3 className='mb-2 text-base font-semibold'>{step.title}</h3>
-              <p className='text-muted-foreground max-w-[240px] text-sm leading-relaxed'>
-                {step.desc}
+              <h3 className='text-2xl font-semibold tracking-[-0.035em]'>
+                {step.title}
+              </h3>
+              <p className='mt-4 max-w-sm text-sm leading-relaxed text-[var(--aivanta-secondary)]'>
+                {step.description}
               </p>
             </AnimateInView>
           ))}
         </div>
+
+        <AnimateInView className='grid gap-6 border-b border-[var(--aivanta-rule)] py-6 font-mono text-[10px] md:grid-cols-12'>
+          <span className='tracking-[0.16em] uppercase md:col-span-3'>
+            Request / Example
+          </span>
+          <code className='overflow-x-auto text-[var(--aivanta-secondary)] md:col-span-8 md:col-start-5'>
+            curl /v1/chat/completions -H &quot;Authorization: Bearer ••••&quot;
+          </code>
+        </AnimateInView>
       </div>
     </section>
   )

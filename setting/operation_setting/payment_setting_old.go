@@ -28,12 +28,6 @@ var PayMethods = []map[string]string{
 		"icon": "SiWechat",
 		"type": "wxpay",
 	},
-	{
-		"name":      "自定义1",
-		"icon":      "LuCreditCard",
-		"type":      "custom1",
-		"min_topup": "50",
-	},
 }
 
 func UpdatePayMethodsByJsonString(jsonString string) error {

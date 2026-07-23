@@ -1,3 +1,6 @@
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Code2, Eye, ShieldAlert } from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -17,14 +20,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import * as React from 'react'
-import * as z from 'zod'
 import { useForm, type Resolver } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Code2, Eye, ShieldAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
+import * as z from 'zod'
+
+import { RiskAcknowledgementDialog } from '@/components/risk-acknowledgement-dialog'
 import {
   Alert,
   AlertAction,
@@ -45,7 +46,8 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { RiskAcknowledgementDialog } from '@/components/risk-acknowledgement-dialog'
+import { cn } from '@/lib/utils'
+
 import { confirmPaymentCompliance } from '../api'
 import {
   SettingsForm,
@@ -60,6 +62,10 @@ import { AmountDiscountVisualEditor } from './amount-discount-visual-editor'
 import { AmountOptionsVisualEditor } from './amount-options-visual-editor'
 import { CreemProductsVisualEditor } from './creem-products-visual-editor'
 import { PaymentMethodsVisualEditor } from './payment-methods-visual-editor'
+import {
+  PayPalSettingsSection,
+  type PayPalSettingsValues,
+} from './paypal-settings-section'
 import {
   formatJsonForEditor,
   getJsonError,
@@ -145,6 +151,12 @@ const paymentSchema = z.object({
   StripeUnitPrice: z.coerce.number().min(0),
   StripeMinTopUp: z.coerce.number().min(0),
   StripePromotionCodesEnabled: z.boolean(),
+  PayPalClientID: z.string(),
+  PayPalClientSecret: z.string(),
+  PayPalWebhookID: z.string(),
+  PayPalSandbox: z.boolean(),
+  PayPalUnitPrice: z.coerce.number().min(0),
+  PayPalMinTopUp: z.coerce.number().min(1),
   CreemApiKey: z.string(),
   CreemWebhookSecret: z.string(),
   CreemTestMode: z.boolean(),
@@ -402,6 +414,16 @@ export function PaymentSettingsSection({
     [setPaymentValue]
   )
 
+  const setPayPalValue = React.useCallback(
+    <K extends keyof PayPalSettingsValues>(
+      key: K,
+      value: PayPalSettingsValues[K]
+    ) => {
+      setPaymentValue(key, value)
+    },
+    [setPaymentValue]
+  )
+
   React.useEffect(() => {
     const parsedDefaults = JSON.parse(defaultsSignature) as PaymentFormValues
     initialRef.current = parsedDefaults
@@ -431,6 +453,12 @@ export function PaymentSettingsSection({
       StripeUnitPrice: values.StripeUnitPrice,
       StripeMinTopUp: values.StripeMinTopUp,
       StripePromotionCodesEnabled: values.StripePromotionCodesEnabled,
+      PayPalClientID: values.PayPalClientID.trim(),
+      PayPalClientSecret: values.PayPalClientSecret.trim(),
+      PayPalWebhookID: values.PayPalWebhookID.trim(),
+      PayPalSandbox: values.PayPalSandbox,
+      PayPalUnitPrice: values.PayPalUnitPrice,
+      PayPalMinTopUp: values.PayPalMinTopUp,
       CreemApiKey: values.CreemApiKey.trim(),
       CreemWebhookSecret: values.CreemWebhookSecret.trim(),
       CreemTestMode: values.CreemTestMode,
@@ -476,6 +504,12 @@ export function PaymentSettingsSection({
       StripeMinTopUp: initialRef.current.StripeMinTopUp,
       StripePromotionCodesEnabled:
         initialRef.current.StripePromotionCodesEnabled,
+      PayPalClientID: initialRef.current.PayPalClientID.trim(),
+      PayPalClientSecret: initialRef.current.PayPalClientSecret.trim(),
+      PayPalWebhookID: initialRef.current.PayPalWebhookID.trim(),
+      PayPalSandbox: initialRef.current.PayPalSandbox,
+      PayPalUnitPrice: initialRef.current.PayPalUnitPrice,
+      PayPalMinTopUp: initialRef.current.PayPalMinTopUp,
       CreemApiKey: initialRef.current.CreemApiKey.trim(),
       CreemWebhookSecret: initialRef.current.CreemWebhookSecret.trim(),
       CreemTestMode: initialRef.current.CreemTestMode,
@@ -564,7 +598,10 @@ export function PaymentSettingsSection({
       sanitized.StripeApiSecret &&
       sanitized.StripeApiSecret !== initial.StripeApiSecret
     ) {
-      updates.push({ key: 'StripeApiSecret', value: sanitized.StripeApiSecret })
+      updates.push({
+        key: 'StripeApiSecret',
+        value: sanitized.StripeApiSecret,
+      })
     }
 
     if (
@@ -582,7 +619,10 @@ export function PaymentSettingsSection({
     }
 
     if (sanitized.StripeUnitPrice !== initial.StripeUnitPrice) {
-      updates.push({ key: 'StripeUnitPrice', value: sanitized.StripeUnitPrice })
+      updates.push({
+        key: 'StripeUnitPrice',
+        value: sanitized.StripeUnitPrice,
+      })
     }
 
     if (sanitized.StripeMinTopUp !== initial.StripeMinTopUp) {
@@ -597,6 +637,42 @@ export function PaymentSettingsSection({
         key: 'StripePromotionCodesEnabled',
         value: sanitized.StripePromotionCodesEnabled,
       })
+    }
+
+    if (sanitized.PayPalClientID !== initial.PayPalClientID) {
+      updates.push({ key: 'PayPalClientID', value: sanitized.PayPalClientID })
+    }
+
+    if (
+      sanitized.PayPalClientSecret &&
+      sanitized.PayPalClientSecret !== initial.PayPalClientSecret
+    ) {
+      updates.push({
+        key: 'PayPalClientSecret',
+        value: sanitized.PayPalClientSecret,
+      })
+    }
+
+    if (sanitized.PayPalWebhookID !== initial.PayPalWebhookID) {
+      updates.push({
+        key: 'PayPalWebhookID',
+        value: sanitized.PayPalWebhookID,
+      })
+    }
+
+    if (sanitized.PayPalSandbox !== initial.PayPalSandbox) {
+      updates.push({ key: 'PayPalSandbox', value: sanitized.PayPalSandbox })
+    }
+
+    if (sanitized.PayPalUnitPrice !== initial.PayPalUnitPrice) {
+      updates.push({
+        key: 'PayPalUnitPrice',
+        value: sanitized.PayPalUnitPrice,
+      })
+    }
+
+    if (sanitized.PayPalMinTopUp !== initial.PayPalMinTopUp) {
+      updates.push({ key: 'PayPalMinTopUp', value: sanitized.PayPalMinTopUp })
     }
 
     if (
@@ -636,7 +712,10 @@ export function PaymentSettingsSection({
     }
 
     if (sanitized.WaffoMerchantId !== initial.WaffoMerchantId) {
-      updates.push({ key: 'WaffoMerchantId', value: sanitized.WaffoMerchantId })
+      updates.push({
+        key: 'WaffoMerchantId',
+        value: sanitized.WaffoMerchantId,
+      })
     }
 
     if (sanitized.WaffoCurrency !== initial.WaffoCurrency) {
@@ -660,7 +739,10 @@ export function PaymentSettingsSection({
     }
 
     if (sanitized.WaffoPublicCert !== initial.WaffoPublicCert) {
-      updates.push({ key: 'WaffoPublicCert', value: sanitized.WaffoPublicCert })
+      updates.push({
+        key: 'WaffoPublicCert',
+        value: sanitized.WaffoPublicCert,
+      })
     }
 
     if (sanitized.WaffoSandboxPublicCert !== initial.WaffoSandboxPublicCert) {
@@ -675,7 +757,10 @@ export function PaymentSettingsSection({
     }
 
     if (sanitized.WaffoPrivateKey) {
-      updates.push({ key: 'WaffoPrivateKey', value: sanitized.WaffoPrivateKey })
+      updates.push({
+        key: 'WaffoPrivateKey',
+        value: sanitized.WaffoPrivateKey,
+      })
     }
 
     if (sanitized.WaffoSandboxApiKey) {
@@ -696,7 +781,10 @@ export function PaymentSettingsSection({
       normalizeJsonForComparison(sanitized.WaffoPayMethods) !==
       normalizeJsonForComparison(initial.WaffoPayMethods)
     ) {
-      updates.push({ key: 'WaffoPayMethods', value: sanitized.WaffoPayMethods })
+      updates.push({
+        key: 'WaffoPayMethods',
+        value: sanitized.WaffoPayMethods,
+      })
     }
 
     const hasWaffoPancakeChanges =
@@ -771,6 +859,14 @@ export function PaymentSettingsSection({
   }
 
   const currentFormValues = form.watch()
+  const payPalValues: PayPalSettingsValues = {
+    PayPalClientID: currentFormValues.PayPalClientID,
+    PayPalClientSecret: currentFormValues.PayPalClientSecret,
+    PayPalWebhookID: currentFormValues.PayPalWebhookID,
+    PayPalSandbox: currentFormValues.PayPalSandbox,
+    PayPalUnitPrice: currentFormValues.PayPalUnitPrice,
+    PayPalMinTopUp: currentFormValues.PayPalMinTopUp,
+  }
   const waffoValues: WaffoSettingsValues = {
     WaffoEnabled: currentFormValues.WaffoEnabled,
     WaffoApiKey: currentFormValues.WaffoApiKey,
@@ -875,10 +971,11 @@ export function PaymentSettingsSection({
           />
           <Tabs defaultValue='general' className='min-w-0'>
             <div className='overflow-x-auto pb-1'>
-              <TabsList className='grid min-w-[44rem] grid-cols-6'>
+              <TabsList className='grid min-w-[52rem] grid-cols-7'>
                 <TabsTrigger value='general'>{t('General')}</TabsTrigger>
                 <TabsTrigger value='epay'>Epay</TabsTrigger>
                 <TabsTrigger value='stripe'>{t('Stripe')}</TabsTrigger>
+                <TabsTrigger value='paypal'>PayPal</TabsTrigger>
                 <TabsTrigger value='creem'>Creem</TabsTrigger>
                 <TabsTrigger value='waffo-pancake'>Waffo Pancake</TabsTrigger>
                 <TabsTrigger value='waffo'>Waffo</TabsTrigger>
@@ -1429,6 +1526,13 @@ export function PaymentSettingsSection({
                   />
                 </div>
               </div>
+            </TabsContent>
+
+            <TabsContent value='paypal' className={paymentTabContentClassName}>
+              <PayPalSettingsSection
+                values={payPalValues}
+                onValueChange={setPayPalValue}
+              />
             </TabsContent>
 
             <TabsContent value='creem' className={paymentTabContentClassName}>

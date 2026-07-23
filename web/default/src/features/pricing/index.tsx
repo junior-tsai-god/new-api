@@ -18,8 +18,11 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+
 import { PublicLayout } from '@/components/layout'
+import { Footer } from '@/components/layout/components/footer'
 import { PageTransition } from '@/components/page-transition'
+
 import {
   LoadingSkeleton,
   EmptyState,
@@ -102,6 +105,7 @@ export function Pricing() {
       ),
     [usableGroup]
   )
+  const modelCount = models?.length ?? 0
 
   const handleClearAll = useCallback(() => {
     clearFilters()
@@ -147,8 +151,10 @@ export function Pricing() {
   if (isLoading) {
     return (
       <PublicLayout showMainContainer={false}>
-        <div className='mx-auto w-full max-w-[1800px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
-          <LoadingSkeleton viewMode={viewMode} />
+        <div className='aivanta-public-surface min-h-svh px-2 py-2 md:px-4 md:py-4'>
+          <div className='aivanta-public-frame px-3 pt-24 pb-8 sm:px-6 sm:pt-28 sm:pb-10 lg:px-8'>
+            <LoadingSkeleton viewMode={viewMode} />
+          </div>
         </div>
       </PublicLayout>
     )
@@ -156,49 +162,41 @@ export function Pricing() {
 
   return (
     <PublicLayout showMainContainer={false}>
-      <div className='relative'>
-        <div
-          aria-hidden
-          className='pointer-events-none absolute inset-x-0 top-0 h-[600px] opacity-20 dark:opacity-[0.10]'
-          style={{
-            background: [
-              'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.72 0.18 250 / 80%) 0%, transparent 70%)',
-              'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.65 0.15 200 / 60%) 0%, transparent 70%)',
-              'radial-gradient(ellipse 40% 35% at 50% 70%, oklch(0.70 0.12 280 / 40%) 0%, transparent 70%)',
-            ].join(', '),
-            maskImage:
-              'linear-gradient(to bottom, black 40%, transparent 100%)',
-            WebkitMaskImage:
-              'linear-gradient(to bottom, black 40%, transparent 100%)',
-          }}
-        />
-        <PageTransition className='relative mx-auto w-full max-w-[1800px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
-          <header className='mx-auto mb-5 max-w-3xl pt-5 text-center sm:mb-10 sm:pt-10'>
-            <h1 className='text-[clamp(2rem,5.5vw,3.5rem)] leading-[1.15] font-bold tracking-tight'>
-              {t('Model Square')}
-            </h1>
-            <p className='text-muted-foreground/80 mt-3 text-sm sm:mt-4 sm:text-base'>
-              {t('This site currently has {{count}} models enabled', {
-                count: models?.length || 0,
-              })}
-            </p>
-            <p className='text-muted-foreground/60 mx-auto mt-2 max-w-2xl text-xs leading-relaxed sm:text-sm'>
-              {t(
-                'Discover curated AI models, compare pricing and capabilities, and choose the right model for every scenario.'
-              )}
-            </p>
-            <SearchBar
-              value={searchInput}
-              onChange={setSearchInput}
-              onClear={clearSearch}
-              placeholder={t(
-                'Search model name, provider, endpoint, or tag...'
-              )}
-              className='mx-auto mt-4 max-w-2xl sm:mt-6'
-            />
+      <div className='aivanta-public-surface min-h-svh px-2 py-2 md:px-4 md:py-4'>
+        <PageTransition className='aivanta-public-frame px-3 pt-24 pb-6 sm:px-6 sm:pt-28 sm:pb-8 lg:px-8'>
+          <header className='grid gap-6 border-b border-[var(--aivanta-rule)] py-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(28rem,1.15fr)] lg:items-end'>
+            <div>
+              <p className='font-mono text-[10px] tracking-[0.18em] text-[var(--aivanta-faint)] uppercase'>
+                Aivanta / {t('Model Square')}
+              </p>
+              <h1 className='mt-2 text-[clamp(2.5rem,5vw,4.75rem)] leading-[0.95] font-light tracking-[-0.06em]'>
+                {t('Model Square')}
+              </h1>
+            </div>
+            <div className='w-full max-w-2xl lg:justify-self-end'>
+              <p className='flex items-center gap-2 font-mono text-[10px] tracking-[0.14em] uppercase'>
+                <span className='gateway-status-dot size-1.5 rounded-full bg-[var(--aivanta-signal)]' />
+                {modelCount} {modelCount === 1 ? t('model') : t('models')} /{' '}
+                {t('Online')}
+              </p>
+              <p className='mt-2 max-w-xl text-sm leading-6 text-[var(--aivanta-secondary)]'>
+                {t(
+                  'Discover curated AI models, compare pricing and capabilities, and choose the right model for every scenario.'
+                )}
+              </p>
+              <SearchBar
+                value={searchInput}
+                onChange={setSearchInput}
+                onClear={clearSearch}
+                placeholder={t(
+                  'Search model name, provider, endpoint, or tag...'
+                )}
+                className='mt-4'
+              />
+            </div>
           </header>
 
-          <div className='grid gap-4 xl:grid-cols-[330px_minmax(0,1fr)]'>
+          <div className='grid gap-4 py-5 xl:grid-cols-[300px_minmax(0,1fr)]'>
             <PricingSidebar
               quotaTypeFilter={quotaTypeFilter}
               endpointTypeFilter={endpointTypeFilter}
@@ -217,10 +215,10 @@ export function Pricing() {
               models={models || []}
               hasActiveFilters={hasActiveFilters}
               onClearFilters={clearFilters}
-              className='hover-scrollbar sticky top-4 hidden max-h-[calc(100dvh-2rem)] self-start overflow-y-auto xl:block'
+              className='hover-scrollbar sticky top-24 hidden max-h-[calc(100dvh-7rem)] self-start overflow-y-auto xl:block'
             />
 
-            <main className='min-w-0 space-y-4'>
+            <main className='flex min-w-0 flex-col gap-4'>
               <PricingToolbar
                 filteredCount={filteredModels.length}
                 totalCount={models?.length}
@@ -279,6 +277,7 @@ export function Pricing() {
             />
           )}
         </PageTransition>
+        <Footer className='mx-auto mt-3 w-[min(calc(100%_-_1rem),96rem)] rounded-[2rem] border border-[var(--aivanta-rule)] bg-[var(--aivanta-paper)]' />
       </div>
     </PublicLayout>
   )

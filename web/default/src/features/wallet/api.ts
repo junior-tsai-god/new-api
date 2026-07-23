@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { api } from '@/lib/api'
+
 import type {
   RedemptionRequest,
   PaymentRequest,
@@ -28,6 +29,8 @@ import type {
   AmountResponse,
   PaymentResponse,
   StripePaymentResponse,
+  PayPalPaymentResponse,
+  PayPalCaptureResponse,
   AffiliateCodeResponse,
   AffiliateTransferResponse,
   BillingHistoryResponse,
@@ -93,6 +96,15 @@ export async function calculateStripeAmount(
   return res.data
 }
 
+export async function calculatePayPalAmount(
+  request: AmountRequest
+): Promise<AmountResponse> {
+  const res = await api.post('/api/user/paypal/amount', request, {
+    skipBusinessError: true,
+  } as Record<string, unknown>)
+  return res.data
+}
+
 /**
  * Request regular payment
  */
@@ -117,6 +129,26 @@ export async function requestStripePayment(
   const res = await api.post('/api/user/stripe/pay', request, {
     skipBusinessError: true,
   } as Record<string, unknown>)
+  return res.data
+}
+
+export async function requestPayPalPayment(
+  request: PaymentRequest
+): Promise<PayPalPaymentResponse> {
+  const res = await api.post('/api/user/paypal/pay', request, {
+    skipBusinessError: true,
+  } as Record<string, unknown>)
+  return res.data
+}
+
+export async function capturePayPalOrder(
+  orderId: string
+): Promise<PayPalCaptureResponse> {
+  const res = await api.post(
+    '/api/user/paypal/capture',
+    { order_id: orderId },
+    { skipBusinessError: true } as Record<string, unknown>
+  )
   return res.data
 }
 

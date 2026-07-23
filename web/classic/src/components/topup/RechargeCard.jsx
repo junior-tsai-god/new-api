@@ -35,7 +35,7 @@ import {
   Tabs,
   TabPane,
 } from '@douyinfe/semi-ui';
-import { SiAlipay, SiWechat, SiStripe } from 'react-icons/si';
+import { SiAlipay, SiPaypal, SiWechat, SiStripe } from 'react-icons/si';
 import {
   CreditCard,
   Coins,
@@ -57,6 +57,7 @@ const RechargeCard = ({
   t,
   enableOnlineTopUp,
   enableStripeTopUp,
+  enablePayPalTopUp,
   enableCreemTopUp,
   creemProducts,
   creemPreTopUp,
@@ -314,6 +315,7 @@ const RechargeCard = ({
                             const minTopupVal =
                               Number(payMethod.min_topup) || 0;
                             const isStripe = payMethod.type === 'stripe';
+                            const isPayPal = payMethod.type === 'paypal';
                             const isWaffo =
                               typeof payMethod.type === 'string' &&
                               payMethod.type.startsWith('waffo:');
@@ -322,9 +324,11 @@ const RechargeCard = ({
                             const disabled =
                               (!enableOnlineTopUp &&
                                 !isStripe &&
+                                !isPayPal &&
                                 !isWaffo &&
                                 !isWaffoPancake) ||
                               (!enableStripeTopUp && isStripe) ||
+                              (!enablePayPalTopUp && isPayPal) ||
                               (!enableWaffoTopUp && isWaffo) ||
                               (!enableWaffoPancakeTopUp && isWaffoPancake) ||
                               minTopupVal > Number(topUpCount || 0);
@@ -346,6 +350,8 @@ const RechargeCard = ({
                                     <SiWechat size={18} color='#07C160' />
                                   ) : payMethod.type === 'stripe' ? (
                                     <SiStripe size={18} color='#635BFF' />
+                                  ) : payMethod.type === 'paypal' ? (
+                                    <SiPaypal size={18} color='#003087' />
                                   ) : payMethod.icon ? (
                                     <img
                                       src={payMethod.icon}

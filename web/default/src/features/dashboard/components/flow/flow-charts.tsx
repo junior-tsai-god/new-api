@@ -1,3 +1,18 @@
+import { useQuery } from '@tanstack/react-query'
+import { VChart } from '@visactor/react-vchart'
+import type { EventParamsDefinition, IVChart } from '@visactor/vchart'
+import {
+  Activity,
+  ChevronRight,
+  CircleAlert,
+  EyeOff,
+  GitBranch,
+  Hash,
+  Info,
+  Loader2,
+  Route,
+  WalletCards,
+} from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -24,21 +39,6 @@ import {
   useRef,
   useState,
 } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { VChart } from '@visactor/react-vchart'
-import type { EventParamsDefinition, IVChart } from '@visactor/vchart'
-import {
-  Activity,
-  ChevronRight,
-  CircleAlert,
-  EyeOff,
-  GitBranch,
-  Hash,
-  Info,
-  Loader2,
-  Route,
-  WalletCards,
-} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { MultiSelect } from '@/components/multi-select'
@@ -88,8 +88,9 @@ import { ROLE } from '@/lib/roles'
 import { computeTimeRange } from '@/lib/time'
 import { useChartTheme } from '@/lib/use-chart-theme'
 import { cn } from '@/lib/utils'
-import { VCHART_OPTION } from '@/lib/vchart'
+import { useVChartOption } from '@/lib/vchart'
 import { useAuthStore } from '@/stores/auth-store'
+
 import { FlowNodeFilterControl } from './flow-node-filter'
 
 interface FlowChartsProps {
@@ -172,9 +173,7 @@ const FLOW_OTHER_NODE_LABEL_KEYS: Record<FlowNodeKind, string> = {
 
 type FlowChartPointerEvent = EventParamsDefinition['pointerdown']
 
-function chartRecordValue(
-  value: unknown
-): Record<string, unknown> | undefined {
+function chartRecordValue(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === 'object'
     ? (value as Record<string, unknown>)
     : undefined
@@ -253,6 +252,7 @@ function formatFlowMetricNumber(value: number): string {
 }
 
 export function FlowCharts(props: FlowChartsProps) {
+  const vchartOption = useVChartOption()
   const { t } = useTranslation()
   const { resolvedTheme, themeReady } = useChartTheme()
   const chartInstanceRef = useRef<IVChart | null>(null)
@@ -469,7 +469,9 @@ export function FlowCharts(props: FlowChartsProps) {
     overflowMode,
     flowRole,
     activeFlowNode ? flowNodeFilterKey(activeFlowNode) : '',
-    activeFlowLink ? `${activeFlowLink.source}\u0000${activeFlowLink.target}` : '',
+    activeFlowLink
+      ? `${activeFlowLink.source}\u0000${activeFlowLink.target}`
+      : '',
     selectedNodes.map(flowNodeFilterKey).join(','),
     selectedUsers.join(','),
     visibleStages.join(','),
@@ -495,7 +497,7 @@ export function FlowCharts(props: FlowChartsProps) {
         theme: chartTheme,
         background: 'transparent',
       }}
-      option={VCHART_OPTION}
+      option={vchartOption}
       onReady={(instance: IVChart) => {
         chartInstanceRef.current = instance
       }}

@@ -9,6 +9,7 @@ build
 *.db-journal
 logs
 web/default/dist
+web/default/.frontend-runtime
 web/classic/dist
 web/node_modules
 web/dist
@@ -36,6 +37,9 @@ data/
 token_estimator_test.go
 skills-lock.json
 .playwright-mcp
+.playwright-cli/
+/output/
+/paypal_*.pdf
 
 # Local-only live probes and scratch test workspaces.
 .local-tests/

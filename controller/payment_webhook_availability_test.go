@@ -44,6 +44,29 @@ func TestStripeWebhookEnabledRequiresTopUpAndWebhookConfig(t *testing.T) {
 	require.False(t, isStripeWebhookEnabled())
 }
 
+func TestPayPalWebhookEnabledRequiresCredentialsAndWebhookID(t *testing.T) {
+	confirmPaymentComplianceForTest(t)
+	originalClientID := setting.PayPalClientID
+	originalClientSecret := setting.PayPalClientSecret
+	originalWebhookID := setting.PayPalWebhookID
+	t.Cleanup(func() {
+		setting.PayPalClientID = originalClientID
+		setting.PayPalClientSecret = originalClientSecret
+		setting.PayPalWebhookID = originalWebhookID
+	})
+
+	setting.PayPalClientID = "client_id"
+	setting.PayPalClientSecret = ""
+	setting.PayPalWebhookID = "webhook_id"
+	require.False(t, isPayPalWebhookEnabled())
+
+	setting.PayPalClientSecret = "client_secret"
+	require.True(t, isPayPalWebhookEnabled())
+
+	setting.PayPalWebhookID = ""
+	require.False(t, isPayPalWebhookEnabled())
+}
+
 func TestCreemWebhookEnabledRequiresTopUpAndWebhookConfig(t *testing.T) {
 	confirmPaymentComplianceForTest(t)
 	originalAPIKey := setting.CreemApiKey

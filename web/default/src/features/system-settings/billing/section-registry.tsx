@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { parseCurrencyDisplayType } from '@/lib/currency'
+
 import { CheckinSettingsSection } from '../general/checkin-settings-section'
 import { PricingSection } from '../general/pricing-section'
 import { QuotaSettingsSection } from '../general/quota-settings-section'
@@ -147,6 +148,12 @@ const BILLING_SECTIONS = [
           StripeUnitPrice: settings.StripeUnitPrice,
           StripeMinTopUp: settings.StripeMinTopUp,
           StripePromotionCodesEnabled: settings.StripePromotionCodesEnabled,
+          PayPalClientID: settings.PayPalClientID,
+          PayPalClientSecret: settings.PayPalClientSecret,
+          PayPalWebhookID: settings.PayPalWebhookID,
+          PayPalSandbox: settings.PayPalSandbox,
+          PayPalUnitPrice: settings.PayPalUnitPrice,
+          PayPalMinTopUp: settings.PayPalMinTopUp,
           CreemApiKey: settings.CreemApiKey,
           CreemWebhookSecret: settings.CreemWebhookSecret,
           CreemTestMode: settings.CreemTestMode,

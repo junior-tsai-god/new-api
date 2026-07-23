@@ -1,3 +1,4 @@
+import { VChart } from '@visactor/react-vchart'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -17,14 +18,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useMemo } from 'react'
-import { VChart } from '@visactor/react-vchart'
 import { useTranslation } from 'react-i18next'
+
+import { useThemeCustomization } from '@/context/theme-customization-provider'
+import { getSuccessRateColor } from '@/features/performance-metrics/lib/format'
 import { useThemeRadiusPx } from '@/lib/theme-radius'
 import { useChartTheme } from '@/lib/use-chart-theme'
 import { cn } from '@/lib/utils'
-import { VCHART_OPTION } from '@/lib/vchart'
-import { useThemeCustomization } from '@/context/theme-customization-provider'
-import { getSuccessRateColor } from '@/features/performance-metrics/lib/format'
+import { useVChartOption } from '@/lib/vchart'
+
 import type { LatencyTimePoint, UptimeDayPoint } from '../lib/mock-stats'
 
 function formatHourLabel(iso: string): string {
@@ -96,6 +98,7 @@ export function LatencyTrendChart(props: {
   className?: string
 }) {
   const { t } = useTranslation()
+  const vchartOption = useVChartOption()
   const { resolvedTheme, themeReady } = useChartTheme()
   const { textColor, gridColor } = getChartThemeTokens(resolvedTheme)
 
@@ -178,7 +181,7 @@ export function LatencyTrendChart(props: {
             theme: resolvedTheme === 'dark' ? 'dark' : 'light',
             background: 'transparent',
           }}
-          option={VCHART_OPTION}
+          option={vchartOption}
         />
       )}
     </div>
@@ -194,6 +197,7 @@ export function UptimeTrendChart(props: {
   className?: string
 }) {
   const { t } = useTranslation()
+  const vchartOption = useVChartOption()
   const { resolvedTheme, themeReady } = useChartTheme()
   const { textColor, gridColor } = getChartThemeTokens(resolvedTheme)
 
@@ -230,7 +234,8 @@ export function UptimeTrendChart(props: {
           size: 5,
           stroke: '#ffffff',
           lineWidth: 1.5,
-          fill: (datum: { uptime: number }) => getSuccessRateColor(datum.uptime),
+          fill: (datum: { uptime: number }) =>
+            getSuccessRateColor(datum.uptime),
         },
       },
       tooltip: {
@@ -305,7 +310,7 @@ export function UptimeTrendChart(props: {
             theme: resolvedTheme === 'dark' ? 'dark' : 'light',
             background: 'transparent',
           }}
-          option={VCHART_OPTION}
+          option={vchartOption}
         />
       )}
     </div>
@@ -321,6 +326,7 @@ export function ThroughputBarChart(props: {
   className?: string
 }) {
   const { t } = useTranslation()
+  const vchartOption = useVChartOption()
   const { resolvedTheme, themeReady } = useChartTheme()
   const { textColor, gridColor } = getChartThemeTokens(resolvedTheme)
   const { customization } = useThemeCustomization()
@@ -398,7 +404,7 @@ export function ThroughputBarChart(props: {
             theme: resolvedTheme === 'dark' ? 'dark' : 'light',
             background: 'transparent',
           }}
-          option={VCHART_OPTION}
+          option={vchartOption}
         />
       )}
     </div>

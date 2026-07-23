@@ -1,3 +1,8 @@
+import { AnimatedOutlet } from '@/components/page-transition'
+import { SkipToMain } from '@/components/skip-to-main'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { LayoutProvider } from '@/context/layout-provider'
+import { SearchProvider } from '@/context/search-provider'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -18,11 +23,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { getCookie } from '@/lib/cookies'
 import { cn } from '@/lib/utils'
-import { LayoutProvider } from '@/context/layout-provider'
-import { SearchProvider } from '@/context/search-provider'
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
-import { AnimatedOutlet } from '@/components/page-transition'
-import { SkipToMain } from '@/components/skip-to-main'
+
 import { AppHeader } from './app-header'
 import { AppSidebar } from './app-sidebar'
 
@@ -36,21 +37,21 @@ export function AuthenticatedLayout(props: AuthenticatedLayoutProps) {
   return (
     <LayoutProvider>
       <SearchProvider>
-        <SidebarProvider defaultOpen={defaultOpen} className='flex-col'>
-          <SkipToMain />
-          <AppHeader />
-          <div className='flex min-h-0 w-full flex-1'>
+        <SidebarProvider defaultOpen={defaultOpen} className='routing-deck'>
+          <div className='routing-deck-shell'>
+            <SkipToMain />
             <AppSidebar />
-            <SidebarInset
-              className={cn(
-                '@container/content',
-                'h-[calc(100svh-var(--app-header-height,0px))]',
-                'min-h-0 overflow-hidden',
-                'peer-data-[variant=inset]:h-[calc(100svh-var(--app-header-height,0px)-(var(--spacing)*4))]'
-              )}
-            >
-              {props.children ?? <AnimatedOutlet />}
-            </SidebarInset>
+            <div className='routing-deck-stage flex min-h-0 min-w-0 flex-1 flex-col'>
+              <AppHeader />
+              <SidebarInset
+                className={cn(
+                  '@container/content',
+                  'h-auto min-h-0 overflow-hidden rounded-none shadow-none'
+                )}
+              >
+                {props.children ?? <AnimatedOutlet />}
+              </SidebarInset>
+            </div>
           </div>
         </SidebarProvider>
       </SearchProvider>

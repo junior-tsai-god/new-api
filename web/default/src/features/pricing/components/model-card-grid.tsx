@@ -1,3 +1,5 @@
+import { useQuery } from '@tanstack/react-query'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -17,11 +19,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+
 import { Button } from '@/components/ui/button'
 import { getPerfMetricsSummary } from '@/features/performance-metrics/api'
+
 import { DEFAULT_PRICING_PAGE_SIZE, DEFAULT_TOKEN_UNIT } from '../constants'
 import type { PricingModel, TokenUnit } from '../types'
 import { ModelCard } from './model-card'
@@ -69,7 +71,7 @@ export function ModelCardGrid(props: ModelCardGridProps) {
   }
 
   return (
-    <div className='space-y-4 sm:space-y-5'>
+    <div className='flex flex-col gap-4 sm:gap-5'>
       <div className='grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3'>
         {pagedModels.map((model) => (
           <ModelCard

@@ -1,0 +1,40 @@
+services:
+  new-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: new-api-local:paypal
+    volumes:
+      - ./web/default/.frontend-runtime:/app/frontend:ro
+    environment:
+      SQL_DSN: postgresql://root:${POSTGRES_PASSWORD}@postgres:5432/new-api
+      REDIS_CONN_STRING: redis://:${REDIS_PASSWORD}@redis:6379
+      SESSION_SECRET: ${SESSION_SECRET}
+      CRYPTO_SECRET: ${CRYPTO_SECRET}
+      FRONTEND_DIST_DIR: /app/frontend/current
+
+  redis:
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: always
+    ports:
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - new-api
+    networks:
+      - new-api-network
+
+volumes:
+  caddy_data:
+  caddy_config:

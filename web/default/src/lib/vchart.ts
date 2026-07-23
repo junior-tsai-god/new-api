@@ -16,7 +16,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-export const VCHART_OPTION = {
-  // 与老前端保持一致（浏览器环境渲染优化）
+import { useIsMobile } from '@/hooks/use-mobile'
+
+const DESKTOP_VCHART_OPTION = {
   mode: 'desktop-browser',
 } as const
+
+const MOBILE_VCHART_OPTION = {
+  mode: 'mobile-browser',
+} as const
+
+export function useVChartOption() {
+  return useIsMobile() ? MOBILE_VCHART_OPTION : DESKTOP_VCHART_OPTION
+}

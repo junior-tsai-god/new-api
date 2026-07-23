@@ -3,6 +3,8 @@ package router
 import (
 	"embed"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
@@ -23,6 +25,21 @@ type ThemeAssets struct {
 
 func SetWebRouter(router *gin.Engine, assets ThemeAssets) {
 	defaultFS := common.EmbedFolder(assets.DefaultBuildFS, "web/default/dist")
+	defaultIndexPath := ""
+	if distDir := strings.TrimSpace(os.Getenv("FRONTEND_DIST_DIR")); distDir != "" {
+		indexPath := filepath.Join(distDir, "index.html")
+		if info, err := os.Stat(distDir); err == nil && info.IsDir() {
+			if _, err = os.Stat(indexPath); err == nil {
+				defaultFS = common.DiskFolder(distDir)
+				defaultIndexPath = indexPath
+				common.SysLog("Serving default frontend from " + distDir)
+			} else {
+				common.SysError("FRONTEND_DIST_DIR has no readable index.html; using embedded frontend: " + err.Error())
+			}
+		} else if err != nil {
+			common.SysError("FRONTEND_DIST_DIR is unavailable; using embedded frontend: " + err.Error())
+		}
+	}
 	classicFS := common.EmbedFolder(assets.ClassicBuildFS, "web/classic/dist")
 	themeFS := common.NewThemeAwareFS(defaultFS, classicFS)
 
@@ -40,7 +57,15 @@ func SetWebRouter(router *gin.Engine, assets ThemeAssets) {
 		if common.GetTheme() == "classic" {
 			c.Data(http.StatusOK, "text/html; charset=utf-8", assets.ClassicIndexPage)
 		} else {
-			c.Data(http.StatusOK, "text/html; charset=utf-8", assets.DefaultIndexPage)
+			indexPage := assets.DefaultIndexPage
+			if defaultIndexPath != "" {
+				if runtimeIndexPage, err := os.ReadFile(defaultIndexPath); err == nil {
+					indexPage = runtimeIndexPage
+				} else {
+					common.SysError("Failed to read runtime frontend index; using embedded frontend: " + err.Error())
+				}
+			}
+			c.Data(http.StatusOK, "text/html; charset=utf-8", indexPage)
 		}
 	})
 }

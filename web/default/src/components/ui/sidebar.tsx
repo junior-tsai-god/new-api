@@ -18,14 +18,13 @@ For commercial licensing, please contact support@quantumnous.com
 */
 'use client'
 
-import * as React from 'react'
 import { mergeProps } from '@base-ui/react/merge-props'
 import { useRender } from '@base-ui/react/use-render'
 import { SidebarLeftIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { cva, type VariantProps } from 'class-variance-authority'
-import { cn } from '@/lib/utils'
-import { useIsMobile } from '@/hooks/use-mobile'
+import * as React from 'react'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
@@ -43,12 +42,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { cn } from '@/lib/utils'
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state'
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = '13rem'
-const SIDEBAR_WIDTH_MOBILE = '17rem'
-const SIDEBAR_WIDTH_ICON = '2.75rem'
+const SIDEBAR_WIDTH = '18.5rem'
+const SIDEBAR_WIDTH_MOBILE = '19rem'
+const SIDEBAR_WIDTH_ICON = '4.75rem'
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b'
 
 type SidebarContextProps = {
@@ -206,7 +207,7 @@ function Sidebar({
           data-sidebar='sidebar'
           data-slot='sidebar'
           data-mobile='true'
-          className='bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden'
+          className='bg-sidebar text-sidebar-foreground w-(--sidebar-width) pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] [&>button]:hidden'
           style={
             {
               '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
