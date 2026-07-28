@@ -67,10 +67,7 @@ export function PanelWrapper(props: PanelWrapperProps) {
   const { t } = useTranslation()
   const resolvedEmptyMessage = props.emptyMessage ?? t('No data available')
   const height = props.height ?? 'h-64'
-  const frameClassName = cn(
-    'overflow-hidden rounded-3xl border bg-card',
-    props.className
-  )
+  const frameClassName = cn('deck-panel overflow-hidden', props.className)
 
   if (props.loading) {
     return (

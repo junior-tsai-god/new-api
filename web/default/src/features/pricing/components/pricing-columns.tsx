@@ -16,9 +16,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { type ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
-import { getLobeIcon } from '@/lib/lobe-icon'
+
 import {
   BadgeCell,
   BadgeListCell,
@@ -26,6 +26,10 @@ import {
 } from '@/components/data-table'
 import { GroupBadge } from '@/components/group-badge'
 import { StatusBadge } from '@/components/status-badge'
+import { formatLatency } from '@/features/performance-metrics/lib/format'
+import { formatTimestampRelative } from '@/lib/format'
+import { getLobeIcon } from '@/lib/lobe-icon'
+
 import { DEFAULT_TOKEN_UNIT, QUOTA_TYPE_VALUES } from '../constants'
 import {
   getDynamicDisplayGroupRatio,
@@ -54,7 +58,7 @@ export interface PricingColumnsOptions {
 export function usePricingColumns(
   options: PricingColumnsOptions = {}
 ): ColumnDef<PricingModel>[] {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
   const {
     tokenUnit = DEFAULT_TOKEN_UNIT,
     priceRate = 1,
@@ -105,6 +109,45 @@ export function usePricingColumns(
         )
       },
       size: 80,
+      enableSorting: false,
+    },
+
+    {
+      accessorKey: 'probe_latency.avg_latency_ms',
+      meta: { label: t('Probe latency') },
+      header: t('Probe latency'),
+      cell: ({ row }) => {
+        const latency = row.original.probe_latency
+        if (!latency) {
+          return <span className='text-muted-foreground/40 text-xs'>—</span>
+        }
+
+        return (
+          <div
+            title={t(
+              'Average of {{count}} tested channels, last probed {{time}}',
+              {
+                count: latency.tested_channels,
+                time: formatTimestampRelative(
+                  latency.last_test_time,
+                  'seconds',
+                  i18n.resolvedLanguage
+                ),
+              }
+            )}
+          >
+            <span className='font-mono text-sm tabular-nums'>
+              {formatLatency(latency.avg_latency_ms)}
+            </span>
+            <div className='text-muted-foreground/50 text-[10px]'>
+              {t('{{count}} tested channels', {
+                count: latency.tested_channels,
+              })}
+            </div>
+          </div>
+        )
+      },
+      size: 120,
       enableSorting: false,
     },
 

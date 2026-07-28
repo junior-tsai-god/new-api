@@ -507,7 +507,7 @@ function MetricCard(props: { item: MetricItem }) {
   const Icon = props.item.icon
 
   return (
-    <div className='border-border/70 bg-background/70 rounded-lg border p-5 shadow-xs'>
+    <div className='aivanta-panel p-5'>
       <div className='flex items-start gap-3'>
         <div className='bg-primary/10 text-primary rounded-lg p-2'>
           <Icon className='size-4' />
@@ -534,10 +534,7 @@ function InsightGrid(props: { items: InsightCard[] }) {
       {props.items.map((item) => {
         const Icon = item.icon
         return (
-          <article
-            key={item.title}
-            className='border-border/70 bg-card rounded-lg border p-5 shadow-xs'
-          >
+          <article key={item.title} className='aivanta-panel p-5'>
             <div className='bg-muted mb-4 inline-flex rounded-lg p-2'>
               <Icon className='text-muted-foreground size-5' />
             </div>
@@ -573,7 +570,7 @@ function Section(props: SectionProps) {
 
 function DataTable(props: DataTableProps) {
   return (
-    <div className='border-border/70 overflow-x-auto rounded-lg border'>
+    <div className='aivanta-panel overflow-x-auto'>
       <table
         className={cn(
           'min-w-[760px] table-fixed text-left text-sm',
@@ -617,7 +614,7 @@ function ArchitectureDiagram() {
     <div className='space-y-4'>
       {architectureLayers.map((layer, index) => (
         <div key={layer.title} className='space-y-4'>
-          <div className='border-border/70 bg-card rounded-lg border p-5 shadow-xs'>
+          <div className='aivanta-panel p-5'>
             <div className='grid gap-4 lg:grid-cols-[12rem_1fr] lg:items-start'>
               <div>
                 <p className='text-lg font-semibold'>{layer.title}</p>
@@ -652,10 +649,7 @@ function WorkstreamGrid() {
   return (
     <div className='grid gap-4 md:grid-cols-2'>
       {workstreams.map((stream) => (
-        <article
-          key={stream.title}
-          className='border-border/70 bg-card rounded-lg border p-5 shadow-xs'
-        >
+        <article key={stream.title} className='aivanta-panel p-5'>
           <div className='flex items-start justify-between gap-4'>
             <div>
               <h3 className='font-semibold'>{stream.title}</h3>
@@ -681,344 +675,357 @@ export function Docs() {
 
   return (
     <PublicLayout showMainContainer={false}>
-      <main>
-        <section className='border-border/60 bg-muted/20 border-b px-6 pt-24 pb-12 md:pt-32 md:pb-16'>
-          <div className='mx-auto max-w-6xl'>
-            <div className='mb-8'>
-              <Button
-                variant='outline'
-                className='gap-2'
-                render={<Link to='/' />}
-              >
-                <ArrowLeft className='size-4' />
-                {t('Back to Home')}
-              </Button>
-            </div>
+      <div className='aivanta-public-surface min-h-svh px-2 py-2 md:px-4 md:py-4'>
+        <main className='aivanta-public-frame px-3 pt-24 pb-6 sm:px-6 sm:pt-28 sm:pb-8 lg:px-8'>
+          <section className='border-b border-[var(--aivanta-rule)] py-6 md:pb-10'>
+            <div className='mx-auto max-w-6xl'>
+              <div className='mb-8'>
+                <Button
+                  variant='outline'
+                  className='gap-2'
+                  render={<Link to='/' />}
+                >
+                  <ArrowLeft className='size-4' />
+                  {t('Back to Home')}
+                </Button>
+              </div>
 
-            <div className='grid gap-8 lg:grid-cols-[1fr_18rem] lg:items-end'>
-              <div className='space-y-6'>
-                <div className='flex flex-wrap gap-2'>
-                  <Badge className='bg-primary/10 text-primary border-primary/20'>
-                    商业计划书
-                  </Badge>
-                  <Badge>站内文档</Badge>
-                  <Badge>模型供应调研</Badge>
-                  <Badge>更新：2026-07-07</Badge>
+              <div className='grid gap-8 lg:grid-cols-[1fr_18rem] lg:items-end'>
+                <div className='space-y-6'>
+                  <p className='font-mono text-[10px] tracking-[0.18em] text-[var(--aivanta-faint)] uppercase'>
+                    Aivanta / {t('Docs')}
+                  </p>
+                  <div className='flex flex-wrap gap-2'>
+                    <Badge className='bg-primary/10 text-primary border-primary/20'>
+                      商业计划书
+                    </Badge>
+                    <Badge>站内文档</Badge>
+                    <Badge>模型供应调研</Badge>
+                    <Badge>更新：2026-07-07</Badge>
+                  </div>
+                  <div className='max-w-4xl space-y-4'>
+                    <h1 className='text-[clamp(2.5rem,5vw,4.75rem)] leading-[0.98] font-light tracking-[-0.055em]'>
+                      AI API 中转站商业计划书
+                    </h1>
+                    <p className='text-muted-foreground max-w-3xl text-base leading-8 md:text-lg'>
+                      本计划书聚焦中国大陆模型供应商与北美、东南亚等区域的价格差、采购折扣和企业级交付能力，
+                      目标是把模型调用从单点转售升级为可治理、可审计、可控成本的企业
+                      AI 网关服务。
+                    </p>
+                  </div>
                 </div>
-                <div className='max-w-4xl space-y-4'>
-                  <h1 className='text-[clamp(2rem,5vw,4rem)] leading-tight font-semibold tracking-tight'>
-                    AI API 中转站商业计划书
-                  </h1>
-                  <p className='text-muted-foreground max-w-3xl text-base leading-8 md:text-lg'>
-                    本计划书聚焦中国大陆模型供应商与北美、东南亚等区域的价格差、采购折扣和企业级交付能力，
-                    目标是把模型调用从单点转售升级为可治理、可审计、可控成本的企业
-                    AI 网关服务。
+
+                <div className='aivanta-panel p-5'>
+                  <div className='mb-4 flex items-center gap-2'>
+                    <Sparkles className='text-primary size-5' />
+                    <p className='font-semibold'>商业主线建议</p>
+                  </div>
+                  <p className='text-muted-foreground text-sm leading-7'>
+                    不把“价差”包装成绕过地域限制，而是提供合规的区域成本优化、供应商采购托管、稳定性保障和企业账单治理。
                   </p>
                 </div>
               </div>
 
-              <div className='border-border/70 bg-background/80 rounded-lg border p-5 shadow-xs'>
-                <div className='mb-4 flex items-center gap-2'>
-                  <Sparkles className='text-primary size-5' />
-                  <p className='font-semibold'>商业主线建议</p>
-                </div>
-                <p className='text-muted-foreground text-sm leading-7'>
-                  不把“价差”包装成绕过地域限制，而是提供合规的区域成本优化、供应商采购托管、稳定性保障和企业账单治理。
-                </p>
-              </div>
-            </div>
-
-            <div className='mt-8 grid gap-4 md:grid-cols-3'>
-              {heroMetrics.map((item) => (
-                <MetricCard key={item.label} item={item} />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <div className='mx-auto grid max-w-6xl gap-10 px-6 py-12 xl:grid-cols-[13rem_1fr] xl:py-16'>
-          <aside className='hidden xl:block'>
-            <nav className='border-border/70 bg-card/70 sticky top-24 rounded-lg border p-3 shadow-xs'>
-              <div className='mb-3 flex items-center gap-2 px-2 text-sm font-semibold'>
-                <BookOpen className='size-4' />
-                目录
-              </div>
-              <div className='space-y-1'>
-                {sectionLinks.map((section) => (
-                  <a
-                    key={section.id}
-                    href={`#${section.id}`}
-                    className='text-muted-foreground hover:bg-muted hover:text-foreground block rounded-md px-2 py-2 text-sm transition-colors'
-                  >
-                    {section.label}
-                  </a>
+              <div className='mt-8 grid gap-4 md:grid-cols-3'>
+                {heroMetrics.map((item) => (
+                  <MetricCard key={item.label} item={item} />
                 ))}
               </div>
-            </nav>
-          </aside>
+            </div>
+          </section>
 
-          <div className='space-y-16'>
-            <Section
-              id='summary'
-              eyebrow='01 / Executive Summary'
-              title='执行摘要'
-              icon={Sparkles}
-            >
-              <div className='text-muted-foreground space-y-4 text-base leading-8'>
-                <p>
-                  项目定位为面向开发者、AI
-                  应用公司和企业客户的模型服务中转站。第一阶段以 OpenAI 兼容
-                  API、模型聚合、成本路由、用量计费和稳定通道为核心，快速承接多模型调用需求。
-                  第二阶段转向企业 AI
-                  网关，提供团队权限、预算控制、审计、SLA、专属通道和供应商采购托管。
-                </p>
-                <p>
-                  商业模式建议以“区域价差与采购优化”为切入点，但不要只依赖价差。真正可持续的收入来自：
-                  大客户折扣池、批处理与缓存带来的成本优势、企业平台订阅费、私有化交付费，以及跨供应商故障切换带来的稳定性溢价。
-                </p>
-              </div>
-              <InsightGrid items={summaryCards} />
-            </Section>
+          <div className='mx-auto grid max-w-6xl gap-10 py-10 xl:grid-cols-[13rem_1fr] xl:py-14'>
+            <aside className='hidden xl:block'>
+              <nav className='aivanta-panel sticky top-24 p-3'>
+                <div className='mb-3 flex items-center gap-2 px-2 text-sm font-semibold'>
+                  <BookOpen className='size-4' />
+                  目录
+                </div>
+                <div className='space-y-1'>
+                  {sectionLinks.map((section) => (
+                    <a
+                      key={section.id}
+                      href={`#${section.id}`}
+                      className='text-muted-foreground hover:bg-muted hover:text-foreground block rounded-md px-2 py-2 text-sm transition-colors'
+                    >
+                      {section.label}
+                    </a>
+                  ))}
+                </div>
+              </nav>
+            </aside>
 
-            <Section
-              id='market'
-              eyebrow='02 / Market'
-              title='行业调研与市场机会'
-              icon={BarChart3}
-            >
-              <InsightGrid items={marketInsights} />
-              <div className='border-border/70 bg-card rounded-lg border p-5 shadow-xs'>
-                <h3 className='font-semibold'>目标客户优先级</h3>
-                <div className='mt-4 grid gap-4 md:grid-cols-3'>
-                  <div>
-                    <p className='font-medium'>AI 原生应用团队</p>
-                    <p className='text-muted-foreground mt-2 text-sm leading-6'>
-                      关注模型覆盖、成本、速度、失败重试和账单透明，付费决策快。
+            <div className='space-y-16'>
+              <Section
+                id='summary'
+                eyebrow='01 / Executive Summary'
+                title='执行摘要'
+                icon={Sparkles}
+              >
+                <div className='text-muted-foreground space-y-4 text-base leading-8'>
+                  <p>
+                    项目定位为面向开发者、AI
+                    应用公司和企业客户的模型服务中转站。第一阶段以 OpenAI 兼容
+                    API、模型聚合、成本路由、用量计费和稳定通道为核心，快速承接多模型调用需求。
+                    第二阶段转向企业 AI
+                    网关，提供团队权限、预算控制、审计、SLA、专属通道和供应商采购托管。
+                  </p>
+                  <p>
+                    商业模式建议以“区域价差与采购优化”为切入点，但不要只依赖价差。真正可持续的收入来自：
+                    大客户折扣池、批处理与缓存带来的成本优势、企业平台订阅费、私有化交付费，以及跨供应商故障切换带来的稳定性溢价。
+                  </p>
+                </div>
+                <InsightGrid items={summaryCards} />
+              </Section>
+
+              <Section
+                id='market'
+                eyebrow='02 / Market'
+                title='行业调研与市场机会'
+                icon={BarChart3}
+              >
+                <InsightGrid items={marketInsights} />
+                <div className='aivanta-panel p-5'>
+                  <h3 className='font-semibold'>目标客户优先级</h3>
+                  <div className='mt-4 grid gap-4 md:grid-cols-3'>
+                    <div>
+                      <p className='font-medium'>AI 原生应用团队</p>
+                      <p className='text-muted-foreground mt-2 text-sm leading-6'>
+                        关注模型覆盖、成本、速度、失败重试和账单透明，付费决策快。
+                      </p>
+                    </div>
+                    <div>
+                      <p className='font-medium'>出海 SaaS 与内容平台</p>
+                      <p className='text-muted-foreground mt-2 text-sm leading-6'>
+                        关注北美、东南亚、大陆多区域可用性，愿意为稳定和合规买单。
+                      </p>
+                    </div>
+                    <div>
+                      <p className='font-medium'>企业内部 AI 平台</p>
+                      <p className='text-muted-foreground mt-2 text-sm leading-6'>
+                        关注权限、审计、采购、发票、数据边界和
+                        SLA，客单价高但销售周期长。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </Section>
+
+              <Section
+                id='business-model'
+                eyebrow='03 / Business Model'
+                title='商业模式：围绕区域价差做成本优化，但用企业交付形成护城河'
+                icon={WalletCards}
+              >
+                <DataTable
+                  caption='商业模式拆解'
+                  headers={['收入模块', '成立原因', '变现方式']}
+                  rows={businessModelRows}
+                />
+                <div className='grid gap-4 md:grid-cols-2'>
+                  <div className='aivanta-panel p-5'>
+                    <h3 className='font-semibold'>建议报价公式</h3>
+                    <p className='text-muted-foreground mt-3 text-sm leading-7'>
+                      客户价 = 模型真实成本 + 汇率/税费/支付通道 +
+                      网络与缓存成本 + 风控坏账准备 + 平台毛利。
+                      对企业客户应提供“阶梯价格 + 月度最低消费 + SLA
+                      等级”，避免只有单一 token 差价。
                     </p>
                   </div>
-                  <div>
-                    <p className='font-medium'>出海 SaaS 与内容平台</p>
-                    <p className='text-muted-foreground mt-2 text-sm leading-6'>
-                      关注北美、东南亚、大陆多区域可用性，愿意为稳定和合规买单。
-                    </p>
-                  </div>
-                  <div>
-                    <p className='font-medium'>企业内部 AI 平台</p>
-                    <p className='text-muted-foreground mt-2 text-sm leading-6'>
-                      关注权限、审计、采购、发票、数据边界和
-                      SLA，客单价高但销售周期长。
+                  <div className='aivanta-panel p-5'>
+                    <h3 className='font-semibold'>不建议承诺的边界</h3>
+                    <p className='text-muted-foreground mt-3 text-sm leading-7'>
+                      不承诺规避地域限制、绕过供应商
+                      ToS、绕过数据跨境规则。对外话术应是“合规区域路由、采购优化与稳定交付”，
+                      不是简单搬运低价接口。
                     </p>
                   </div>
                 </div>
-              </div>
-            </Section>
+              </Section>
 
-            <Section
-              id='business-model'
-              eyebrow='03 / Business Model'
-              title='商业模式：围绕区域价差做成本优化，但用企业交付形成护城河'
-              icon={WalletCards}
-            >
-              <DataTable
-                caption='商业模式拆解'
-                headers={['收入模块', '成立原因', '变现方式']}
-                rows={businessModelRows}
-              />
-              <div className='grid gap-4 md:grid-cols-2'>
-                <div className='border-border/70 bg-card rounded-lg border p-5 shadow-xs'>
-                  <h3 className='font-semibold'>建议报价公式</h3>
-                  <p className='text-muted-foreground mt-3 text-sm leading-7'>
-                    客户价 = 模型真实成本 + 汇率/税费/支付通道 + 网络与缓存成本
-                    + 风控坏账准备 + 平台毛利。 对企业客户应提供“阶梯价格 +
-                    月度最低消费 + SLA 等级”，避免只有单一 token 差价。
+              <Section
+                id='suppliers'
+                eyebrow='04 / Suppliers'
+                title='中国模型供应商调研与区域价差判断'
+                icon={Database}
+              >
+                <div className='space-y-8'>
+                  <div>
+                    <h3 className='mb-3 text-lg font-semibold'>供应商候选池</h3>
+                    <DataTable
+                      caption='中国模型供应商候选池'
+                      headers={[
+                        '供应商',
+                        '模型/能力',
+                        '公开价格状态',
+                        'BP 中的作用',
+                      ]}
+                      rows={supplierRows}
+                      dense
+                    />
+                  </div>
+
+                  <div>
+                    <h3 className='mb-3 text-lg font-semibold'>
+                      阿里云国内、北美、东南亚价差重点
+                    </h3>
+                    <DataTable
+                      caption='阿里云区域价差'
+                      headers={[
+                        '模型',
+                        '区域/档位',
+                        '输入/输出价（每百万 tokens）',
+                        '判断',
+                      ]}
+                      rows={alibabaPriceRows}
+                      dense
+                    />
+                    <p className='text-muted-foreground mt-3 text-sm leading-6'>
+                      结论：阿里云不是所有模型都“大陆便宜、北美贵”。qwen3.7-max
+                      和 qwen3-max 的部分 Global
+                      档在中国北京与美国弗吉尼亚公开价一致； 但
+                      International、US 专用档和部分上下文档位存在明显差异。BP
+                      应把“区域 + 商业档位 + 账号可售范围”一起作为成本路由变量。
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className='mb-3 text-lg font-semibold'>
+                      其他已核验公开价格
+                    </h3>
+                    <DataTable
+                      caption='其他模型供应商公开价格'
+                      headers={['供应商', '模型', '输入/输出价', '说明']}
+                      rows={verifiedPriceRows}
+                      dense
+                    />
+                  </div>
+
+                  <div>
+                    <h3 className='mb-3 text-lg font-semibold'>
+                      大客户折扣与可谈空间
+                    </h3>
+                    <DataTable
+                      caption='大客户折扣判断'
+                      headers={['供应商', '公开可见线索', '建议谈判点']}
+                      rows={discountRows}
+                      dense
+                    />
+                  </div>
+                </div>
+              </Section>
+
+              <Section
+                id='architecture'
+                eyebrow='05 / Architecture'
+                title='中转站架构设计'
+                icon={GitBranch}
+              >
+                <ArchitectureDiagram />
+                <div className='grid gap-4 md:grid-cols-3'>
+                  <div className='aivanta-panel p-5'>
+                    <Zap className='text-primary mb-3 size-5' />
+                    <h3 className='font-semibold'>成本路由</h3>
+                    <p className='text-muted-foreground mt-2 text-sm leading-6'>
+                      按模型能力、区域、实时价格、缓存命中率、延迟和错误率动态选择供应商。
+                    </p>
+                  </div>
+                  <div className='aivanta-panel p-5'>
+                    <ShieldCheck className='text-primary mb-3 size-5' />
+                    <h3 className='font-semibold'>合规路由</h3>
+                    <p className='text-muted-foreground mt-2 text-sm leading-6'>
+                      客户可配置数据区域、日志留存、供应商黑白名单和敏感业务限制。
+                    </p>
+                  </div>
+                  <div className='aivanta-panel p-5'>
+                    <Activity className='text-primary mb-3 size-5' />
+                    <h3 className='font-semibold'>稳定性路由</h3>
+                    <p className='text-muted-foreground mt-2 text-sm leading-6'>
+                      通道探活、熔断、重试、降级模型、告警和客户级 SLA 报表。
+                    </p>
+                  </div>
+                </div>
+              </Section>
+
+              <Section
+                id='plan'
+                eyebrow='06 / Plan'
+                title='阶段计划与团队分工'
+                icon={Users}
+              >
+                <DataTable
+                  caption='阶段计划'
+                  headers={['阶段', '主题', '关键任务', '交付物']}
+                  rows={planRows}
+                  dense
+                />
+                <WorkstreamGrid />
+              </Section>
+
+              <Section
+                id='finance'
+                eyebrow='07 / Finance and Risk'
+                title='财务假设与风险控制'
+                icon={ShieldCheck}
+              >
+                <div className='grid gap-4 md:grid-cols-3'>
+                  <div className='aivanta-panel p-5'>
+                    <p className='text-muted-foreground text-sm'>
+                      基础毛利目标
+                    </p>
+                    <p className='mt-2 text-2xl font-semibold'>15%-35%</p>
+                    <p className='text-muted-foreground mt-2 text-sm leading-6'>
+                      开发者按量业务毛利较薄，企业订阅与私有化服务拉高综合毛利。
+                    </p>
+                  </div>
+                  <div className='aivanta-panel p-5'>
+                    <p className='text-muted-foreground text-sm'>
+                      企业客户定价
+                    </p>
+                    <p className='mt-2 text-2xl font-semibold'>平台费 + 用量</p>
+                    <p className='text-muted-foreground mt-2 text-sm leading-6'>
+                      建议采用月度最低消费、阶梯单价、SLA 等级和专属支持。
+                    </p>
+                  </div>
+                  <div className='aivanta-panel p-5'>
+                    <p className='text-muted-foreground text-sm'>采购策略</p>
+                    <p className='mt-2 text-2xl font-semibold'>
+                      多供应商成本池
+                    </p>
+                    <p className='text-muted-foreground mt-2 text-sm leading-6'>
+                      避免单一供应商调价或限流导致业务中断和毛利塌陷。
+                    </p>
+                  </div>
+                </div>
+                <DataTable
+                  caption='主要风险与应对'
+                  headers={['风险', '等级', '应对策略']}
+                  rows={riskRows}
+                />
+              </Section>
+
+              <Section
+                id='sources'
+                eyebrow='08 / Research Boundary'
+                title='资料来源与待补充边界'
+                icon={BookOpen}
+              >
+                <div className='aivanta-panel p-5'>
+                  <p className='text-muted-foreground leading-8'>
+                    本页价格信息以 2026-07-07
+                    可访问的公开资料为基础，已优先使用阿里云 Model
+                    Studio、腾讯云混元、百度千帆、DeepSeek
+                    官方文档等可核验页面。
+                    火山引擎方舟、智谱、Kimi、MiniMax、硅基流动等价格与大客户折扣需要继续通过控制台、商务询价或可截图页面补齐。
+                    后续应建立价格更新流程：每周抓取公开价，每月向供应商复核企业价，每次调价同步成本路由和客户报价。
                   </p>
                 </div>
-                <div className='border-border/70 bg-card rounded-lg border p-5 shadow-xs'>
-                  <h3 className='font-semibold'>不建议承诺的边界</h3>
-                  <p className='text-muted-foreground mt-3 text-sm leading-7'>
-                    不承诺规避地域限制、绕过供应商
-                    ToS、绕过数据跨境规则。对外话术应是“合规区域路由、采购优化与稳定交付”，
-                    不是简单搬运低价接口。
-                  </p>
-                </div>
-              </div>
-            </Section>
-
-            <Section
-              id='suppliers'
-              eyebrow='04 / Suppliers'
-              title='中国模型供应商调研与区域价差判断'
-              icon={Database}
-            >
-              <div className='space-y-8'>
-                <div>
-                  <h3 className='mb-3 text-lg font-semibold'>供应商候选池</h3>
-                  <DataTable
-                    caption='中国模型供应商候选池'
-                    headers={[
-                      '供应商',
-                      '模型/能力',
-                      '公开价格状态',
-                      'BP 中的作用',
-                    ]}
-                    rows={supplierRows}
-                    dense
-                  />
-                </div>
-
-                <div>
-                  <h3 className='mb-3 text-lg font-semibold'>
-                    阿里云国内、北美、东南亚价差重点
-                  </h3>
-                  <DataTable
-                    caption='阿里云区域价差'
-                    headers={[
-                      '模型',
-                      '区域/档位',
-                      '输入/输出价（每百万 tokens）',
-                      '判断',
-                    ]}
-                    rows={alibabaPriceRows}
-                    dense
-                  />
-                  <p className='text-muted-foreground mt-3 text-sm leading-6'>
-                    结论：阿里云不是所有模型都“大陆便宜、北美贵”。qwen3.7-max 和
-                    qwen3-max 的部分 Global
-                    档在中国北京与美国弗吉尼亚公开价一致； 但 International、US
-                    专用档和部分上下文档位存在明显差异。BP 应把“区域 + 商业档位
-                    + 账号可售范围”一起作为成本路由变量。
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className='mb-3 text-lg font-semibold'>
-                    其他已核验公开价格
-                  </h3>
-                  <DataTable
-                    caption='其他模型供应商公开价格'
-                    headers={['供应商', '模型', '输入/输出价', '说明']}
-                    rows={verifiedPriceRows}
-                    dense
-                  />
-                </div>
-
-                <div>
-                  <h3 className='mb-3 text-lg font-semibold'>
-                    大客户折扣与可谈空间
-                  </h3>
-                  <DataTable
-                    caption='大客户折扣判断'
-                    headers={['供应商', '公开可见线索', '建议谈判点']}
-                    rows={discountRows}
-                    dense
-                  />
-                </div>
-              </div>
-            </Section>
-
-            <Section
-              id='architecture'
-              eyebrow='05 / Architecture'
-              title='中转站架构设计'
-              icon={GitBranch}
-            >
-              <ArchitectureDiagram />
-              <div className='grid gap-4 md:grid-cols-3'>
-                <div className='border-border/70 bg-card rounded-lg border p-5 shadow-xs'>
-                  <Zap className='text-primary mb-3 size-5' />
-                  <h3 className='font-semibold'>成本路由</h3>
-                  <p className='text-muted-foreground mt-2 text-sm leading-6'>
-                    按模型能力、区域、实时价格、缓存命中率、延迟和错误率动态选择供应商。
-                  </p>
-                </div>
-                <div className='border-border/70 bg-card rounded-lg border p-5 shadow-xs'>
-                  <ShieldCheck className='text-primary mb-3 size-5' />
-                  <h3 className='font-semibold'>合规路由</h3>
-                  <p className='text-muted-foreground mt-2 text-sm leading-6'>
-                    客户可配置数据区域、日志留存、供应商黑白名单和敏感业务限制。
-                  </p>
-                </div>
-                <div className='border-border/70 bg-card rounded-lg border p-5 shadow-xs'>
-                  <Activity className='text-primary mb-3 size-5' />
-                  <h3 className='font-semibold'>稳定性路由</h3>
-                  <p className='text-muted-foreground mt-2 text-sm leading-6'>
-                    通道探活、熔断、重试、降级模型、告警和客户级 SLA 报表。
-                  </p>
-                </div>
-              </div>
-            </Section>
-
-            <Section
-              id='plan'
-              eyebrow='06 / Plan'
-              title='阶段计划与团队分工'
-              icon={Users}
-            >
-              <DataTable
-                caption='阶段计划'
-                headers={['阶段', '主题', '关键任务', '交付物']}
-                rows={planRows}
-                dense
-              />
-              <WorkstreamGrid />
-            </Section>
-
-            <Section
-              id='finance'
-              eyebrow='07 / Finance and Risk'
-              title='财务假设与风险控制'
-              icon={ShieldCheck}
-            >
-              <div className='grid gap-4 md:grid-cols-3'>
-                <div className='border-border/70 bg-card rounded-lg border p-5 shadow-xs'>
-                  <p className='text-muted-foreground text-sm'>基础毛利目标</p>
-                  <p className='mt-2 text-2xl font-semibold'>15%-35%</p>
-                  <p className='text-muted-foreground mt-2 text-sm leading-6'>
-                    开发者按量业务毛利较薄，企业订阅与私有化服务拉高综合毛利。
-                  </p>
-                </div>
-                <div className='border-border/70 bg-card rounded-lg border p-5 shadow-xs'>
-                  <p className='text-muted-foreground text-sm'>企业客户定价</p>
-                  <p className='mt-2 text-2xl font-semibold'>平台费 + 用量</p>
-                  <p className='text-muted-foreground mt-2 text-sm leading-6'>
-                    建议采用月度最低消费、阶梯单价、SLA 等级和专属支持。
-                  </p>
-                </div>
-                <div className='border-border/70 bg-card rounded-lg border p-5 shadow-xs'>
-                  <p className='text-muted-foreground text-sm'>采购策略</p>
-                  <p className='mt-2 text-2xl font-semibold'>多供应商成本池</p>
-                  <p className='text-muted-foreground mt-2 text-sm leading-6'>
-                    避免单一供应商调价或限流导致业务中断和毛利塌陷。
-                  </p>
-                </div>
-              </div>
-              <DataTable
-                caption='主要风险与应对'
-                headers={['风险', '等级', '应对策略']}
-                rows={riskRows}
-              />
-            </Section>
-
-            <Section
-              id='sources'
-              eyebrow='08 / Research Boundary'
-              title='资料来源与待补充边界'
-              icon={BookOpen}
-            >
-              <div className='border-border/70 bg-card rounded-lg border p-5 shadow-xs'>
-                <p className='text-muted-foreground leading-8'>
-                  本页价格信息以 2026-07-07
-                  可访问的公开资料为基础，已优先使用阿里云 Model
-                  Studio、腾讯云混元、百度千帆、DeepSeek 官方文档等可核验页面。
-                  火山引擎方舟、智谱、Kimi、MiniMax、硅基流动等价格与大客户折扣需要继续通过控制台、商务询价或可截图页面补齐。
-                  后续应建立价格更新流程：每周抓取公开价，每月向供应商复核企业价，每次调价同步成本路由和客户报价。
-                </p>
-              </div>
-            </Section>
+              </Section>
+            </div>
           </div>
-        </div>
-      </main>
-      <Footer />
+        </main>
+        <Footer className='mx-auto mt-3 w-[min(calc(100%_-_1rem),96rem)] rounded-[2rem] border border-[var(--aivanta-rule)] bg-[var(--aivanta-paper)]' />
+      </div>
     </PublicLayout>
   )
 }

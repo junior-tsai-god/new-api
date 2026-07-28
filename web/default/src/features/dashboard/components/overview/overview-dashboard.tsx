@@ -321,17 +321,8 @@ function RequestPreview(props: {
       initial={shouldReduceMotion ? false : { opacity: 0, y: 10, scale: 0.98 }}
       animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
       transition={MOTION_TRANSITION.slow}
-      className='bg-card relative overflow-hidden rounded-3xl border p-4'
+      className='deck-panel relative overflow-hidden p-4'
     >
-      {!shouldReduceMotion && (
-        <motion.div
-          className='via-foreground/30 pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent to-transparent'
-          animate={{ x: ['-100%', '100%'] }}
-          transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
-          aria-hidden='true'
-        />
-      )}
-
       <div className='flex items-center justify-between gap-3 border-b pb-3'>
         <div className='flex min-w-0 items-center gap-2'>
           <span className='bg-muted flex size-8 shrink-0 items-center justify-center rounded-lg'>
@@ -421,7 +412,7 @@ function QuickActionItem(props: { action: QuickAction }) {
   return (
     <Button
       variant='outline'
-      className='bg-card/75 h-auto justify-start rounded-2xl px-3 py-3 text-left'
+      className='bg-card/75 h-auto justify-start rounded-xl px-3 py-3 text-left'
       render={<Link to={props.action.to} />}
     >
       <span className='bg-muted flex size-9 shrink-0 items-center justify-center rounded-lg'>
@@ -484,132 +475,159 @@ function DispatchHero(props: {
   ]
 
   return (
-    <CardStaggerContainer className='grid items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]'>
-      <CardStaggerItem className='route-dispatch-main bg-primary text-primary-foreground relative min-h-[22rem] overflow-hidden rounded-[2rem] border-0 p-5 sm:p-7'>
-        <div className='route-dispatch-grid pointer-events-none absolute inset-0 opacity-60' />
-        <div
-          className='route-dispatch-orbit pointer-events-none absolute -top-24 -right-16 size-80 rounded-full'
-          aria-hidden='true'
-        />
-
-        <div className='relative flex h-full min-h-[18.5rem] flex-col justify-between gap-8'>
-          <div className='flex flex-wrap items-start justify-between gap-4'>
-            <div className='max-w-2xl'>
-              <div className='text-primary-foreground/55 flex items-center gap-2 font-mono text-[10px] tracking-[0.22em] uppercase'>
-                <span className='gateway-status-dot bg-warning size-2 rounded-full' />
-                AIVANTA / ROUTE 01
-              </div>
-              <h3 className='mt-4 text-3xl font-normal tracking-[-0.055em] sm:text-5xl'>
-                {t('Routing desk')}
-              </h3>
-              <p className='text-primary-foreground/60 mt-3 max-w-xl text-sm leading-relaxed sm:text-base'>
-                {t('Monitor balance, usage, and request volume')}
-              </p>
+    <CardStaggerContainer>
+      <CardStaggerItem className='console-overview-board deck-panel overflow-hidden'>
+        <div className='console-overview-rail grid gap-4 border-b px-4 py-4 sm:px-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-center'>
+          <div>
+            <div className='mb-2 flex items-center justify-between gap-3 font-mono text-[9px] tracking-[0.15em] uppercase'>
+              <span>{t('Routes')}</span>
+              <span className='text-muted-foreground'>
+                {t('Route active')} / {t('Healthy')}
+              </span>
             </div>
-
-            <Button
-              className='bg-warning text-warning-foreground hover:bg-warning/90 rounded-xl'
-              render={<Link to='/playground' />}
-            >
-              <TerminalSquare data-icon='inline-start' />
-              {t('Playground')}
-              <ArrowRight data-icon='inline-end' />
-            </Button>
+            <div className='console-route-rail grid h-8 grid-cols-[18%_16%_1fr_12%] overflow-hidden rounded-full font-mono text-[8px] font-medium'>
+              <span className='flex items-center justify-center bg-[var(--deck-ink)] text-[var(--deck-panel)]'>
+                18%
+              </span>
+              <span className='flex items-center justify-center bg-[var(--deck-signal)] text-[var(--deck-ink)]'>
+                16%
+              </span>
+              <span className='deck-track-striped' aria-hidden='true' />
+              <span className='flex items-center justify-center border border-[var(--deck-line)]'>
+                12%
+              </span>
+            </div>
           </div>
-
-          <div className='grid gap-2 sm:grid-cols-3'>
-            {metrics.map((metric, index) => {
-              const Icon = metric.icon
-
-              return (
-                <div
-                  key={metric.label}
-                  className='route-dispatch-metric relative overflow-hidden rounded-2xl px-4 py-3.5'
-                >
-                  <div className='flex items-center justify-between gap-3'>
-                    <span className='text-primary-foreground/55 flex items-center gap-2 text-xs font-medium'>
-                      <Icon className='size-3.5' aria-hidden='true' />
-                      {metric.label}
-                    </span>
-                    <span className='font-mono text-[9px] text-white/35 tabular-nums'>
-                      0{index + 1}
-                    </span>
-                  </div>
-                  <div className='deck-metric mt-3 text-3xl'>
-                    {metric.value}
-                  </div>
-                  <div
-                    className='mt-3 flex items-center gap-1'
-                    aria-hidden='true'
-                  >
-                    <span className='bg-warning h-1 flex-1 rounded-full' />
-                    <span className='h-1 w-8 rounded-full bg-white/20' />
-                    <span className='h-1 w-3 rounded-full bg-white/10' />
-                  </div>
-                </div>
-              )
-            })}
+          <div className='grid grid-cols-3 gap-5 font-mono text-[9px] tracking-[0.12em] uppercase'>
+            <span>{t('API Keys')}</span>
+            <span>{t('Models')}</span>
+            <span>{t('Requests')}</span>
           </div>
         </div>
-      </CardStaggerItem>
 
-      <CardStaggerItem className='route-dispatch-signal relative overflow-hidden rounded-[2rem] p-5 sm:p-6'>
-        <div className='relative flex h-full min-h-[20rem] flex-col'>
-          <div className='flex items-start justify-between gap-3'>
-            <div>
-              <div className='font-mono text-[10px] tracking-[0.18em] uppercase opacity-55'>
-                NODE / 01
-              </div>
-              <h3 className='mt-2 text-lg font-semibold'>
-                {t('Route active')}
-              </h3>
-            </div>
-            <span className='flex size-10 items-center justify-center rounded-full bg-black/10'>
-              <RadioTower className='size-4' aria-hidden='true' />
-            </span>
-          </div>
-
-          <div className='mt-6 flex items-baseline gap-2'>
-            <span className='deck-metric text-5xl'>{t('Online')}</span>
-            <span
-              className='bg-success size-2 rounded-full'
+        <div className='grid xl:grid-cols-[minmax(0,1fr)_22rem]'>
+          <div className='route-dispatch-main relative overflow-hidden p-5 sm:p-7'>
+            <div className='route-dispatch-grid pointer-events-none absolute inset-0 opacity-55' />
+            <div
+              className='route-dispatch-orbit pointer-events-none absolute -top-28 -right-20 size-80 rounded-full'
               aria-hidden='true'
             />
-          </div>
 
-          <div className='mt-6 grid gap-2'>
-            {props.signals.map((signal, index) => {
-              const Icon = signal.icon
-
-              return (
-                <div
-                  key={signal.label}
-                  className='flex items-center justify-between gap-3 border-t border-black/15 pt-2.5'
-                >
-                  <span className='flex min-w-0 items-center gap-2 text-xs font-medium'>
-                    <span className='font-mono text-[9px] opacity-45'>
-                      0{index + 1}
-                    </span>
-                    <Icon className='size-3.5 shrink-0' aria-hidden='true' />
-                    <span className='truncate'>{signal.label}</span>
-                  </span>
-                  <span className='max-w-28 truncate text-xs opacity-65'>
-                    {signal.value}
-                  </span>
+            <div className='relative flex min-h-[16rem] flex-col justify-between gap-8'>
+              <div className='flex flex-wrap items-start justify-between gap-4'>
+                <div className='max-w-2xl'>
+                  <div className='text-muted-foreground flex items-center gap-2 font-mono text-[10px] tracking-[0.22em] uppercase'>
+                    <span className='gateway-status-dot size-2 rounded-full bg-[var(--deck-signal)]' />
+                    AIVANTA / CONSOLE
+                  </div>
+                  <h3 className='mt-3 text-3xl font-normal tracking-[-0.055em] sm:text-5xl'>
+                    {t('Routing desk')}
+                  </h3>
+                  <p className='text-muted-foreground mt-2 max-w-xl text-sm leading-relaxed sm:text-base'>
+                    {t('Monitor balance, usage, and request volume')}
+                  </p>
                 </div>
-              )
-            })}
+
+                <Button
+                  className='rounded-xl'
+                  render={<Link to='/playground' />}
+                >
+                  <TerminalSquare data-icon='inline-start' />
+                  {t('Playground')}
+                  <ArrowRight data-icon='inline-end' />
+                </Button>
+              </div>
+
+              <div className='grid divide-y border-t border-[var(--deck-line)] sm:grid-cols-3 sm:divide-x sm:divide-y-0'>
+                {metrics.map((metric, index) => {
+                  const Icon = metric.icon
+
+                  return (
+                    <div
+                      key={metric.label}
+                      className='py-4 sm:px-5 sm:py-0 sm:first:pl-0 sm:last:pr-0'
+                    >
+                      <div className='text-muted-foreground flex items-center justify-between gap-3 text-xs font-medium'>
+                        <span className='flex items-center gap-2'>
+                          <Icon className='size-3.5' aria-hidden='true' />
+                          {metric.label}
+                        </span>
+                        <span className='font-mono text-[9px]'>
+                          0{index + 1}
+                        </span>
+                      </div>
+                      <div className='deck-metric mt-3 text-3xl sm:text-4xl'>
+                        {metric.value}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           </div>
 
-          <div className='mt-auto pt-6'>
-            <div className='text-[10px] font-medium opacity-55'>
-              {t('Current domain')}
-            </div>
-            <div
-              className='mt-1.5 truncate font-mono text-[10px]'
-              title={props.endpoint}
-            >
-              {props.endpoint}
+          <div className='route-dispatch-signal border-t p-5 sm:p-6 xl:border-t-0 xl:border-l'>
+            <div className='flex h-full min-h-[18rem] flex-col'>
+              <div className='flex items-start justify-between gap-3'>
+                <div>
+                  <div className='font-mono text-[10px] tracking-[0.18em] uppercase opacity-55'>
+                    NODE / 01
+                  </div>
+                  <h3 className='mt-2 text-lg font-semibold'>
+                    {t('Route active')}
+                  </h3>
+                </div>
+                <span className='bg-foreground/10 flex size-10 items-center justify-center rounded-full'>
+                  <RadioTower className='size-4' aria-hidden='true' />
+                </span>
+              </div>
+
+              <div className='mt-6 flex items-baseline gap-2'>
+                <span className='deck-metric text-5xl'>{t('Online')}</span>
+                <span
+                  className='bg-success size-2 rounded-full'
+                  aria-hidden='true'
+                />
+              </div>
+
+              <div className='mt-6 grid gap-2'>
+                {props.signals.map((signal, index) => {
+                  const Icon = signal.icon
+
+                  return (
+                    <div
+                      key={signal.label}
+                      className='border-foreground/15 flex items-center justify-between gap-3 border-t pt-2.5'
+                    >
+                      <span className='flex min-w-0 items-center gap-2 text-xs font-medium'>
+                        <span className='font-mono text-[9px] opacity-45'>
+                          0{index + 1}
+                        </span>
+                        <Icon
+                          className='size-3.5 shrink-0'
+                          aria-hidden='true'
+                        />
+                        <span className='truncate'>{signal.label}</span>
+                      </span>
+                      <span className='max-w-28 truncate text-xs opacity-65'>
+                        {signal.value}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className='mt-auto pt-6'>
+                <div className='text-[10px] font-medium opacity-55'>
+                  {t('Current domain')}
+                </div>
+                <div
+                  className='mt-1.5 truncate font-mono text-[10px]'
+                  title={props.endpoint}
+                >
+                  {props.endpoint}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -793,7 +811,7 @@ export function OverviewDashboard() {
 
       {setupGuideExpanded ? (
         <CardStaggerContainer className='grid items-stretch gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]'>
-          <CardStaggerItem className='bg-card h-full overflow-hidden rounded-3xl border'>
+          <CardStaggerItem className='deck-panel h-full overflow-hidden'>
             <div className='relative h-full overflow-hidden p-5 sm:p-6'>
               <SetupGuideBackdrop />
               <div className='relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_21rem]'>
@@ -829,7 +847,7 @@ export function OverviewDashboard() {
                     </div>
                   </div>
 
-                  <ol className='bg-background/45 rounded-3xl border p-2'>
+                  <ol className='bg-background/45 rounded-2xl border p-2'>
                     {startSteps.map((step, index) => (
                       <StartStepItem
                         key={step.title}
@@ -849,7 +867,7 @@ export function OverviewDashboard() {
             </div>
           </CardStaggerItem>
 
-          <CardStaggerItem className='bg-card h-full rounded-3xl border p-5 sm:p-6'>
+          <CardStaggerItem className='deck-panel h-full p-5 sm:p-6'>
             <div className='flex h-full flex-col gap-4'>
               <div className='flex flex-col gap-1'>
                 <div className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
@@ -869,7 +887,7 @@ export function OverviewDashboard() {
         </CardStaggerContainer>
       ) : (
         <CardStaggerContainer>
-          <CardStaggerItem className='bg-card overflow-hidden rounded-3xl border'>
+          <CardStaggerItem className='deck-panel overflow-hidden'>
             <div className='relative overflow-hidden px-4 py-3 sm:px-5'>
               <SetupGuideBackdrop compact />
               <div className='relative flex flex-wrap items-center justify-between gap-3'>

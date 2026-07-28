@@ -89,35 +89,24 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
   return (
     <PageFooterProvider container={footerContainer}>
       <Main>
-        <div className='route-page-heading shrink-0 px-4 pt-5 pb-3 sm:px-6 sm:pt-7 sm:pb-4 lg:px-8'>
+        <div className='route-page-heading shrink-0 px-4 py-4 sm:px-6 sm:py-5 lg:px-8'>
           {breadcrumb != null && (
             <div className='mb-2 sm:mb-3'>{breadcrumb}</div>
           )}
-          <div className='flex flex-wrap items-end justify-between gap-x-4 gap-y-3'>
-            <div className='flex min-w-0 flex-1 items-stretch gap-3 sm:gap-4'>
-              <div className='route-page-index hidden w-11 shrink-0 flex-col items-center justify-center rounded-2xl sm:flex'>
-                <span className='font-mono text-[9px] tracking-[0.12em]'>
-                  RT
-                </span>
-                <span className='mt-0.5 font-mono text-xs font-semibold'>
-                  01
+          <div className='flex flex-wrap items-end justify-between gap-x-6 gap-y-3'>
+            <div className='min-w-0 flex-1'>
+              <div className='text-muted-foreground flex items-center gap-2 font-mono text-[9px] tracking-[0.2em] uppercase'>
+                <span className='gateway-status-dot size-1.5 shrink-0 rounded-full bg-[var(--deck-signal)]' />
+                <span className='truncate'>
+                  AIVANTA / {routeCode || 'CONSOLE'}
                 </span>
               </div>
-              <div className='min-w-0 flex-1'>
-                <div className='text-muted-foreground truncate font-mono text-[9px] tracking-[0.2em] uppercase'>
-                  ROUTE / {routeCode || 'CONSOLE'}
-                </div>
-                <h2 className='mt-1 truncate text-2xl font-normal tracking-[-0.04em] sm:text-3xl'>
-                  {title}
-                </h2>
-                <div className='route-page-track mt-3 flex h-1.5 w-full max-w-md overflow-hidden rounded-full'>
-                  <span className='bg-warning w-2/5 rounded-full' />
-                  <span className='route-page-track-stripes flex-1' />
-                </div>
-              </div>
+              <h1 className='mt-1.5 truncate text-2xl font-normal tracking-[-0.04em] sm:text-[2rem]'>
+                {title}
+              </h1>
             </div>
             {actions != null && (
-              <div className='flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-x-4'>
+              <div className='flex shrink-0 flex-wrap items-center justify-end gap-2'>
                 {actions}
               </div>
             )}
@@ -127,8 +116,8 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
         <div
           className={
             props.fixedContent
-              ? 'route-page-content min-h-0 flex-1 overflow-hidden px-4 pt-1 pb-4 sm:px-6 sm:pb-6 lg:px-8'
-              : 'route-page-content min-h-0 flex-1 overflow-auto px-4 pt-1 pb-4 sm:px-6 sm:pb-6 lg:px-8'
+              ? 'route-page-content min-h-0 flex-1 overflow-hidden px-4 py-4 sm:px-6 sm:py-5 lg:px-8'
+              : 'route-page-content min-h-0 flex-1 overflow-auto px-4 py-4 sm:px-6 sm:py-5 lg:px-8'
           }
         >
           {content}
@@ -136,7 +125,7 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
 
         <div
           ref={setFooterContainer}
-          className='bg-background shrink-0 border-t px-3 py-2.5 empty:hidden sm:px-4 sm:py-3'
+          className='route-page-footer shrink-0 border-t px-3 py-2.5 empty:hidden sm:px-4 sm:py-3'
         />
       </Main>
     </PageFooterProvider>

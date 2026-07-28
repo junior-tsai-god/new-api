@@ -16,9 +16,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useEffect, useMemo } from 'react'
+
 import { useStatus } from '@/hooks/use-status'
+import { MODEL_LATENCY_REFRESH_STORAGE_KEY } from '@/lib/model-latency-refresh'
+
 import { getPricing } from '../api'
 
 export function usePricingData() {
@@ -28,7 +31,20 @@ export function usePricingData() {
     queryKey: ['pricing'],
     queryFn: getPricing,
     staleTime: 5 * 60 * 1000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
   })
+
+  useEffect(() => {
+    const handleLatencyRefresh = (event: StorageEvent) => {
+      if (event.key === MODEL_LATENCY_REFRESH_STORAGE_KEY) {
+        void refetch()
+      }
+    }
+
+    window.addEventListener('storage', handleLatencyRefresh)
+    return () => window.removeEventListener('storage', handleLatencyRefresh)
+  }, [refetch])
 
   // Ensure rates never reach zero to prevent division errors
   const priceRate = useMemo(
@@ -56,6 +72,7 @@ export function usePricingData() {
         vendor_icon: vendor?.icon,
         vendor_description: vendor?.description,
         group_ratio: data.group_ratio,
+        probe_latency: data.model_latency?.[model.model_name],
       }
     })
   }, [data])

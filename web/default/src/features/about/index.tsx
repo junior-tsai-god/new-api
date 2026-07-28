@@ -21,11 +21,35 @@ import { Construction } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { PublicLayout } from '@/components/layout'
+import { Footer } from '@/components/layout/components/footer'
 import { RichContent } from '@/components/rich-content'
 import { Skeleton } from '@/components/ui/skeleton'
 import { isHttpUrl, isLikelyHtml } from '@/lib/content-format'
 
 import { getAboutContent } from './api'
+
+function AboutPageFrame(props: { children: React.ReactNode }) {
+  const { t } = useTranslation()
+
+  return (
+    <PublicLayout showMainContainer={false}>
+      <div className='aivanta-public-surface min-h-svh px-2 py-2 md:px-4 md:py-4'>
+        <main className='aivanta-public-frame px-3 pt-24 pb-6 sm:px-6 sm:pt-28 sm:pb-8 lg:px-8'>
+          <header className='border-b border-[var(--aivanta-rule)] py-6'>
+            <p className='font-mono text-[10px] tracking-[0.18em] text-[var(--aivanta-faint)] uppercase'>
+              Aivanta / {t('About')}
+            </p>
+            <h1 className='mt-2 text-[clamp(2.5rem,5vw,4.75rem)] leading-[0.95] font-light tracking-[-0.06em]'>
+              {t('About')}
+            </h1>
+          </header>
+          <div className='py-6 sm:py-8'>{props.children}</div>
+        </main>
+        <Footer className='mx-auto mt-3 w-[min(calc(100%_-_1rem),96rem)] rounded-[2rem] border border-[var(--aivanta-rule)] bg-[var(--aivanta-paper)]' />
+      </div>
+    </PublicLayout>
+  )
+}
 
 function EmptyAboutState() {
   const { t } = useTranslation()
@@ -62,22 +86,22 @@ export function About() {
 
   if (isLoading) {
     return (
-      <PublicLayout>
+      <AboutPageFrame>
         <div className='mx-auto flex max-w-4xl flex-col gap-4 py-12'>
           <Skeleton className='h-8 w-[45%]' />
           <Skeleton className='h-4 w-full' />
           <Skeleton className='h-4 w-[90%]' />
           <Skeleton className='h-4 w-[80%]' />
         </div>
-      </PublicLayout>
+      </AboutPageFrame>
     )
   }
 
   if (!hasContent) {
     return (
-      <PublicLayout>
+      <AboutPageFrame>
         <EmptyAboutState />
-      </PublicLayout>
+      </AboutPageFrame>
     )
   }
 
@@ -95,7 +119,7 @@ export function About() {
   }
 
   return (
-    <PublicLayout>
+    <AboutPageFrame>
       <div className='mx-auto max-w-6xl px-4 py-8'>
         <RichContent
           mode={isLikelyHtml(rawContent) ? 'html' : 'markdown'}
@@ -103,6 +127,6 @@ export function About() {
           className='prose-neutral dark:prose-invert max-w-none'
         />
       </div>
-    </PublicLayout>
+    </AboutPageFrame>
   )
 }

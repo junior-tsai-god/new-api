@@ -27,6 +27,14 @@ export type PricingVendor = {
   description?: string
 }
 
+export type ModelProbeLatency = {
+  avg_latency_ms: number
+  min_latency_ms: number
+  max_latency_ms: number
+  tested_channels: number
+  last_test_time: number
+}
+
 export type PricingModel = {
   id: number
   model_name: string
@@ -68,6 +76,7 @@ export type PricingModel = {
   input_modalities?: Modality[]
   output_modalities?: Modality[]
   capabilities?: ModelCapability[]
+  probe_latency?: ModelProbeLatency
 }
 
 /** Input/output modalities supported by a model. */
@@ -97,6 +106,7 @@ export type PricingData = {
   usable_group: Record<string, { desc: string; ratio: number }>
   supported_endpoint: Record<string, string>
   auto_groups: string[]
+  model_latency?: Record<string, ModelProbeLatency>
 }
 
 export type TokenUnit = 'M' | 'K'

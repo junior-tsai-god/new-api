@@ -150,25 +150,64 @@ For commercial licensing, please contact support@quantumnous.com
   }
 
   .routing-deck {
+    --aivanta-paper: var(--deck-shell);
+    --aivanta-panel: var(--deck-panel);
+    --aivanta-ink: var(--deck-ink);
+    --aivanta-signal: var(--deck-signal);
+    --aivanta-rule: var(--deck-line);
+    --aivanta-mark: var(--deck-signal);
+    --aivanta-mark-ink: var(--deck-ink);
+    --background: var(--deck-shell);
+    --foreground: var(--deck-ink);
+    --card: var(--deck-panel);
+    --card-foreground: var(--deck-ink);
+    --popover: var(--deck-panel);
+    --popover-foreground: var(--deck-ink);
+    --primary: var(--deck-ink);
+    --primary-foreground: var(--deck-panel);
+    --secondary: color-mix(in oklch, var(--deck-ink) 7%, transparent);
+    --secondary-foreground: var(--deck-ink);
+    --muted: color-mix(in oklch, var(--deck-ink) 6%, transparent);
+    --muted-foreground: color-mix(
+      in oklch,
+      var(--deck-ink) 64%,
+      var(--deck-steel)
+    );
+    --accent: color-mix(in oklch, var(--deck-signal) 34%, var(--deck-panel));
+    --accent-foreground: var(--deck-ink);
+    --border: var(--deck-line);
+    --input: var(--deck-line);
+    --ring: var(--deck-signal);
+    --sidebar: var(--deck-shell);
+    --sidebar-foreground: var(--deck-ink);
+    --sidebar-primary: var(--deck-ink);
+    --sidebar-primary-foreground: var(--deck-panel);
+    --sidebar-accent: color-mix(
+      in oklch,
+      var(--deck-signal) 28%,
+      var(--deck-panel)
+    );
+    --sidebar-accent-foreground: var(--deck-ink);
+    --sidebar-border: var(--deck-line);
+    --sidebar-ring: var(--deck-signal);
     min-height: 100svh;
     background: var(--deck-canvas);
-    padding: clamp(0rem, 1.6vw, 1.5rem);
+    padding-block: 1.5rem;
   }
 
   .routing-deck-shell {
     position: relative;
     isolation: isolate;
-    display: flex;
-    height: calc(100svh - clamp(0rem, 3.2vw, 3rem));
-    width: min(100%, 112rem);
+    height: calc(100svh - 3rem);
+    width: min(calc(100% - 2.5rem), 96rem);
     margin-inline: auto;
     overflow: hidden;
-    border: 1px solid color-mix(in oklch, var(--deck-ink) 8%, transparent);
-    border-radius: clamp(0rem, 2.4vw, 2.5rem);
+    border: 1px solid var(--deck-line);
+    border-radius: clamp(1.5rem, 4vw, 3rem);
     background:
       radial-gradient(
         circle at 91% 3%,
-        color-mix(in oklch, var(--deck-signal) 24%, transparent),
+        color-mix(in oklch, var(--deck-signal) 30%, transparent),
         transparent 31rem
       ),
       var(--deck-shell);
@@ -177,14 +216,20 @@ For commercial licensing, please contact support@quantumnous.com
 
   .routing-deck-stage {
     position: relative;
-    background:
-      linear-gradient(
-        90deg,
-        color-mix(in oklch, var(--deck-ink) 4%, transparent) 1px,
-        transparent 1px
-      ),
-      transparent;
-    background-size: 25% 100%;
+    height: 100%;
+    width: 100%;
+    background: transparent;
+  }
+
+  .routing-deck-shell > [data-slot='sidebar'] {
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 60;
+    width: 0;
+  }
+
+  .routing-deck-shell [data-slot='sidebar-gap'] {
+    display: none;
   }
 
   .routing-deck-shell [data-slot='sidebar-container'] {
@@ -192,96 +237,133 @@ For commercial licensing, please contact support@quantumnous.com
     top: 0;
     bottom: 0;
     height: 100%;
+    padding: 0;
+    box-shadow: 1.5rem 0 4rem -2.5rem
+      color-mix(in oklch, var(--deck-ink) 48%, transparent);
   }
 
   .routing-deck-shell [data-slot='sidebar-inner'] {
     overflow: hidden;
-    background: var(--deck-panel);
+    border: 0;
+    border-right: 1px solid var(--deck-line);
+    border-radius: 0;
+    background: transparent;
   }
 
   .routing-deck-shell [data-slot='sidebar-inset'] {
     background: transparent;
   }
 
-  .routing-deck-shell [data-sidebar='menu-button'][data-active] {
+  .routing-deck-shell [data-sidebar='menu-button'][data-active],
+  .console-menu-frame [data-sidebar='menu-button'][data-active] {
     background: var(--deck-ink);
     color: var(--deck-panel);
   }
 
-  .route-sidebar-frame {
+  .console-menu-frame {
+    --aivanta-mark: var(--deck-signal);
+    --aivanta-mark-ink: oklch(0.18 0.008 80);
+    --background: var(--deck-shell);
+    --foreground: var(--deck-ink);
+    --card: var(--deck-panel);
+    --card-foreground: var(--deck-ink);
+    --border: var(--deck-line);
+    --ring: var(--deck-signal);
+    --sidebar: var(--deck-shell);
+    --sidebar-foreground: var(--deck-ink);
+    --sidebar-accent: color-mix(
+      in oklch,
+      var(--deck-signal) 26%,
+      var(--deck-panel)
+    );
+    --sidebar-accent-foreground: var(--deck-ink);
+    --sidebar-border: var(--deck-line);
+    background:
+      radial-gradient(
+        circle at 15% 0%,
+        color-mix(in oklch, var(--deck-signal) 24%, transparent),
+        transparent 17rem
+      ),
+      var(--deck-shell);
+    color: var(--deck-ink);
+  }
+
+  .console-menu-heading,
+  .console-menu-frame [data-slot='sidebar-footer'],
+  .console-menu-frame [data-slot='sidebar-header'] {
+    border-color: var(--deck-line);
+  }
+
+  .console-menu-heading {
+    background: color-mix(in oklch, var(--deck-panel) 72%, transparent);
+    backdrop-filter: blur(18px);
+  }
+
+  .console-header-row {
+    border-color: var(--deck-line);
+    background: color-mix(in oklch, var(--deck-panel) 82%, transparent);
+    backdrop-filter: blur(22px);
+  }
+
+  .console-menu-trigger {
+    border-color: var(--deck-line);
     background: var(--deck-panel);
   }
 
-  .route-spine {
-    --aivanta-mark: var(--deck-signal);
-    --aivanta-mark-ink: oklch(0.18 0.008 80);
-    background:
-      linear-gradient(
-        to bottom,
-        transparent 0 4.75rem,
-        color-mix(in oklch, white 9%, transparent) 4.75rem calc(4.75rem + 1px),
-        transparent calc(4.75rem + 1px)
-      ),
-      var(--deck-ink);
-    color: var(--deck-panel);
+  .console-primary-nav {
+    border-color: var(--deck-line);
+    background: color-mix(in oklch, var(--deck-panel) 76%, transparent);
   }
 
-  .route-spine-brand {
-    background: color-mix(in oklch, white 8%, transparent);
+  .console-module-bar {
+    border-color: var(--deck-line);
+    background: color-mix(in oklch, var(--deck-shell) 84%, transparent);
   }
 
-  .route-zone-link {
-    color: color-mix(in oklch, var(--deck-panel) 60%, transparent);
+  .console-module-link {
+    color: color-mix(in oklch, var(--deck-ink) 62%, var(--deck-steel));
   }
 
-  .route-zone-link:hover {
-    background: color-mix(in oklch, white 8%, transparent);
-    color: var(--deck-panel);
+  .console-module-link:hover,
+  .console-module-link[data-active] {
+    background: var(--deck-panel);
+    color: var(--deck-ink);
   }
 
-  .route-zone-link[data-active] {
-    background: var(--deck-signal);
-    color: oklch(0.18 0.008 80);
+  .console-module-link[data-active] {
+    box-shadow: inset 0 0 0 1px var(--deck-line);
   }
 
-  .route-zone-link[data-active]::after {
-    position: absolute;
-    top: 50%;
-    right: -0.5rem;
-    width: 0.75rem;
-    height: 1px;
+  .console-module-link[data-active]::after {
+    width: 0.35rem;
+    height: 0.35rem;
+    margin-left: 0.125rem;
+    border-radius: 999px;
     background: var(--deck-signal);
     content: '';
   }
 
-  .route-zone-index {
-    opacity: 0.55;
+  .console-module-badge {
+    min-width: 1.1rem;
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--deck-ink) 8%, transparent);
+    padding-inline: 0.3rem;
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    text-align: center;
   }
 
-  .route-zone-link[data-active] .route-zone-index {
-    opacity: 0.75;
-  }
-
-  .route-directory {
-    background:
-      linear-gradient(
-        to bottom,
-        color-mix(in oklch, var(--deck-signal) 7%, transparent),
-        transparent 12rem
-      ),
-      var(--deck-panel);
-    border-right: 1px solid var(--deck-line);
-  }
-
-  .route-directory-heading,
-  .route-status-bridge {
+  .console-module-status {
     border-color: var(--deck-line);
+    background: var(--deck-panel);
   }
 
-  .route-directory-status,
-  .route-header-status {
-    border-color: var(--deck-line);
-    background: color-mix(in oklch, var(--deck-panel) 68%, transparent);
+  .console-module-menu {
+    --popover: var(--deck-panel);
+    --popover-foreground: var(--deck-ink);
+    --accent: color-mix(in oklch, var(--deck-signal) 26%, var(--deck-panel));
+    --accent-foreground: var(--deck-ink);
+    --border: var(--deck-line);
   }
 
   .route-nav-group + .route-nav-group {
@@ -310,57 +392,67 @@ For commercial licensing, please contact support@quantumnous.com
       color-mix(in oklch, var(--deck-signal) 18%, transparent);
   }
 
-  .route-header-code,
-  .route-page-index {
-    background: var(--deck-ink);
-    color: var(--deck-panel);
-  }
-
-  .route-status-bridge {
-    background: color-mix(in oklch, var(--deck-shell) 82%, transparent);
-    backdrop-filter: blur(18px);
-  }
-
   .route-page-heading {
-    background: linear-gradient(
-      to bottom,
-      color-mix(in oklch, var(--deck-panel) 28%, transparent),
-      transparent
-    );
-  }
-
-  .route-page-track {
-    background: color-mix(in oklch, var(--deck-ink) 8%, transparent);
-  }
-
-  .route-page-track-stripes {
-    background-image: repeating-linear-gradient(
-      118deg,
-      color-mix(in oklch, var(--deck-ink) 16%, transparent) 0 1px,
-      transparent 1px 8px
-    );
-  }
-
-  .route-page-content::before {
-    position: absolute;
-    inset-inline: 0;
-    top: 0;
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      var(--deck-line) 12% 88%,
-      transparent
-    );
-    content: '';
+    border-bottom: 1px solid var(--deck-line);
+    background: color-mix(in oklch, var(--deck-panel) 34%, transparent);
   }
 
   .route-page-content {
     position: relative;
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in oklch, var(--deck-ink) 3.5%, transparent) 1px,
+        transparent 1px
+      ),
+      var(--deck-shell);
+    background-size: 25% 100%;
+  }
+
+  .route-page-footer {
+    border-color: var(--deck-line);
+    background: var(--deck-shell);
+  }
+
+  .route-data-toolbar {
+    border: 1px solid var(--deck-line);
+    border-radius: 1rem;
+    background: color-mix(in oklch, var(--deck-panel) 88%, transparent);
+    padding: 0.625rem 0.75rem;
+  }
+
+  .route-data-frame,
+  .route-data-card {
+    border-radius: 1.15rem;
+    border-color: var(--deck-line);
+    background: var(--deck-panel);
+  }
+
+  .route-data-frame [data-slot='table-header'] {
+    background: color-mix(in oklch, var(--deck-signal) 6%, var(--deck-panel));
+  }
+
+  .route-data-frame [data-slot='table-row']:hover {
+    background: color-mix(in oklch, var(--deck-signal) 5%, var(--deck-panel));
+  }
+
+  .route-page-content [data-slot='card'],
+  .route-page-content .deck-panel {
+    border-color: var(--deck-line);
+    background: var(--deck-panel);
+  }
+
+  .route-workspace {
+    border-top: 1px solid var(--deck-line);
+    background: var(--deck-shell);
   }
 
   .routing-deck-shell [data-sidebar='menu-button'][data-active] svg,
   .routing-deck-shell
+    [data-sidebar='menu-button'][data-active]
+    [data-slot='badge'],
+  .console-menu-frame [data-sidebar='menu-button'][data-active] svg,
+  .console-menu-frame
     [data-sidebar='menu-button'][data-active]
     [data-slot='badge'] {
     color: currentColor;
@@ -368,7 +460,7 @@ For commercial licensing, please contact support@quantumnous.com
 
   .deck-panel {
     border: 1px solid var(--deck-line);
-    border-radius: calc(var(--radius) * 1.65);
+    border-radius: calc(var(--radius) * 1.4);
     background: var(--deck-panel);
   }
 
@@ -403,42 +495,73 @@ For commercial licensing, please contact support@quantumnous.com
   }
 
   .route-dispatch-main {
-    box-shadow: inset 0 0 0 1px color-mix(in oklch, white 8%, transparent);
+    background:
+      radial-gradient(
+        circle at 91% 4%,
+        color-mix(in oklch, var(--deck-signal) 18%, transparent),
+        transparent 23rem
+      ),
+      var(--deck-panel);
+  }
+
+  .console-overview-board {
+    background: var(--deck-panel);
+  }
+
+  .console-overview-rail {
+    border-color: var(--deck-line);
+    background: color-mix(in oklch, var(--deck-shell) 62%, var(--deck-panel));
+  }
+
+  .console-route-rail {
+    box-shadow: inset 0 0 0 1px var(--deck-line);
   }
 
   .route-dispatch-grid {
     background-image:
       linear-gradient(
         to right,
-        color-mix(in oklch, white 7%, transparent) 1px,
+        color-mix(in oklch, var(--deck-ink) 5%, transparent) 1px,
         transparent 1px
       ),
       linear-gradient(
         to bottom,
-        color-mix(in oklch, white 6%, transparent) 1px,
+        color-mix(in oklch, var(--deck-ink) 4%, transparent) 1px,
         transparent 1px
       );
     background-size: 4.5rem 4.5rem;
-    mask-image: linear-gradient(110deg, black, transparent 72%);
+    mask-image: linear-gradient(110deg, black, transparent 76%);
   }
 
   .route-dispatch-orbit {
-    border: 2.5rem solid
-      color-mix(in oklch, var(--deck-signal) 17%, transparent);
+    border: 2rem solid color-mix(in oklch, var(--deck-signal) 19%, transparent);
     box-shadow:
-      0 0 0 1px color-mix(in oklch, var(--deck-signal) 30%, transparent),
-      inset 0 0 0 1px color-mix(in oklch, var(--deck-signal) 24%, transparent);
+      0 0 0 1px color-mix(in oklch, var(--deck-signal) 26%, transparent),
+      inset 0 0 0 1px color-mix(in oklch, var(--deck-signal) 22%, transparent);
   }
 
   .route-dispatch-metric {
-    border: 1px solid color-mix(in oklch, white 9%, transparent);
-    background: color-mix(in oklch, white 6%, transparent);
-    backdrop-filter: blur(10px);
+    border: 1px solid var(--deck-line);
+    background: color-mix(in oklch, var(--deck-shell) 54%, var(--deck-panel));
+  }
+
+  .route-dispatch-track {
+    height: 1px;
+    background: var(--deck-line);
+  }
+
+  .route-dispatch-track > span {
+    display: block;
+    width: 42%;
+    height: 3px;
+    border-radius: 999px;
+    background: var(--deck-signal);
   }
 
   .route-dispatch-signal {
     background: var(--deck-signal);
     color: oklch(0.18 0.008 80);
+    border-color: color-mix(in oklch, var(--deck-ink) 16%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in oklch, black 10%, transparent);
   }
 
@@ -552,21 +675,21 @@ For commercial licensing, please contact support@quantumnous.com
 
   @media (max-width: 767px) {
     .routing-deck {
-      padding: 0;
+      padding-block: 0.5rem;
     }
 
     .routing-deck-shell {
-      height: 100svh;
-      border-inline: 0;
-      border-radius: 0;
+      height: calc(100svh - 1rem);
+      width: calc(100% - 1.5rem);
+      border-radius: 1.5rem;
     }
 
-    .routing-deck-stage {
-      background-size: 50% 100%;
+    .route-page-content {
+      background-size: 100% 100%;
     }
 
-    .route-directory {
-      border-right: 0;
+    .console-module-bar {
+      padding-inline: 0.75rem;
     }
   }
 

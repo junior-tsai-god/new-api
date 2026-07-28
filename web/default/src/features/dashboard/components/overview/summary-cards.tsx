@@ -247,7 +247,7 @@ export function SummaryCards() {
   }
 
   return (
-    <div className='bg-card overflow-hidden rounded-3xl border'>
+    <div className='deck-panel overflow-hidden'>
       <div className='grid xl:grid-cols-[minmax(0,1fr)_20rem]'>
         <div className='flex flex-col gap-5 p-5 sm:p-6'>
           <div className='flex flex-wrap items-start justify-between gap-3'>
@@ -282,7 +282,7 @@ export function SummaryCards() {
           </StaggerContainer>
         </div>
 
-        <div className='bg-primary text-primary-foreground flex flex-col justify-between gap-5 border-t p-5 sm:p-6 xl:border-t-0 xl:border-l'>
+        <div className='route-credit-panel bg-primary text-primary-foreground flex flex-col justify-between gap-5 border-t p-5 sm:p-6 xl:border-t-0 xl:border-l'>
           <div className='flex flex-col gap-3'>
             <div className='flex items-center justify-between'>
               <span className='text-primary-foreground/60 text-xs font-medium'>

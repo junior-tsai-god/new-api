@@ -1,4 +1,3 @@
-import { SidebarTrigger } from '@/components/ui/sidebar'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -17,26 +16,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { cn } from '@/lib/utils'
 
-type HeaderProps = React.HTMLAttributes<HTMLElement>
+export const MODEL_LATENCY_REFRESH_STORAGE_KEY =
+  'model-latency-refresh-requested-at:v1'
 
-export function Header({ className, children, ...props }: HeaderProps) {
-  return (
-    <header
-      className={cn(
-        'sticky top-0 z-40 h-[var(--app-header-height,4.75rem)] w-full shrink-0',
-        className
-      )}
-      {...props}
-    >
-      <div className='console-header-row flex h-full items-center gap-2 border-b px-3 sm:px-5 lg:px-7'>
-        <SidebarTrigger
-          variant='outline'
-          className='console-menu-trigger size-9 shrink-0 rounded-full shadow-none'
-        />
-        {children}
-      </div>
-    </header>
-  )
+export function notifyModelLatencyUpdated() {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.localStorage.setItem(
+      MODEL_LATENCY_REFRESH_STORAGE_KEY,
+      String(Date.now())
+    )
+  } catch {
+    // Query invalidation still refreshes the current tab when storage is unavailable.
+  }
 }

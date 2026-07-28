@@ -17,10 +17,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { api } from '@/lib/api'
+
 import type {
   ConfirmPaymentComplianceResponse,
+  ChannelLatencyTestTask,
   FetchUpstreamRatiosRequest,
   LogCleanupTask,
+  StartChannelLatencyTestResponse,
   SystemOptionsResponse,
   SystemTaskListResponse,
   SystemTaskResponse,
@@ -69,9 +72,30 @@ export async function getCurrentLogCleanupTask() {
   return res.data
 }
 
-export async function getSystemTask(taskId: string) {
-  const res = await api.get<SystemTaskResponse<LogCleanupTask>>(
+export async function getSystemTask<TTask = LogCleanupTask>(taskId: string) {
+  const res = await api.get<SystemTaskResponse<TTask>>(
     `/api/system-task/${taskId}`
+  )
+  return res.data
+}
+
+export async function getCurrentChannelLatencyTest() {
+  const res = await api.get<SystemTaskResponse<ChannelLatencyTestTask | null>>(
+    '/api/system-task/current',
+    {
+      params: { type: 'channel_test' },
+    }
+  )
+  return res.data
+}
+
+export async function startChannelLatencyTest() {
+  const res = await api.get<StartChannelLatencyTestResponse>(
+    '/api/channel/test',
+    {
+      skipBusinessError: true,
+      skipErrorHandler: true,
+    }
   )
   return res.data
 }

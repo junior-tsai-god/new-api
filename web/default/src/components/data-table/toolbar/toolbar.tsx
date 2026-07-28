@@ -1,3 +1,5 @@
+import type { Table } from '@tanstack/react-table'
+import { ChevronDown, Loader2, X as Cross2Icon } from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -18,13 +20,13 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import * as React from 'react'
 import { useState, type ReactNode } from 'react'
-import type { Table } from '@tanstack/react-table'
-import { useDebounce } from '@/hooks'
-import { ChevronDown, Loader2, X as Cross2Icon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { cn } from '@/lib/utils'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useDebounce } from '@/hooks'
+import { cn } from '@/lib/utils'
+
 import { DataTableFacetedFilter } from './faceted-filter'
 import { DataTableViewOptions } from './view-options'
 
@@ -341,7 +343,12 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
 
   if (hasLeftActions) {
     return (
-      <div className={cn('flex flex-col gap-2', props.className)}>
+      <div
+        className={cn(
+          'route-data-toolbar flex flex-col gap-2',
+          props.className
+        )}
+      >
         <div className='flex flex-wrap items-center gap-2 sm:gap-3'>
           {props.customSearch !== undefined ? props.customSearch : searchInput}
           {props.additionalSearch}
@@ -374,7 +381,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center gap-2 sm:gap-3',
+        'route-data-toolbar flex flex-wrap items-center gap-2 sm:gap-3',
         props.className
       )}
     >

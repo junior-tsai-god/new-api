@@ -2,6 +2,7 @@ package controller
 
 import (
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
@@ -64,9 +65,29 @@ func GetPricing(c *gin.Context) {
 		}
 	}
 
+	usableGroupNames := make([]string, 0, len(usableGroup))
+	for usableGroupName := range usableGroup {
+		usableGroupNames = append(usableGroupNames, usableGroupName)
+	}
+	modelLatency, err := model.GetModelLatency(usableGroupNames)
+	if err != nil {
+		logger.LogError(c, "failed to load model probe latency: "+err.Error())
+		modelLatency = map[string]model.ModelLatency{}
+	}
+	visibleModels := make(map[string]struct{}, len(pricing))
+	for _, pricingItem := range pricing {
+		visibleModels[pricingItem.ModelName] = struct{}{}
+	}
+	for modelName := range modelLatency {
+		if _, visible := visibleModels[modelName]; !visible {
+			delete(modelLatency, modelName)
+		}
+	}
+
 	c.JSON(200, gin.H{
 		"success":            true,
 		"data":               pricing,
+		"model_latency":      modelLatency,
 		"vendors":            model.GetVendors(),
 		"group_ratio":        groupRatio,
 		"usable_group":       usableGroup,

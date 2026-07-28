@@ -1,4 +1,11 @@
-import { useLocation } from '@tanstack/react-router'
+import {
+  DashboardSquare01Icon,
+  Message01Icon,
+  Settings02Icon,
+  UserCircleIcon,
+} from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Link, useLocation } from '@tanstack/react-router'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -26,11 +33,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useNotifications } from '@/hooks/use-notifications'
-import { useSidebarView } from '@/hooks/use-sidebar-view'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
+import { ROLE } from '@/lib/roles'
+import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
 
 import { defaultTopNavLinks } from '../config/top-nav.config'
-import { checkIsActive } from '../lib/url-utils'
 import type { TopNavLink } from '../types'
 import { Header } from './header'
 import { SystemBrand } from './system-brand'
@@ -110,73 +118,109 @@ export function AppHeader({
   showProfileDropdown = true,
 }: AppHeaderProps) {
   const { t } = useTranslation()
-  // Prioritize dynamically generated links from backend
   const dynamicLinks = useTopNavLinks()
   const links = dynamicLinks.length > 0 ? dynamicLinks : navLinks
-  const href = useLocation({ select: (location) => location.href })
-  const { view, navGroups } = useSidebarView()
-
-  const routeContext = useMemo(() => {
-    for (const group of navGroups) {
-      for (const item of group.items) {
-        if (checkIsActive(href, item)) {
-          return {
-            code: (view?.id || group.id || 'route').toUpperCase(),
-            group: group.title,
-            title: item.title,
-          }
-        }
-      }
-    }
-
-    return {
-      code: (view?.id || 'route').toUpperCase(),
-      group: t('Console'),
-      title: t('Overview'),
-    }
-  }, [href, navGroups, t, view?.id])
-
-  // Notifications hook
+  const pathname = useLocation({ select: (location) => location.pathname })
+  const role = useAuthStore((state) => state.auth.user?.role ?? ROLE.GUEST)
   const notifications = useNotifications()
+  const primaryNavigation = useMemo(
+    () => [
+      {
+        id: 'chat',
+        title: t('Chat'),
+        to: '/playground' as const,
+        icon: Message01Icon,
+        matches: ['/playground', '/chat', '/chat2link'],
+      },
+      {
+        id: 'console',
+        title: t('Console'),
+        to: '/dashboard' as const,
+        icon: DashboardSquare01Icon,
+        matches: ['/dashboard', '/keys', '/usage-logs'],
+      },
+      {
+        id: 'personal',
+        title: t('Personal'),
+        to: '/wallet' as const,
+        icon: UserCircleIcon,
+        matches: ['/wallet', '/profile'],
+      },
+      ...(role >= ROLE.ADMIN
+        ? [
+            {
+              id: 'admin',
+              title: t('Admin'),
+              to: '/channels' as const,
+              icon: Settings02Icon,
+              matches: [
+                '/channels',
+                '/models',
+                '/users',
+                '/redemption-codes',
+                '/subscriptions',
+                '/architecture',
+                '/system-info',
+                '/system-settings',
+              ],
+            },
+          ]
+        : []),
+    ],
+    [role, t]
+  )
 
   return (
     <Header>
-      <div className='md:hidden'>
+      <div className='min-w-0 shrink'>
         <SystemBrand variant='inline' />
-      </div>
-
-      <div className='hidden min-w-0 items-center gap-3 md:flex'>
-        <span className='route-header-code flex size-9 shrink-0 items-center justify-center rounded-xl font-mono text-[9px] font-semibold tracking-[0.08em]'>
-          {routeContext.code.slice(0, 3)}
-        </span>
-        <div className='min-w-0 leading-tight'>
-          <div className='text-muted-foreground truncate font-mono text-[9px] tracking-[0.2em] uppercase'>
-            {routeContext.group} / {routeContext.code}
-          </div>
-          <div className='mt-1 truncate text-sm font-semibold'>
-            {routeContext.title}
-          </div>
-        </div>
       </div>
 
       {leftContent ? (
         <div className='ms-2 flex items-center'>{leftContent}</div>
       ) : null}
 
+      <nav
+        className='console-primary-nav mx-auto hidden items-center gap-0.5 rounded-full border p-1 lg:flex'
+        aria-label={t('Console')}
+      >
+        {primaryNavigation.map((item) => {
+          const isActive = item.matches.some(
+            (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+          )
+
+          return (
+            <Link
+              key={item.id}
+              to={item.to}
+              data-active={isActive || undefined}
+              aria-current={isActive ? 'page' : undefined}
+              className={cn(
+                'focus-visible:ring-ring flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium outline-none transition-colors focus-visible:ring-2',
+                isActive
+                  ? 'bg-[var(--deck-ink)] text-[var(--deck-panel)]'
+                  : 'text-muted-foreground hover:bg-[var(--deck-panel)] hover:text-foreground'
+              )}
+            >
+              <HugeiconsIcon
+                icon={item.icon}
+                className='size-3.5'
+                strokeWidth={1.9}
+                aria-hidden='true'
+              />
+              {item.title}
+            </Link>
+          )
+        })}
+      </nav>
+
       {rightContent ?? (
         <div className='ms-auto flex items-center gap-1 sm:gap-1.5'>
-          {showTopNav && (
+          {showTopNav && links.length > 0 ? (
             <div className='me-2 hidden 2xl:block'>
               <TopNav links={links} />
             </div>
-          )}
-          <div className='route-header-status me-1 hidden items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium lg:flex'>
-            <span className='gateway-status-dot bg-success size-1.5 rounded-full' />
-            <span>{t('Online')}</span>
-            <span className='text-muted-foreground font-mono text-[9px] tracking-[0.14em]'>
-              NODE 01
-            </span>
-          </div>
+          ) : null}
           {showSearch && <Search />}
           {showNotifications && (
             <NotificationPopover

@@ -18,8 +18,12 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { cn } from '@/lib/utils'
+
 import { getSuccessRateDotClass } from '@/features/performance-metrics/lib/format'
+import { formatTimestampRelative } from '@/lib/format'
+import { cn } from '@/lib/utils'
+
+import type { ModelProbeLatency } from '../types'
 
 export type ModelPerfBadgeData = {
   avg_latency_ms: number
@@ -30,6 +34,7 @@ export type ModelPerfBadgeData = {
 
 export interface ModelPerfBadgeProps extends React.HTMLAttributes<HTMLDivElement> {
   perf: ModelPerfBadgeData | undefined
+  probe: ModelProbeLatency | undefined
 }
 
 function formatCompactNumber(value: number): string {
@@ -52,73 +57,105 @@ function formatCompactThroughput(tps: number): string {
 export const ModelPerfBadge = memo(function ModelPerfBadge(
   props: ModelPerfBadgeProps
 ) {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
 
-  if (!props.perf) {
+  if (!props.perf && !props.probe) {
     return null
   }
 
-  const { avg_latency_ms, avg_tps, success_rate } = props.perf
+  const avgLatencyMs =
+    props.probe?.avg_latency_ms ?? props.perf?.avg_latency_ms ?? 0
+  const avgTps = props.perf?.avg_tps ?? 0
+  const successRate = props.perf?.success_rate ?? Number.NaN
 
   const recentRates =
-    props.perf.recent_success_rates?.filter((rate) => Number.isFinite(rate)) ??
+    props.perf?.recent_success_rates?.filter((rate) => Number.isFinite(rate)) ??
     []
   const statusRates =
-    recentRates.length > 0 ? recentRates.slice(-3) : [success_rate]
+    recentRates.length > 0 ? recentRates.slice(-3) : [successRate]
   const statusBars = [
     ...Array(Math.max(0, 3 - statusRates.length)).fill(null),
     ...statusRates,
-  ].slice(-3)
+  ]
+    .slice(-3)
+    .map((rate, index) => ({
+      rate,
+      slot: ['oldest', 'previous', 'latest'][index],
+    }))
 
   return (
     <div
       className={cn(
-        'hidden w-[132px] grid-cols-[38px_48px_30px] gap-x-2 text-right tabular-nums min-[460px]:grid',
+        'hidden items-start gap-x-2 text-right tabular-nums min-[460px]:flex',
         props.className
       )}
     >
-      <div title={t('Average latency')} className='min-w-0'>
-        <div className='text-muted-foreground/55 text-[10px] leading-4'>
-          {t('Latency short')}
-        </div>
-        <div className='text-muted-foreground/80 font-mono text-xs leading-4 whitespace-nowrap'>
-          {formatCompactLatency(avg_latency_ms)}
-        </div>
-      </div>
-      <div title={t('Throughput')} className='min-w-0'>
-        <div className='text-muted-foreground/55 truncate text-[10px] leading-4'>
-          {t('Throughput short')}
-        </div>
-        <div className='text-muted-foreground/80 font-mono text-xs leading-4 whitespace-nowrap'>
-          {formatCompactThroughput(avg_tps)}
-        </div>
-      </div>
       <div
-        title={`${t('Success rate')}: ${success_rate.toFixed(1)}%`}
-        className='min-w-0'
+        title={
+          props.probe
+            ? t('Average of {{count}} tested channels, last probed {{time}}', {
+                count: props.probe.tested_channels,
+                time: formatTimestampRelative(
+                  props.probe.last_test_time,
+                  'seconds',
+                  i18n.resolvedLanguage
+                ),
+              })
+            : t('Average latency')
+        }
+        className='min-w-[38px]'
       >
-        <div className='text-muted-foreground/55 truncate text-[10px] leading-4'>
-          {t('Status short')}
+        <div className='text-muted-foreground/55 text-[10px] leading-4'>
+          {props.probe ? t('Probe latency short') : t('Latency short')}
         </div>
-        <div className='flex h-4 items-center justify-end gap-0.5'>
-          {statusBars.map((rate, index) => (
-            <span
-              key={`${index}-${rate ?? 'empty'}`}
-              className={cn(
-                'w-1 rounded-full',
-                index === 0 && 'h-2',
-                index === 1 && 'h-2.5',
-                index === 2 && 'h-3',
-                rate == null
-                  ? index === 0
-                    ? 'bg-muted-foreground/10'
-                    : 'bg-muted-foreground/15'
-                  : getSuccessRateDotClass(rate)
-              )}
-            />
-          ))}
+        <div className='text-muted-foreground/80 font-mono text-xs leading-4 whitespace-nowrap'>
+          {formatCompactLatency(avgLatencyMs)}
         </div>
       </div>
+      {props.perf && (
+        <>
+          <div title={t('Throughput')} className='min-w-[48px]'>
+            <div className='text-muted-foreground/55 truncate text-[10px] leading-4'>
+              {t('Throughput short')}
+            </div>
+            <div className='text-muted-foreground/80 font-mono text-xs leading-4 whitespace-nowrap'>
+              {formatCompactThroughput(avgTps)}
+            </div>
+          </div>
+          <div
+            title={`${t('Success rate')}: ${successRate.toFixed(1)}%`}
+            className='min-w-[30px]'
+          >
+            <div className='text-muted-foreground/55 truncate text-[10px] leading-4'>
+              {t('Status short')}
+            </div>
+            <div className='flex h-4 items-center justify-end gap-0.5'>
+              {statusBars.map((bar) => {
+                let backgroundClass = getSuccessRateDotClass(bar.rate)
+                if (bar.rate == null) {
+                  backgroundClass =
+                    bar.slot === 'oldest'
+                      ? 'bg-muted-foreground/10'
+                      : 'bg-muted-foreground/15'
+                }
+
+                return (
+                  <span
+                    key={bar.slot}
+                    className={cn(
+                      'w-1 rounded-full',
+                      bar.slot === 'oldest' && 'h-2',
+                      bar.slot === 'previous' && 'h-2.5',
+                      bar.slot === 'latest' && 'h-3',
+                      backgroundClass
+                    )}
+                  />
+                )
+              })}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 })

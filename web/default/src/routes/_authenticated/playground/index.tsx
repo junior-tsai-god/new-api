@@ -17,9 +17,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { isSidebarModuleEnabled } from '@/lib/nav-modules'
+
 import { Main } from '@/components/layout'
 import { Playground } from '@/features/playground'
+import { isSidebarModuleEnabled } from '@/lib/nav-modules'
 
 export const Route = createFileRoute('/_authenticated/playground/')({
   beforeLoad: () => {
@@ -32,7 +33,7 @@ export const Route = createFileRoute('/_authenticated/playground/')({
 
 function PlaygroundPage() {
   return (
-    <Main className='p-0'>
+    <Main className='route-workspace p-0'>
       <Playground />
     </Main>
   )

@@ -94,10 +94,39 @@ export type LogCleanupTask = SystemTask<
   LogCleanupTaskResult
 >
 
+export type ChannelLatencyTestState = {
+  total: number
+  processed: number
+  progress: number
+}
+
+export type ChannelLatencyTestResult = {
+  tested: number
+  succeeded: number
+  failed: number
+  disabled: number
+  enabled: number
+}
+
+export type ChannelLatencyTestTask = SystemTask<
+  Record<string, never>,
+  ChannelLatencyTestState,
+  ChannelLatencyTestResult
+>
+
 export type SystemTaskResponse<TTask = SystemTask | null> = {
   success: boolean
   message: string
   data?: TTask
+}
+
+export type StartChannelLatencyTestResponse = {
+  success: boolean
+  message: string
+  data?: {
+    task_id: string
+    status: SystemTaskStatus
+  }
 }
 
 export type SystemTaskListResponse = {

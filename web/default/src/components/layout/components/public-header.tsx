@@ -93,7 +93,11 @@ export function PublicHeader(props: PublicHeaderProps) {
   const displaySiteName = customSiteName || systemName
   const links = dynamicLinks.length > 0 ? dynamicLinks : navLinks
   const isHomePage = pathname === '/'
-  const isBrandSurface = isHomePage || pathname.startsWith('/pricing')
+  const isBrandSurface =
+    isHomePage ||
+    ['/pricing', '/rankings', '/docs', '/about'].some((prefix) =>
+      pathname.startsWith(prefix)
+    )
 
   let brandContent: React.ReactNode
   if (loading) {
