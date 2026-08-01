@@ -13,6 +13,7 @@ services:
       CRYPTO_SECRET: ${CRYPTO_SECRET}
       SESSION_COOKIE_SECURE: "true"
       SESSION_COOKIE_TRUSTED_URL: https://43.162.104.187.sslip.io
+      TRUSTED_PROXIES: 172.18.0.0/16
       FRONTEND_DIST_DIR: /app/frontend/current
 
   redis:
