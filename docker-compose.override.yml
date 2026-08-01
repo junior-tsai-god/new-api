@@ -11,6 +11,8 @@ services:
       REDIS_CONN_STRING: redis://:${REDIS_PASSWORD}@redis:6379
       SESSION_SECRET: ${SESSION_SECRET}
       CRYPTO_SECRET: ${CRYPTO_SECRET}
+      SESSION_COOKIE_SECURE: "true"
+      SESSION_COOKIE_TRUSTED_URL: https://43.162.104.187.sslip.io
       FRONTEND_DIST_DIR: /app/frontend/current
 
   redis:
