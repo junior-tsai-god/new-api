@@ -8,9 +8,6 @@ docs
 .eslintcache
 .gocache
 /web/node_modules
-/web/default/node_modules
-/web/default/dist
-/web/default/.frontend-runtime
-/web/classic/node_modules
-/web/classic/dist
+/web/dist
+/web/.frontend-runtime
 !THIRD-PARTY-LICENSES.md

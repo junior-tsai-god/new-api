@@ -50,29 +50,3 @@ func DiskFolder(targetPath string) static.ServeFileSystem {
 		FileSystem: http.Dir(targetPath),
 	}
 }
-
-// themeAwareFileSystem delegates to the appropriate embedded FS based on
-// the current theme (via GetTheme). This enables runtime theme switching
-// without restarting the server.
-type themeAwareFileSystem struct {
-	defaultFS static.ServeFileSystem
-	classicFS static.ServeFileSystem
-}
-
-func (t *themeAwareFileSystem) Exists(prefix string, path string) bool {
-	if GetTheme() == "classic" {
-		return t.classicFS.Exists(prefix, path)
-	}
-	return t.defaultFS.Exists(prefix, path)
-}
-
-func (t *themeAwareFileSystem) Open(name string) (http.File, error) {
-	if GetTheme() == "classic" {
-		return t.classicFS.Open(name)
-	}
-	return t.defaultFS.Open(name)
-}
-
-func NewThemeAwareFS(defaultFS, classicFS static.ServeFileSystem) static.ServeFileSystem {
-	return &themeAwareFileSystem{defaultFS: defaultFS, classicFS: classicFS}
-}

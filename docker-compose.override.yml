@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     image: new-api-local:paypal
     volumes:
-      - ./web/default/.frontend-runtime:/app/frontend:ro
+      - ./web/.frontend-runtime:/app/frontend:ro
     environment:
       SQL_DSN: postgresql://root:${POSTGRES_PASSWORD}@postgres:5432/new-api
       REDIS_CONN_STRING: redis://:${REDIS_PASSWORD}@redis:6379
