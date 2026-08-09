@@ -18,27 +18,15 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import {
   Activity,
-  Box,
-  CreditCard,
-  FileText,
   FlaskConical,
   Key,
-  LayoutDashboard,
-  ListTodo,
-  MessageSquare,
-  Network,
-  Radio,
-  ServerCog,
   Settings,
-  Ticket,
-  User,
-  Users,
   Wallet,
+  Boxes,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { SidebarData } from '@/components/layout/types'
-import { ROLE } from '@/lib/roles'
 
 /**
  * Root navigation groups for the application sidebar.
@@ -52,24 +40,8 @@ export function useSidebarData(): SidebarData {
   return {
     navGroups: [
       {
-        id: 'chat',
-        title: t('Chat'),
-        items: [
-          {
-            title: t('Playground'),
-            url: '/playground',
-            icon: FlaskConical,
-          },
-          {
-            title: t('Chat'),
-            icon: MessageSquare,
-            type: 'chat-presets',
-          },
-        ],
-      },
-      {
-        id: 'general',
-        title: t('General'),
+        id: 'workspace',
+        title: t('Workspace'),
         items: [
           {
             title: t('Overview'),
@@ -77,9 +49,9 @@ export function useSidebarData(): SidebarData {
             icon: Activity,
           },
           {
-            title: t('Dashboard'),
-            url: '/dashboard/models',
-            icon: LayoutDashboard,
+            title: t('Playground'),
+            url: '/playground',
+            icon: FlaskConical,
           },
           {
             title: t('API Keys'),
@@ -87,80 +59,33 @@ export function useSidebarData(): SidebarData {
             icon: Key,
           },
           {
-            title: t('Usage Logs'),
-            url: '/usage-logs/common',
-            icon: FileText,
+            title: t('Models'),
+            url: '/model-catalog/catalog',
+            activeUrls: ['/model-catalog', '/model-status', '/pricing'],
+            icon: Boxes,
           },
           {
-            title: t('Task Logs'),
-            url: '/usage-logs/task',
-            activeUrls: ['/usage-logs/drawing'],
-            configUrls: ['/usage-logs/drawing', '/usage-logs/task'],
-            icon: ListTodo,
-          },
-        ],
-      },
-      {
-        id: 'personal',
-        title: t('Personal'),
-        items: [
-          {
-            title: t('Wallet'),
-            url: '/wallet',
+            title: t('Usage & Billing'),
+            url: '/dashboard/models',
+            activeUrls: ['/usage-logs', '/wallet'],
+            configUrls: [
+              '/dashboard/models',
+              '/usage-logs/common',
+              '/usage-logs/drawing',
+              '/usage-logs/task',
+              '/wallet',
+            ],
             icon: Wallet,
-          },
-          {
-            title: t('Profile'),
-            url: '/profile',
-            icon: User,
           },
         ],
       },
       {
         id: 'admin',
-        title: t('Admin'),
+        title: t('Administration'),
         items: [
           {
-            title: t('Channels'),
+            title: t('Administration'),
             url: '/channels',
-            icon: Radio,
-          },
-          {
-            title: t('Models'),
-            url: '/models/metadata',
-            icon: Box,
-          },
-          {
-            title: t('Users'),
-            url: '/users',
-            icon: Users,
-          },
-          {
-            title: t('Redemption Codes'),
-            url: '/redemption-codes',
-            icon: Ticket,
-          },
-          {
-            title: t('Subscriptions'),
-            url: '/subscriptions',
-            icon: CreditCard,
-          },
-          {
-            title: t('System Architecture'),
-            url: '/architecture',
-            icon: Network,
-            requiredRole: ROLE.ADMIN,
-          },
-          {
-            title: t('System Info'),
-            url: '/system-info',
-            icon: ServerCog,
-            requiredRole: ROLE.SUPER_ADMIN,
-          },
-          {
-            title: t('System Settings'),
-            url: '/system-settings/site',
-            activeUrls: ['/system-settings'],
             icon: Settings,
           },
         ],

@@ -39,6 +39,7 @@ import { ModelPerfBadge, type ModelPerfBadgeData } from './model-perf-badge'
 export interface ModelCardProps {
   model: PricingModel
   onClick: () => void
+  onTry?: () => void
   priceRate?: number
   usdExchangeRate?: number
   tokenUnit?: TokenUnit
@@ -224,6 +225,15 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
         </div>
 
         <div className='flex shrink-0 items-center gap-1.5'>
+          {props.onTry ? (
+            <button
+              type='button'
+              onClick={props.onTry}
+              className='text-foreground hover:bg-accent inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors sm:px-2.5 sm:py-1.5'
+            >
+              {t('Try in Playground')}
+            </button>
+          ) : null}
           <button
             type='button'
             onClick={props.onClick}

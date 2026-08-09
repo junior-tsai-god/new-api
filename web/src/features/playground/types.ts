@@ -23,6 +23,8 @@ export type MessageStatus = 'loading' | 'streaming' | 'complete' | 'error'
 
 export type PlaygroundMessageLayoutMode = 'alternating' | 'left'
 
+export type PlaygroundAuthMode = 'session' | 'api-key'
+
 export interface MessageVersion {
   id: string
   content: string
@@ -117,6 +119,8 @@ export interface ChatCompletionResponse {
 
 // Configuration types
 export interface PlaygroundConfig {
+  auth_mode: PlaygroundAuthMode
+  api_key_id: number | null
   model: string
   group: string
   temperature: number
@@ -148,4 +152,9 @@ export interface GroupOption {
   value: string
   ratio: number
   desc?: string
+}
+
+export interface PlaygroundRequestAuth {
+  mode: PlaygroundAuthMode
+  apiKey?: string
 }

@@ -212,6 +212,12 @@ export const STATIC_I18N_KEYS = [
   // Models section-registry nav (dynamic titleKey)
   'Grok',
 
+  // Playground starter queries
+  'Analyze the trend in this data: Jan 120 users, Feb 165, Mar 210, Apr 198.',
+  'Summarize in one sentence: Our AI gateway unifies model access, usage tracking, and automatic failover.',
+  'Write a TypeScript function that removes duplicate model names while preserving their original order.',
+  'Should a customer-support chatbot favor speed or accuracy? Explain the trade-offs.',
+
   // Channel Affinity section
   'Channel Affinity',
 

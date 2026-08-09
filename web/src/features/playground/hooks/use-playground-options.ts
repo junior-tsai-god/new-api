@@ -35,24 +35,27 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import { getUserGroups, getUserModels } from '../api'
+import type { ApiKey } from '@/features/keys/types'
+
+import { getApiKeyModels, getUserGroups, getUserModels } from '../api'
 import {
   getGroupFallback,
   getModelFallback,
   getOptionLoadErrorMessage,
   shouldClearModelForGroup,
 } from '../lib'
-import type { GroupOption, ModelOption, PlaygroundConfig } from '../types'
+import type { PlaygroundAuthMode, PlaygroundConfig } from '../types'
 
 type UsePlaygroundOptionsParams = {
+  apiKeySecret?: string
+  authMode: PlaygroundAuthMode
   currentGroup: string
   currentModel: string
-  setGroups: (groups: GroupOption[]) => void
-  setModels: (models: ModelOption[]) => void
+  selectedApiKey: ApiKey | null
   updateConfig: <K extends keyof PlaygroundConfig>(
     key: K,
     value: PlaygroundConfig[K]
@@ -60,10 +63,11 @@ type UsePlaygroundOptionsParams = {
 }
 
 export function usePlaygroundOptions({
+  apiKeySecret,
+  authMode,
   currentGroup,
   currentModel,
-  setGroups,
-  setModels,
+  selectedApiKey,
   updateConfig,
 }: UsePlaygroundOptionsParams) {
   const { t } = useTranslation()
@@ -74,9 +78,24 @@ export function usePlaygroundOptions({
     isError: isModelsError,
     isLoading: isLoadingModels,
   } = useQuery({
-    queryKey: ['playground-models', currentGroup],
-    queryFn: () => getUserModels(currentGroup),
-    enabled: currentGroup !== '',
+    queryKey: [
+      'playground-models',
+      authMode,
+      authMode === 'session' ? currentGroup : selectedApiKey?.id,
+    ],
+    queryFn: () => {
+      if (authMode === 'session') {
+        return getUserModels(currentGroup)
+      }
+      if (!apiKeySecret) {
+        throw new Error('Failed to load selected API key')
+      }
+      return getApiKeyModels(apiKeySecret)
+    },
+    enabled:
+      authMode === 'session'
+        ? currentGroup !== ''
+        : Boolean(selectedApiKey && apiKeySecret),
   })
 
   const {
@@ -86,7 +105,25 @@ export function usePlaygroundOptions({
   } = useQuery({
     queryKey: ['playground-groups'],
     queryFn: getUserGroups,
+    enabled: authMode === 'session',
   })
+
+  const apiKeyGroups = useMemo(() => {
+    if (!selectedApiKey) return []
+
+    const group = selectedApiKey.group?.trim() || 'default'
+    return [
+      {
+        desc: t('Fixed by the selected API key'),
+        label: group,
+        ratio: 1,
+        value: group,
+      },
+    ]
+  }, [selectedApiKey, t])
+
+  const groups = authMode === 'session' ? (groupsData ?? []) : apiKeyGroups
+  const models = modelsData ?? []
 
   useEffect(() => {
     if (!isModelsError) return
@@ -113,7 +150,6 @@ export function usePlaygroundOptions({
   useEffect(() => {
     if (!modelsData) return
 
-    setModels(modelsData)
     const fallback = getModelFallback(modelsData, currentModel)
 
     if (fallback) {
@@ -124,20 +160,30 @@ export function usePlaygroundOptions({
     if (shouldClearModelForGroup(modelsData, currentModel)) {
       updateConfig('model', '')
     }
-  }, [modelsData, currentModel, setModels, updateConfig])
+  }, [modelsData, currentModel, updateConfig])
 
   useEffect(() => {
-    if (!groupsData) return
+    if (authMode !== 'session' || !groupsData) return
 
-    setGroups(groupsData)
     const fallback = getGroupFallback(groupsData, currentGroup)
 
     if (fallback) {
       updateConfig('group', fallback)
     }
-  }, [groupsData, currentGroup, setGroups, updateConfig])
+  }, [authMode, groupsData, currentGroup, updateConfig])
+
+  useEffect(() => {
+    if (authMode !== 'api-key' || apiKeyGroups.length === 0) return
+
+    const apiKeyGroup = apiKeyGroups[0].value
+    if (apiKeyGroup !== currentGroup) {
+      updateConfig('group', apiKeyGroup)
+    }
+  }, [apiKeyGroups, authMode, currentGroup, updateConfig])
 
   return {
+    groups,
     isLoadingModels,
+    models,
   }
 }

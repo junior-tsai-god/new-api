@@ -58,18 +58,13 @@ export function SidebarModulesCard() {
   const sectionDefs: SectionDef[] = [
     {
       key: 'chat',
-      title: t('Chat Area'),
-      description: t('Playground and chat functions'),
+      title: t('Playground'),
+      description: t('AI model testing environment'),
       modules: [
         {
           key: 'playground',
           title: t('Playground'),
           description: t('AI model testing environment'),
-        },
-        {
-          key: 'chat',
-          title: t('Chat'),
-          description: t('Chat session management'),
         },
       ],
     },

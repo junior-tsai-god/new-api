@@ -19,10 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/console/chat/$chatId')({
-  beforeLoad: ({ params }) => {
-    throw redirect({
-      to: '/chat/$chatId',
-      params: { chatId: params.chatId },
-    })
+  beforeLoad: () => {
+    throw redirect({ to: '/playground' })
   },
 })

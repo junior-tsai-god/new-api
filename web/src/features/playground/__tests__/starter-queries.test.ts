@@ -16,27 +16,26 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-export function sendToFluent(apiKey: string, serverAddress?: string): boolean {
-  if (typeof window === 'undefined') {
-    return false
-  }
+import assert from 'node:assert/strict'
+import { describe, test } from 'node:test'
 
-  const container = document.getElementById('fluent-new-api-container')
-  if (!container) {
-    return false
-  }
+import { PLAYGROUND_STARTER_QUERY_KEYS } from '../constants.ts'
 
-  const payload = {
-    id: 'new-api',
-    baseUrl: serverAddress || window.location.origin,
-    apiKey: `sk-${apiKey}`,
-  }
+describe('playground starter queries', () => {
+  test('provides one complete, directly sendable query for each original category', () => {
+    const queries = Object.values(PLAYGROUND_STARTER_QUERY_KEYS)
 
-  container.dispatchEvent(
-    new CustomEvent('fluent:prefill', {
-      detail: payload,
-    })
-  )
+    assert.equal(queries.length, 4)
+    assert.deepEqual(Object.keys(PLAYGROUND_STARTER_QUERY_KEYS), [
+      'ANALYZE_DATA',
+      'SUMMARIZE_TEXT',
+      'CODE',
+      'GET_ADVICE',
+    ])
 
-  return true
-}
+    for (const query of queries) {
+      assert.ok(query.split(/\s+/).length >= 10)
+      assert.match(query, /[.!?]$/)
+    }
+  })
+})

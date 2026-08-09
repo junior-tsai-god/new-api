@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 
-import type { ChatCompletionRequest } from '../types'
+import type { ChatCompletionRequest, PlaygroundRequestAuth } from '../types'
 import { createStreamRequestController } from './use-stream-request'
 
 function deferred<T>() {
@@ -72,6 +72,8 @@ const payload: ChatCompletionRequest = {
   stream: true,
 }
 
+const sessionAuth: PlaygroundRequestAuth = { mode: 'session' }
+
 const noopCallbacks = {
   onUpdate: () => undefined,
   onComplete: () => undefined,
@@ -99,8 +101,8 @@ describe('latest-wins stream request coordination', () => {
       setStreaming: () => undefined,
     })
 
-    const first = controller.send(payload, noopCallbacks)
-    const second = controller.send(payload, noopCallbacks)
+    const first = controller.send(payload, sessionAuth, noopCallbacks)
+    const second = controller.send(payload, sessionAuth, noopCallbacks)
     firstHeaders.resolve({ Authorization: 'Bearer stale' })
     await first
     assert.equal(sources.length, 0)
@@ -123,7 +125,7 @@ describe('latest-wins stream request coordination', () => {
       setStreaming: () => undefined,
     })
 
-    const request = controller.send(payload, noopCallbacks)
+    const request = controller.send(payload, sessionAuth, noopCallbacks)
     controller.stop()
     headers.resolve({ Authorization: 'Bearer ignored' })
     await request
@@ -144,7 +146,7 @@ describe('latest-wins stream request coordination', () => {
       setStreaming: (streaming) => streamingStates.push(streaming),
     })
 
-    const request = controller.send(payload, noopCallbacks)
+    const request = controller.send(payload, sessionAuth, noopCallbacks)
     controller.dispose()
     headers.resolve({ Authorization: 'Bearer ignored' })
     await request
@@ -180,8 +182,8 @@ describe('latest-wins stream request coordination', () => {
       onError: () => undefined,
     }
 
-    await controller.send(payload, callbacks)
-    const second = controller.send(payload, callbacks)
+    await controller.send(payload, sessionAuth, callbacks)
+    const second = controller.send(payload, sessionAuth, callbacks)
     assert.equal(sources[0]?.closed, true)
     sources[0]?.emit(
       'message',

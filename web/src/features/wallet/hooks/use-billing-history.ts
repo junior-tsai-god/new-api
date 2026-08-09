@@ -28,6 +28,7 @@ import {
   completeOrder,
   isApiSuccess,
 } from '../api'
+import { shouldReportBillingHistoryError } from '../lib/billing-history-error'
 import type { TopupRecord } from '../types'
 
 // ============================================================================
@@ -56,33 +57,42 @@ export function useBillingHistory(options: UseBillingHistoryOptions = {}) {
   /**
    * Fetch billing history
    */
-  const fetchBillingHistory = useCallback(async () => {
-    setLoading(true)
-    try {
-      const response = isAdmin
-        ? await getAllBillingHistory(page, pageSize, keyword)
-        : await getUserBillingHistory(page, pageSize, keyword)
+  const fetchBillingHistory = useCallback(
+    async (signal?: AbortSignal) => {
+      setLoading(true)
+      try {
+        const response = isAdmin
+          ? await getAllBillingHistory(page, pageSize, keyword, signal)
+          : await getUserBillingHistory(page, pageSize, keyword, signal)
 
-      if (isApiSuccess(response) && response.data) {
-        setRecords(response.data.items || [])
-        setTotal(response.data.total || 0)
-      } else {
-        toast.error(
-          response.message || i18next.t('Failed to load billing history')
-        )
+        if (signal?.aborted) return
+
+        if (isApiSuccess(response) && response.data) {
+          setRecords(response.data.items || [])
+          setTotal(response.data.total || 0)
+        } else {
+          toast.error(
+            response.message || i18next.t('Failed to load billing history')
+          )
+          setRecords([])
+          setTotal(0)
+        }
+      } catch (error: unknown) {
+        if (!shouldReportBillingHistoryError(error, signal)) return
+
+        // eslint-disable-next-line no-console
+        console.error('Failed to fetch billing history:', error)
+        toast.error(i18next.t('Failed to load billing history'))
         setRecords([])
         setTotal(0)
+      } finally {
+        if (!signal?.aborted) {
+          setLoading(false)
+        }
       }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to fetch billing history:', error)
-      toast.error(i18next.t('Failed to load billing history'))
-      setRecords([])
-      setTotal(0)
-    } finally {
-      setLoading(false)
-    }
-  }, [isAdmin, page, pageSize, keyword])
+    },
+    [isAdmin, page, pageSize, keyword]
+  )
 
   /**
    * Complete a pending order (admin only)
@@ -143,7 +153,10 @@ export function useBillingHistory(options: UseBillingHistoryOptions = {}) {
 
   // Fetch data when dependencies change
   useEffect(() => {
-    fetchBillingHistory()
+    const controller = new AbortController()
+    void fetchBillingHistory(controller.signal)
+
+    return () => controller.abort()
   }, [fetchBillingHistory])
 
   return {

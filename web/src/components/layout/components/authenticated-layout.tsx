@@ -25,7 +25,6 @@ import { cn } from '@/lib/utils'
 
 import { AppHeader } from './app-header'
 import { AppSidebar } from './app-sidebar'
-import { ConsoleModuleNavigation } from './console-module-navigation'
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode
@@ -41,7 +40,6 @@ export function AuthenticatedLayout(props: AuthenticatedLayoutProps) {
             <AppSidebar />
             <div className='routing-deck-stage flex min-h-0 min-w-0 flex-1 flex-col'>
               <AppHeader />
-              <ConsoleModuleNavigation />
               <div
                 data-slot='sidebar-inset'
                 className={cn(

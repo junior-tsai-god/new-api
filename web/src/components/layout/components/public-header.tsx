@@ -95,8 +95,8 @@ export function PublicHeader(props: PublicHeaderProps) {
   const isHomePage = pathname === '/'
   const isBrandSurface =
     isHomePage ||
-    ['/pricing', '/rankings', '/docs', '/about'].some((prefix) =>
-      pathname.startsWith(prefix)
+    ['/pricing', '/model-status', '/rankings', '/docs', '/about'].some(
+      (prefix) => pathname.startsWith(prefix)
     )
 
   let brandContent: React.ReactNode

@@ -12,7 +12,7 @@ services:
       SESSION_SECRET: ${SESSION_SECRET}
       CRYPTO_SECRET: ${CRYPTO_SECRET}
       SESSION_COOKIE_SECURE: "true"
-      SESSION_COOKIE_TRUSTED_URL: https://43.162.104.187.sslip.io
+      SESSION_COOKIE_TRUSTED_URL: https://apibex.com
       TRUSTED_PROXIES: 172.18.0.0/16
       FRONTEND_DIST_DIR: /app/frontend/current
 

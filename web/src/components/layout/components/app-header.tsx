@@ -17,10 +17,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import {
-  DashboardSquare01Icon,
-  Message01Icon,
+  AiBrain01Icon,
+  ArrowLeft01Icon,
+  FlaskConicalIcon,
+  Home01Icon,
+  Key01Icon,
   Settings02Icon,
-  UserCircleIcon,
+  Wallet01Icon,
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Link, useLocation } from '@tanstack/react-router'
@@ -31,143 +34,77 @@ import { ConfigDrawer } from '@/components/config-drawer'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { NotificationPopover } from '@/components/notification-popover'
 import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
 import { useNotifications } from '@/hooks/use-notifications'
-import { useTopNavLinks } from '@/hooks/use-top-nav-links'
 import { ROLE } from '@/lib/roles'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
-import { defaultTopNavLinks } from '../config/top-nav.config'
-import type { TopNavLink } from '../types'
 import { Header } from './header'
 import { SystemBrand } from './system-brand'
-import { TopNav } from './top-nav'
 
-/**
- * General application Header component
- * Integrates navigation bar, search, configuration and profile functions
- *
- * @example
- * // Basic usage
- * <AppHeader />
- *
- * @example
- * // Custom navigation links
- * <AppHeader navLinks={customLinks} />
- *
- * @example
- * // Hide navigation bar and search box
- * <AppHeader showTopNav={false} showSearch={false} />
- *
- * @example
- * // Fully customize left and right content
- * <AppHeader
- *   leftContent={<CustomLeft />}
- *   rightContent={<CustomRight />}
- * />
- */
-type AppHeaderProps = {
-  /**
-   * Custom navigation links, uses default global navigation or dynamically generated from backend if not provided
-   */
-  navLinks?: TopNavLink[]
-  /**
-   * Whether to show top navigation bar
-   * @default true
-   */
-  showTopNav?: boolean
-  /**
-   * Left content, overrides TopNav if provided
-   */
-  leftContent?: React.ReactNode
-  /**
-   * Whether to show search box
-   * @default true
-   */
-  showSearch?: boolean
-  /**
-   * Custom right content, overrides default right content if provided
-   */
-  rightContent?: React.ReactNode
-  /**
-   * Whether to show notification button
-   * @default true
-   */
-  showNotifications?: boolean
-  /**
-   * Whether to show config drawer
-   * @default true
-   */
-  showConfigDrawer?: boolean
-  /**
-   * Whether to show profile dropdown
-   * @default true
-   */
-  showProfileDropdown?: boolean
-}
+const ADMIN_PATH_PREFIXES = [
+  '/channels',
+  '/models/metadata',
+  '/models/deployments',
+  '/users',
+  '/redemption-codes',
+  '/subscriptions',
+  '/architecture',
+  '/system-info',
+  '/system-settings',
+  '/dashboard/flow',
+  '/dashboard/users',
+]
 
-export function AppHeader({
-  navLinks = defaultTopNavLinks,
-  showTopNav = true,
-  leftContent,
-  showSearch = true,
-  rightContent,
-  showNotifications = true,
-  showConfigDrawer = true,
-  showProfileDropdown = true,
-}: AppHeaderProps) {
+export function AppHeader() {
   const { t } = useTranslation()
-  const dynamicLinks = useTopNavLinks()
-  const links = dynamicLinks.length > 0 ? dynamicLinks : navLinks
   const pathname = useLocation({ select: (location) => location.pathname })
   const role = useAuthStore((state) => state.auth.user?.role ?? ROLE.GUEST)
   const notifications = useNotifications()
-  const primaryNavigation = useMemo(
+  const isAdminWorkspace =
+    role >= ROLE.ADMIN &&
+    ADMIN_PATH_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+    )
+  const userNavigation = useMemo(
     () => [
       {
-        id: 'chat',
-        title: t('Chat'),
-        to: '/playground' as const,
-        icon: Message01Icon,
-        matches: ['/playground', '/chat', '/chat2link'],
-      },
-      {
-        id: 'console',
-        title: t('Console'),
+        id: 'overview',
+        title: t('Overview'),
         to: '/dashboard' as const,
-        icon: DashboardSquare01Icon,
-        matches: ['/dashboard', '/keys', '/usage-logs'],
+        icon: Home01Icon,
+        matches: ['/dashboard/overview'],
       },
       {
-        id: 'personal',
-        title: t('Personal'),
-        to: '/wallet' as const,
-        icon: UserCircleIcon,
-        matches: ['/wallet', '/profile'],
+        id: 'playground',
+        title: t('Playground'),
+        to: '/playground' as const,
+        icon: FlaskConicalIcon,
+        matches: ['/playground'],
       },
-      ...(role >= ROLE.ADMIN
-        ? [
-            {
-              id: 'admin',
-              title: t('Admin'),
-              to: '/channels' as const,
-              icon: Settings02Icon,
-              matches: [
-                '/channels',
-                '/models',
-                '/users',
-                '/redemption-codes',
-                '/subscriptions',
-                '/architecture',
-                '/system-info',
-                '/system-settings',
-              ],
-            },
-          ]
-        : []),
+      {
+        id: 'keys',
+        title: t('API Keys'),
+        to: '/keys' as const,
+        icon: Key01Icon,
+        matches: ['/keys'],
+      },
+      {
+        id: 'models',
+        title: t('Models'),
+        to: '/model-catalog' as const,
+        icon: AiBrain01Icon,
+        matches: ['/model-catalog', '/model-status', '/pricing'],
+      },
+      {
+        id: 'usage',
+        title: t('Usage & Billing'),
+        to: '/usage' as const,
+        icon: Wallet01Icon,
+        matches: ['/dashboard/models', '/usage-logs', '/wallet'],
+      },
     ],
-    [role, t]
+    [t]
   )
 
   return (
@@ -176,69 +113,82 @@ export function AppHeader({
         <SystemBrand variant='inline' />
       </div>
 
-      {leftContent ? (
-        <div className='ms-2 flex items-center'>{leftContent}</div>
-      ) : null}
-
       <nav
         className='console-primary-nav mx-auto hidden items-center gap-0.5 rounded-full border p-1 lg:flex'
-        aria-label={t('Console')}
+        aria-label={t('Workspace')}
       >
-        {primaryNavigation.map((item) => {
-          const isActive = item.matches.some(
-            (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-          )
-
-          return (
+        {isAdminWorkspace ? (
+          <>
             <Link
-              key={item.id}
-              to={item.to}
-              data-active={isActive || undefined}
-              aria-current={isActive ? 'page' : undefined}
-              className={cn(
-                'focus-visible:ring-ring flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium outline-none transition-colors focus-visible:ring-2',
-                isActive
-                  ? 'bg-[var(--deck-ink)] text-[var(--deck-panel)]'
-                  : 'text-muted-foreground hover:bg-[var(--deck-panel)] hover:text-foreground'
-              )}
+              to='/dashboard'
+              className='text-muted-foreground hover:text-foreground focus-visible:ring-ring flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium outline-none focus-visible:ring-2'
             >
               <HugeiconsIcon
-                icon={item.icon}
+                icon={ArrowLeft01Icon}
                 className='size-3.5'
                 strokeWidth={1.9}
                 aria-hidden='true'
               />
-              {item.title}
+              {t('Back to workspace')}
             </Link>
-          )
-        })}
+            <span className='flex h-8 items-center gap-1.5 rounded-full bg-[var(--deck-ink)] px-3 text-xs font-medium text-[var(--deck-panel)]'>
+              <HugeiconsIcon
+                icon={Settings02Icon}
+                className='size-3.5'
+                strokeWidth={1.9}
+                aria-hidden='true'
+              />
+              {t('Administration')}
+            </span>
+          </>
+        ) : (
+          userNavigation.map((item) => {
+            const isActive = item.matches.some(
+              (prefix) =>
+                pathname === prefix || pathname.startsWith(`${prefix}/`)
+            )
+
+            return (
+              <Link
+                key={item.id}
+                to={item.to}
+                data-active={isActive || undefined}
+                aria-current={isActive ? 'page' : undefined}
+                className={cn(
+                  'focus-visible:ring-ring flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium outline-none transition-colors focus-visible:ring-2',
+                  isActive
+                    ? 'bg-[var(--deck-ink)] text-[var(--deck-panel)]'
+                    : 'text-muted-foreground hover:bg-[var(--deck-panel)] hover:text-foreground'
+                )}
+              >
+                <HugeiconsIcon
+                  icon={item.icon}
+                  className='size-3.5'
+                  strokeWidth={1.9}
+                  aria-hidden='true'
+                />
+                {item.title}
+              </Link>
+            )
+          })
+        )}
       </nav>
 
-      {rightContent ?? (
-        <div className='ms-auto flex items-center gap-1 sm:gap-1.5'>
-          {showTopNav && links.length > 0 ? (
-            <div className='me-2 hidden 2xl:block'>
-              <TopNav links={links} />
-            </div>
-          ) : null}
-          {showSearch && <Search />}
-          {showNotifications && (
-            <NotificationPopover
-              open={notifications.popoverOpen}
-              onOpenChange={notifications.setPopoverOpen}
-              unreadCount={notifications.unreadCount}
-              activeTab={notifications.activeTab}
-              onTabChange={notifications.setActiveTab}
-              notice={notifications.notice}
-              announcements={notifications.announcements}
-              loading={notifications.loading}
-            />
-          )}
-          <LanguageSwitcher />
-          {showConfigDrawer && <ConfigDrawer />}
-          {showProfileDropdown && <ProfileDropdown />}
-        </div>
-      )}
+      <div className='ms-auto flex items-center gap-1 sm:gap-1.5'>
+        <NotificationPopover
+          open={notifications.popoverOpen}
+          onOpenChange={notifications.setPopoverOpen}
+          unreadCount={notifications.unreadCount}
+          activeTab={notifications.activeTab}
+          onTabChange={notifications.setActiveTab}
+          notice={notifications.notice}
+          announcements={notifications.announcements}
+          loading={notifications.loading}
+        />
+        <LanguageSwitcher />
+        <ConfigDrawer />
+        <ProfileDropdown />
+      </div>
     </Header>
   )
 }

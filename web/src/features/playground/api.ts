@@ -18,26 +18,71 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { api } from '@/lib/api'
 
-import { API_ENDPOINTS } from './constants'
+import { API_ENDPOINTS, ERROR_MESSAGES } from './constants'
 import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
   ModelOption,
   GroupOption,
+  PlaygroundRequestAuth,
 } from './types'
+
+type RelayErrorPayload = {
+  error?: {
+    code?: string
+    message?: string
+  }
+  message?: string
+}
+
+async function parseRelayResponse<T>(response: Response): Promise<T> {
+  const data = (await response.json()) as T & RelayErrorPayload
+  if (response.ok) {
+    return data
+  }
+
+  const error = new Error(
+    data.error?.message || data.message || `HTTP ${response.status}`
+  ) as Error & { response?: { data: RelayErrorPayload } }
+  error.response = { data }
+  throw error
+}
 
 /**
  * Send chat completion request (non-streaming)
  */
 export async function sendChatCompletion(
   payload: ChatCompletionRequest,
+  auth: PlaygroundRequestAuth,
   signal?: AbortSignal
 ): Promise<ChatCompletionResponse> {
-  const res = await api.post(API_ENDPOINTS.CHAT_COMPLETIONS, payload, {
+  if (auth.mode === 'session') {
+    const res = await api.post(
+      API_ENDPOINTS.SESSION_CHAT_COMPLETIONS,
+      payload,
+      {
+        signal,
+        skipErrorHandler: true,
+      }
+    )
+    return res.data
+  }
+
+  if (!auth.apiKey) {
+    throw new Error(ERROR_MESSAGES.API_KEY_REQUIRED)
+  }
+
+  const response = await fetch(API_ENDPOINTS.API_KEY_CHAT_COMPLETIONS, {
+    body: JSON.stringify(payload),
+    credentials: 'omit',
+    headers: {
+      Authorization: `Bearer ${auth.apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    method: 'POST',
     signal,
-    skipErrorHandler: true,
-  } as Record<string, unknown>)
-  return res.data
+  })
+  return parseRelayResponse<ChatCompletionResponse>(response)
 }
 
 /**
@@ -57,6 +102,30 @@ export async function getUserModels(group: string): Promise<ModelOption[]> {
     label: model,
     value: model,
   }))
+}
+
+/**
+ * Get models available to a selected API key without exposing the key in the UI.
+ */
+export async function getApiKeyModels(apiKey: string): Promise<ModelOption[]> {
+  const response = await fetch(API_ENDPOINTS.API_KEY_MODELS, {
+    credentials: 'omit',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+    },
+  })
+  const data = await parseRelayResponse<{
+    data?: Array<{ id?: string }>
+  }>(response)
+
+  if (!Array.isArray(data.data)) {
+    return []
+  }
+
+  return data.data.flatMap((model) => {
+    const name = model.id?.trim()
+    return name ? [{ label: name, value: name }] : []
+  })
 }
 
 /**

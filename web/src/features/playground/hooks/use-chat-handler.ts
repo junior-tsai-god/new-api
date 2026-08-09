@@ -34,12 +34,18 @@ import {
   isAssistantMessageFinal,
   isAssistantMessagePending,
 } from '../lib'
-import type { Message, PlaygroundConfig, ParameterEnabled } from '../types'
+import type {
+  Message,
+  PlaygroundConfig,
+  ParameterEnabled,
+  PlaygroundRequestAuth,
+} from '../types'
 import { useStreamRequest } from './use-stream-request'
 
 interface UseChatHandlerOptions {
   config: PlaygroundConfig
   parameterEnabled: ParameterEnabled
+  requestAuth: PlaygroundRequestAuth
   onMessageUpdate: (updater: (prev: Message[]) => Message[]) => void
 }
 
@@ -69,6 +75,7 @@ function mergePendingStreamChunk(
 export function useChatHandler({
   config,
   parameterEnabled,
+  requestAuth,
   onMessageUpdate,
 }: UseChatHandlerOptions) {
   const { t } = useTranslation()
@@ -252,10 +259,12 @@ export function useChatHandler({
       const payload = buildChatCompletionPayload(
         messages,
         config,
-        parameterEnabled
+        parameterEnabled,
+        requestAuth.mode === 'session'
       )
       void sendStreamRequest(
         payload,
+        requestAuth,
         (type, chunk) => handleStreamUpdate(generation, type, chunk),
         () => handleStreamComplete(generation),
         (error, errorCode) => handleStreamError(generation, error, errorCode)
@@ -264,6 +273,7 @@ export function useChatHandler({
     [
       config,
       parameterEnabled,
+      requestAuth,
       sendStreamRequest,
       discardPendingStreamUpdates,
       handleStreamUpdate,
@@ -278,7 +288,8 @@ export function useChatHandler({
       const payload = buildChatCompletionPayload(
         messages,
         config,
-        parameterEnabled
+        parameterEnabled,
+        requestAuth.mode === 'session'
       )
       const generation = requestGenerationRef.current + 1
       const abortController = new AbortController()
@@ -293,6 +304,7 @@ export function useChatHandler({
         setIsRequesting(true)
         const response = await sendChatCompletion(
           payload,
+          requestAuth,
           abortController.signal
         )
         if (
@@ -338,6 +350,7 @@ export function useChatHandler({
     [
       config,
       parameterEnabled,
+      requestAuth,
       stopStream,
       discardPendingStreamUpdates,
       onMessageUpdate,

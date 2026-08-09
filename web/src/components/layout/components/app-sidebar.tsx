@@ -66,7 +66,7 @@ export function AppSidebar() {
           <SidebarTrigger
             variant='outline'
             className='size-9 rounded-full'
-            aria-label={t('Console')}
+            aria-label={t('Workspace')}
           />
         </div>
 
@@ -99,7 +99,7 @@ export function AppSidebar() {
 
         <SidebarFooter className='border-t px-4 py-3'>
           <div className='flex items-center justify-between gap-3 text-xs'>
-            <span className='text-muted-foreground'>{t('Console')}</span>
+            <span className='text-muted-foreground'>{t('Workspace')}</span>
             <span className='flex items-center gap-2 font-medium'>
               <span className='gateway-status-dot bg-success size-1.5 rounded-full' />
               {t('Online')}

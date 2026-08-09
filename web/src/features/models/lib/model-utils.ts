@@ -16,11 +16,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { type TFunction } from 'i18next'
+import type { TFunction } from 'i18next'
 
 import { formatTimestampToDate } from '@/lib/format'
 
-import { getNameRuleConfig, getQuotaTypeConfig } from '../constants'
+import {
+  ENDPOINT_TEMPLATES,
+  getNameRuleConfig,
+  getQuotaTypeConfig,
+} from '../constants'
 import type { NameRule, Model } from '../types'
 
 // ============================================================================
@@ -98,7 +102,39 @@ export function parseEndpoints(
 }
 
 /**
- * Format endpoints to display
+ * Format an endpoint type/configuration into its actionable request route.
+ */
+export function formatEndpointDisplay(
+  endpointType: string,
+  configuration?: unknown
+): string {
+  const configuredEndpoint =
+    configuration &&
+    typeof configuration === 'object' &&
+    !Array.isArray(configuration)
+      ? (configuration as { method?: unknown; path?: unknown })
+      : null
+  const template = ENDPOINT_TEMPLATES[endpointType]
+  let configuredPath = ''
+  if (typeof configuration === 'string') {
+    configuredPath = configuration.trim()
+  } else if (typeof configuredEndpoint?.path === 'string') {
+    configuredPath = configuredEndpoint.path.trim()
+  }
+  const configuredMethod =
+    typeof configuredEndpoint?.method === 'string'
+      ? configuredEndpoint.method.trim().toUpperCase()
+      : ''
+  const path = configuredPath || template?.path
+  const method = configuredMethod || template?.method
+
+  if (!path) return endpointType
+  return method ? `${method} ${path}` : path
+}
+
+/**
+ * Format endpoints to display as request methods and paths instead of internal
+ * protocol identifiers such as "openai".
  */
 export function formatEndpointsDisplay(
   endpoints: string | undefined
@@ -107,11 +143,15 @@ export function formatEndpointsDisplay(
   if (!parsed) return []
 
   if (typeof parsed === 'object' && !Array.isArray(parsed)) {
-    return Object.keys(parsed)
+    return Object.entries(parsed).map(([endpointType, configuration]) =>
+      formatEndpointDisplay(endpointType, configuration)
+    )
   }
 
   if (Array.isArray(parsed)) {
-    return parsed.map(String)
+    return parsed.map((endpointType) =>
+      formatEndpointDisplay(String(endpointType))
+    )
   }
 
   return []

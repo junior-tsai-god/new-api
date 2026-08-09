@@ -20,6 +20,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { SectionPageLayout } from '@/components/layout'
+import { UsageBillingNavigation } from '@/features/usage-billing/usage-billing-navigation'
 import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { getSelf } from '@/lib/api'
@@ -313,9 +314,12 @@ export function Wallet(props: WalletProps) {
   return (
     <>
       <SectionPageLayout>
-        <SectionPageLayout.Title>{t('Wallet')}</SectionPageLayout.Title>
+        <SectionPageLayout.Title>
+          {t('Usage & Billing')}
+        </SectionPageLayout.Title>
         <SectionPageLayout.Content>
           <div className='mx-auto flex w-full max-w-7xl flex-col gap-5 sm:gap-6'>
+            <UsageBillingNavigation />
             <WalletStatsCard user={user} loading={userLoading} />
 
             <div
@@ -401,10 +405,9 @@ export function Wallet(props: WalletProps) {
         transferring={transferring}
       />
 
-      <BillingHistoryDialog
-        open={billingDialogOpen}
-        onOpenChange={setBillingDialogOpen}
-      />
+      {billingDialogOpen ? (
+        <BillingHistoryDialog open onOpenChange={setBillingDialogOpen} />
+      ) : null}
 
       <CreemConfirmDialog
         open={creemDialogOpen}

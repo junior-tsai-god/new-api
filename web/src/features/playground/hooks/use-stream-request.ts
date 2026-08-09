@@ -29,7 +29,7 @@ import {
   parseStreamErrorDetails,
   parseStreamMessageUpdates,
 } from '../lib'
-import type { ChatCompletionRequest } from '../types'
+import type { ChatCompletionRequest, PlaygroundRequestAuth } from '../types'
 
 interface StreamEventSource {
   readyState?: number
@@ -48,10 +48,11 @@ interface StreamRequestCallbacks {
 }
 
 interface StreamRequestControllerRuntime {
-  getHeaders: () => Promise<Record<string, string>>
+  getHeaders: (auth: PlaygroundRequestAuth) => Promise<Record<string, string>>
   createSource: (
     payload: ChatCompletionRequest,
-    headers: Record<string, string>
+    headers: Record<string, string>,
+    auth: PlaygroundRequestAuth
   ) => StreamEventSource
   setStreaming: (streaming: boolean) => void
 }
@@ -72,6 +73,7 @@ export function createStreamRequestController(
 
   const send = async (
     payload: ChatCompletionRequest,
+    auth: PlaygroundRequestAuth,
     callbacks: StreamRequestCallbacks
   ) => {
     const requestGeneration = generation + 1
@@ -83,7 +85,7 @@ export function createStreamRequestController(
 
     let headers: Record<string, string>
     try {
-      headers = await runtime.getHeaders()
+      headers = await runtime.getHeaders(auth)
     } catch (error: unknown) {
       if (generation !== requestGeneration) return
       callbacks.onError(
@@ -95,7 +97,7 @@ export function createStreamRequestController(
     }
     if (generation !== requestGeneration) return
 
-    const nextSource = runtime.createSource(payload, headers)
+    const nextSource = runtime.createSource(payload, headers, auth)
     source = nextSource
     runtime.setStreaming(true)
     let completed = false
@@ -190,13 +192,29 @@ export function useStreamRequest() {
   > | null>(null)
   if (!controllerRef.current) {
     controllerRef.current = createStreamRequestController({
-      getHeaders: getFreshAuthHeaders,
-      createSource: (payload, headers) =>
-        new SSE(API_ENDPOINTS.CHAT_COMPLETIONS, {
-          headers,
-          method: 'POST',
-          payload: JSON.stringify(payload),
-        }) as StreamEventSource,
+      getHeaders: (auth) => {
+        if (auth.mode === 'session') {
+          return getFreshAuthHeaders()
+        }
+        if (!auth.apiKey) {
+          return Promise.reject(new Error(ERROR_MESSAGES.API_KEY_REQUIRED))
+        }
+        return Promise.resolve({
+          Authorization: `Bearer ${auth.apiKey}`,
+          'Content-Type': 'application/json',
+        })
+      },
+      createSource: (payload, headers, auth) =>
+        new SSE(
+          auth.mode === 'session'
+            ? API_ENDPOINTS.SESSION_CHAT_COMPLETIONS
+            : API_ENDPOINTS.API_KEY_CHAT_COMPLETIONS,
+          {
+            headers,
+            method: 'POST',
+            payload: JSON.stringify(payload),
+          }
+        ) as StreamEventSource,
       setStreaming: setIsStreaming,
     })
   }
@@ -204,11 +222,12 @@ export function useStreamRequest() {
   const sendStreamRequest = useCallback(
     (
       payload: ChatCompletionRequest,
+      auth: PlaygroundRequestAuth,
       onUpdate: (type: 'reasoning' | 'content', chunk: string) => void,
       onComplete: () => void,
       onError: (error: string, errorCode?: string) => void
     ) =>
-      controllerRef.current?.send(payload, {
+      controllerRef.current?.send(payload, auth, {
         onUpdate,
         onComplete,
         onError,

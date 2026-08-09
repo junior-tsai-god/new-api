@@ -16,14 +16,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { ArrowRight01Icon, BookOpen01Icon } from '@hugeicons/core-free-icons'
+import { ArrowRight01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
-
-import { GatewayWorkbench } from '../workbench/gateway-workbench'
+import { getModelStatus } from '@/features/model-status/api'
 
 interface HeroProps {
   className?: string
@@ -32,130 +33,152 @@ interface HeroProps {
 
 export function Hero(props: HeroProps) {
   const { t } = useTranslation()
-
-  const stats = [
-    { value: '50+', label: t('upstream services integrated') },
-    { value: '100+', label: t('model billing support') },
-    { value: '24/7', label: t('Observability') },
-  ]
+  const statusQuery = useQuery({
+    queryKey: ['model-status'],
+    queryFn: getModelStatus,
+    staleTime: 45 * 1000,
+  })
+  const statusSummary = useMemo(() => {
+    const models = statusQuery.data?.models ?? []
+    const healthy = models.filter((model) => model.status === 'healthy').length
+    const measured = models.filter((model) => model.latency_ms > 0)
+    const latencyTotal = measured.reduce(
+      (total, model) => total + model.latency_ms,
+      0
+    )
+    return {
+      healthy,
+      total: models.length,
+      averageLatency:
+        measured.length > 0 ? Math.round(latencyTotal / measured.length) : 0,
+    }
+  }, [statusQuery.data?.models])
+  const serviceHealthy =
+    !statusQuery.isError &&
+    statusSummary.total > 0 &&
+    statusSummary.healthy === statusSummary.total
+  let serviceLabel = t('Online')
+  if (statusQuery.isError) {
+    serviceLabel = t('Unknown')
+  } else if (serviceHealthy) {
+    serviceLabel = t('Healthy')
+  }
 
   return (
     <section className='aivanta-paper-grid relative overflow-hidden px-2 pt-2 md:px-4 md:pt-4'>
-      <div className='aivanta-workbench px-3 pt-20 pb-3 sm:px-5 sm:pt-24 sm:pb-5 lg:px-6'>
+      <div className='aivanta-workbench px-3 pt-20 pb-3 sm:px-6 sm:pt-24 sm:pb-6 lg:px-8'>
         <div className='flex flex-wrap items-center justify-between gap-3 border-b border-[var(--aivanta-rule)] py-3 font-mono text-[9px] tracking-[0.16em] uppercase sm:text-[10px]'>
           <span>Aivanta / Gateway</span>
           <span className='flex items-center gap-2'>
-            <span className='gateway-status-dot size-1.5 rounded-full bg-[var(--aivanta-signal)]' />
-            {t('AI Application Infrastructure Foundation')}
+            <span
+              className='gateway-status-dot size-1.5 rounded-full bg-[var(--aivanta-signal)]'
+              aria-hidden='true'
+            />
+            {t('Model Status')}
           </span>
         </div>
 
-        <div className='grid gap-8 py-7 lg:grid-cols-[minmax(0,1.2fr)_minmax(30rem,0.8fr)] lg:items-end'>
-          <div className='max-w-3xl'>
-            <p className='mb-3 font-mono text-[10px] tracking-[0.16em] text-[var(--aivanta-faint)] uppercase'>
+        <div className='grid gap-8 py-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(24rem,0.85fr)] lg:items-center lg:py-12'>
+          <div className='max-w-4xl'>
+            <p className='mb-4 font-mono text-[10px] tracking-[0.16em] text-[var(--aivanta-faint)] uppercase'>
               {t('Unified API Gateway for')} {t('Vast Range of AI Models')}
             </p>
-            <h1 className='text-[clamp(3rem,6vw,5.75rem)] leading-[0.9] font-light tracking-[-0.065em]'>
-              {t('Intelligence, connected.')}
+            <h1 className='text-[clamp(3.25rem,7vw,7rem)] leading-[0.88] font-light tracking-[-0.07em]'>
+              {t('One API key. Every model.')}
             </h1>
+            <p className='mt-6 max-w-2xl text-base leading-7 text-[var(--aivanta-secondary)] sm:text-lg'>
+              {t(
+                'Test models in Playground, then use the same API key in your app.'
+              )}
+            </p>
+            <div className='mt-7 flex flex-col gap-2 sm:flex-row'>
+              <Button
+                size='lg'
+                className='justify-between sm:min-w-44'
+                render={
+                  <Link
+                    to={props.isAuthenticated ? '/playground' : '/sign-in'}
+                  />
+                }
+              >
+                {t('Start testing')}
+                <HugeiconsIcon
+                  icon={ArrowRight01Icon}
+                  data-icon='inline-end'
+                  strokeWidth={2}
+                />
+              </Button>
+              <Button
+                size='lg'
+                variant='outline'
+                className='sm:min-w-36'
+                render={<Link to='/pricing' />}
+              >
+                {t('Model Square')}
+              </Button>
+            </div>
           </div>
-          <div className='grid grid-cols-3 gap-4 lg:pb-1'>
-            {stats.map((stat) => (
-              <div key={stat.label}>
-                <p className='deck-metric text-3xl leading-none sm:text-4xl'>
-                  {stat.value}
+
+          <aside
+            className='aivanta-panel overflow-hidden'
+            aria-label={t('Model Status')}
+          >
+            <div className='flex items-center justify-between border-b border-[var(--aivanta-rule)] px-4 py-3 font-mono text-[10px] tracking-[0.14em] uppercase sm:px-5'>
+              <span>{t('Model Status')}</span>
+              <span className='flex items-center gap-2'>
+                <span
+                  className={
+                    serviceHealthy
+                      ? 'bg-success size-1.5 rounded-full'
+                      : 'bg-warning size-1.5 rounded-full'
+                  }
+                  aria-hidden='true'
+                />
+                {serviceLabel}
+              </span>
+            </div>
+            <div className='grid grid-cols-2 divide-x border-b border-[var(--aivanta-rule)]'>
+              <div className='px-4 py-5 sm:px-5'>
+                <p className='text-[10px] tracking-[0.12em] text-[var(--aivanta-faint)] uppercase'>
+                  {t('Healthy models')}
                 </p>
-                <p className='mt-2 text-[10px] leading-relaxed text-[var(--aivanta-secondary)] sm:text-xs'>
-                  {stat.label}
+                <p className='deck-metric mt-2 text-4xl'>
+                  {statusQuery.isLoading
+                    ? '—'
+                    : `${statusSummary.healthy}/${statusSummary.total}`}
                 </p>
               </div>
-            ))}
-          </div>
-          <div className='flex flex-col justify-center gap-2 sm:flex-row lg:col-span-2'>
-            <Button
-              size='lg'
-              className='justify-between sm:min-w-48'
-              render={
-                <Link to={props.isAuthenticated ? '/dashboard' : '/sign-in'} />
-              }
-            >
-              {props.isAuthenticated ? t('Enter Console') : t('Sign in')}
-              <HugeiconsIcon
-                icon={ArrowRight01Icon}
-                data-icon='inline-end'
-                strokeWidth={2}
-              />
-            </Button>
-            <Button
-              size='lg'
-              variant='outline'
-              className='sm:min-w-40'
-              render={<Link to='/pricing' />}
-            >
-              {t('Model Square')}
-            </Button>
-          </div>
-        </div>
-
-        <div className='mb-3 grid gap-4 rounded-[1.5rem] border border-[var(--aivanta-rule)] bg-[var(--aivanta-panel)] p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center'>
-          <div>
-            <div className='mb-2 flex items-center justify-between font-mono text-[9px] tracking-[0.12em] uppercase'>
-              <span>{t('Routes')}</span>
-              <span className='text-[var(--aivanta-faint)]'>
-                50+ / {t('Healthy')}
-              </span>
+              <div className='px-4 py-5 sm:px-5'>
+                <p className='text-[10px] tracking-[0.12em] text-[var(--aivanta-faint)] uppercase'>
+                  {t('Average latency')}
+                </p>
+                <p className='deck-metric mt-2 text-4xl'>
+                  {statusSummary.averageLatency > 0
+                    ? statusSummary.averageLatency
+                    : '—'}
+                  {statusSummary.averageLatency > 0 ? (
+                    <span className='ms-1 font-mono text-xs tracking-normal'>
+                      ms
+                    </span>
+                  ) : null}
+                </p>
+              </div>
             </div>
-            <div className='gateway-route-rail grid h-8 grid-cols-[18%_16%_1fr_12%] overflow-hidden rounded-full text-[8px] font-medium'>
-              <span className='flex items-center justify-center bg-[var(--aivanta-ink)] text-[var(--aivanta-paper)]'>
-                18%
-              </span>
-              <span className='flex items-center justify-center bg-[var(--aivanta-signal)] text-[var(--aivanta-ink)]'>
-                16%
-              </span>
-              <span className='deck-track-striped' aria-hidden='true' />
-              <span className='flex items-center justify-center border border-[var(--aivanta-rule)]'>
-                12%
-              </span>
+            <div className='px-4 py-4 sm:px-5'>
+              <p className='text-[10px] tracking-[0.12em] text-[var(--aivanta-faint)] uppercase'>
+                {t('Unified endpoint')}
+              </p>
+              <code className='mt-2 block truncate rounded-lg border border-[var(--aivanta-rule)] bg-[var(--aivanta-paper)] px-3 py-2.5 text-xs'>
+                POST /v1/chat/completions
+              </code>
+              <Link
+                to='/model-status'
+                className='mt-4 inline-flex items-center text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-none'
+              >
+                {t('View status')}
+              </Link>
             </div>
-          </div>
-          <div className='grid grid-cols-3 gap-5 font-mono text-[9px] tracking-[0.12em] uppercase'>
-            <span>{t('Providers')} / 50+</span>
-            <span>{t('Models')} / 100+</span>
-            <span>{t('Requests')} / 6.1M</span>
-          </div>
-        </div>
-
-        <GatewayWorkbench />
-
-        <div className='mt-3 flex flex-col gap-4 rounded-[1.5rem] border border-[var(--aivanta-rule)] bg-[var(--aivanta-panel)] p-4 md:flex-row md:items-center md:justify-between'>
-          <p className='max-w-2xl font-mono text-[9px] leading-relaxed text-[var(--aivanta-faint)] uppercase sm:text-[10px]'>
-            {t(
-              'Supports one-click configuration and perfectly adapts to NewAPI multi-protocol configuration.'
-            )}
-          </p>
-          <div className='flex flex-col gap-2 sm:flex-row'>
-            <Button
-              className='justify-between'
-              render={
-                <Link to={props.isAuthenticated ? '/dashboard' : '/sign-in'} />
-              }
-            >
-              {props.isAuthenticated ? t('Enter Console') : t('Sign in')}
-              <HugeiconsIcon
-                icon={ArrowRight01Icon}
-                data-icon='inline-end'
-                strokeWidth={2}
-              />
-            </Button>
-            <Button variant='outline' render={<Link to='/docs' />}>
-              <HugeiconsIcon
-                icon={BookOpen01Icon}
-                data-icon='inline-start'
-                strokeWidth={2}
-              />
-              {t('Docs')}
-            </Button>
-          </div>
+          </aside>
         </div>
       </div>
     </section>

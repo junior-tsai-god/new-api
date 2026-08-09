@@ -34,7 +34,9 @@ export const MESSAGE_STATUS = {
 
 // API endpoints
 export const API_ENDPOINTS = {
-  CHAT_COMPLETIONS: '/pg/chat/completions',
+  API_KEY_CHAT_COMPLETIONS: '/v1/chat/completions',
+  API_KEY_MODELS: '/v1/models',
+  SESSION_CHAT_COMPLETIONS: '/pg/chat/completions',
   USER_MODELS: '/api/user/models',
   USER_GROUPS: '/api/user/self/groups',
 } as const
@@ -45,6 +47,8 @@ export const DEFAULT_GROUP = 'default' as const
 
 // Default configuration
 export const DEFAULT_CONFIG: PlaygroundConfig = {
+  auth_mode: 'session',
+  api_key_id: null,
   model: 'gpt-4o',
   group: DEFAULT_GROUP,
   temperature: 0.7,
@@ -65,6 +69,16 @@ export const DEFAULT_PARAMETER_ENABLED: ParameterEnabled = {
   seed: false,
 }
 
+export const PLAYGROUND_STARTER_QUERY_KEYS = {
+  ANALYZE_DATA:
+    'Analyze the trend in this data: Jan 120 users, Feb 165, Mar 210, Apr 198.',
+  SUMMARIZE_TEXT:
+    'Summarize in one sentence: Our AI gateway unifies model access, usage tracking, and automatic failover.',
+  CODE: 'Write a TypeScript function that removes duplicate model names while preserving their original order.',
+  GET_ADVICE:
+    'Should a customer-support chatbot favor speed or accuracy? Explain the trade-offs.',
+} as const
+
 // Storage keys
 export const STORAGE_KEYS = {
   CONFIG: 'playground_config',
@@ -74,6 +88,7 @@ export const STORAGE_KEYS = {
 
 // Error messages
 export const ERROR_MESSAGES = {
+  API_KEY_REQUIRED: 'API key is required',
   API_REQUEST_ERROR: 'Request error occurred',
   NETWORK_ERROR: 'Network connection failed or server not responding',
   PARSE_ERROR: 'Error parsing response data',

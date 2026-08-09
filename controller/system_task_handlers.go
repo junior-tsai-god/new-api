@@ -19,9 +19,31 @@ import (
 // service.StartSystemTaskRunner.
 func RegisterScheduledSystemTasks() {
 	service.RegisterSystemTaskHandler(channelTestHandler{})
+	service.RegisterSystemTaskHandler(modelStatusProbeHandler{})
 	service.RegisterSystemTaskHandler(modelUpdateHandler{})
 	service.RegisterSystemTaskHandler(midjourneyPollHandler{})
 	service.RegisterSystemTaskHandler(asyncTaskPollHandler{})
+}
+
+type modelStatusProbeHandler struct{}
+
+func (modelStatusProbeHandler) Type() string { return model.SystemTaskTypeModelStatusProbe }
+
+func (modelStatusProbeHandler) Enabled() bool {
+	return common.GetEnvOrDefaultBool("MODEL_STATUS_PROBE_ENABLED", true)
+}
+
+func (modelStatusProbeHandler) Interval() time.Duration { return modelStatusProbeInterval() }
+
+func (modelStatusProbeHandler) NewPayload() any { return nil }
+
+func (modelStatusProbeHandler) Run(ctx context.Context, task *model.SystemTask, runnerID string) {
+	summary, err := runModelStatusProbeTask(ctx, task.TaskID, service.NewSystemTaskProgressReporter(task, runnerID))
+	if err != nil {
+		finishSystemTaskHandler(task, runnerID, model.SystemTaskStatusFailed, summary, err)
+		return
+	}
+	finishSystemTaskHandler(task, runnerID, model.SystemTaskStatusSucceeded, summary, nil)
 }
 
 // channelTestHandler runs the scheduled "test all channels" job. Enablement and

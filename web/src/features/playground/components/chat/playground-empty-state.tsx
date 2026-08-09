@@ -27,15 +27,26 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 
+import { PLAYGROUND_STARTER_QUERY_KEYS } from '../../constants'
+
 type PlaygroundEmptyStateProps = {
   onSelectPrompt: (prompt: string) => void
 }
 
 const starterPrompts = [
-  { icon: BarChartIcon, text: 'Analyze data' },
-  { icon: NotepadTextIcon, text: 'Summarize text' },
-  { icon: CodeSquareIcon, text: 'Code' },
-  { icon: GraduationCapIcon, text: 'Get advice' },
+  {
+    icon: BarChartIcon,
+    text: PLAYGROUND_STARTER_QUERY_KEYS.ANALYZE_DATA,
+  },
+  {
+    icon: NotepadTextIcon,
+    text: PLAYGROUND_STARTER_QUERY_KEYS.SUMMARIZE_TEXT,
+  },
+  { icon: CodeSquareIcon, text: PLAYGROUND_STARTER_QUERY_KEYS.CODE },
+  {
+    icon: GraduationCapIcon,
+    text: PLAYGROUND_STARTER_QUERY_KEYS.GET_ADVICE,
+  },
 ]
 
 export function PlaygroundEmptyState({

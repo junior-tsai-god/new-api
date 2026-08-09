@@ -1,3 +1,3 @@
-43.162.104.187.sslip.io {
+apibex.com {
 	reverse_proxy new-api:3000
 }

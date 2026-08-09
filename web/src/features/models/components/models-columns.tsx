@@ -17,32 +17,23 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { ColumnDef } from '@tanstack/react-table'
+import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 
 import { BadgeCell, BadgeListCell } from '@/components/data-table'
 import { GroupBadge } from '@/components/group-badge'
 import { ProviderBadge } from '@/components/provider-badge'
 import { StatusBadge } from '@/components/status-badge'
-import { TableId } from '@/components/table-id'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 import { formatTimestampToDate } from '@/lib/format'
 import { getLobeIcon } from '@/lib/lobe-icon'
 
-import {
-  getModelStatusConfig,
-  getNameRuleConfig,
-  getQuotaTypeConfig,
-} from '../constants'
-import { parseModelTags, formatEndpointsDisplay } from '../lib'
+import { getModelStatusConfig } from '../constants'
+import { formatEndpointsDisplay } from '../lib'
 import type { Model, Vendor } from '../types'
 import { DataTableRowActions } from './data-table-row-actions'
-import { DescriptionCell } from './description-cell'
+
+const EMPTY_VENDORS: Vendor[] = []
 
 function getCompactModelIcon(iconKey: string) {
   const baseIconKey = iconKey.split('.')[0]
@@ -53,13 +44,20 @@ function getCompactModelIcon(iconKey: string) {
 /**
  * Generate models columns configuration
  */
-export function useModelsColumns(vendors: Vendor[] = []): ColumnDef<Model>[] {
+export function useModelsColumns(
+  vendors: Vendor[] = EMPTY_VENDORS
+): ColumnDef<Model>[] {
   const { t } = useTranslation()
 
+  return createModelsColumns(t, vendors)
+}
+
+export function createModelsColumns(
+  t: TFunction,
+  vendors: Vendor[] = EMPTY_VENDORS
+): ColumnDef<Model>[] {
   // Get translated configs
-  const NAME_RULE_CONFIG = getNameRuleConfig(t)
   const MODEL_STATUS_CONFIG = getModelStatusConfig(t)
-  const QUOTA_TYPE_CONFIG = getQuotaTypeConfig(t)
 
   const vendorMap: Record<number, Vendor> = {}
   vendors.forEach((v) => {
@@ -88,18 +86,6 @@ export function useModelsColumns(vendors: Vendor[] = []): ColumnDef<Model>[] {
       enableSorting: false,
       enableHiding: false,
       size: 40,
-    },
-
-    // ID column
-    {
-      accessorKey: 'id',
-      header: t('ID'),
-      meta: { mobileHidden: true },
-      cell: ({ row }) => {
-        const id = row.getValue('id') as number
-        return <TableId value={id} />
-      },
-      size: 64,
     },
 
     // Model Name column (with model icon)
@@ -134,72 +120,6 @@ export function useModelsColumns(vendors: Vendor[] = []): ColumnDef<Model>[] {
       },
       size: 260,
       minSize: 200,
-    },
-
-    // Name Rule column
-    {
-      accessorKey: 'name_rule',
-      header: t('Match Type'),
-      cell: ({ row }) => {
-        const rule = row.getValue('name_rule') as 0 | 1 | 2 | 3
-        const model = row.original
-        const config = NAME_RULE_CONFIG[rule]
-
-        let label = config.label
-        if (rule !== 0 && model.matched_count) {
-          label = `${config.label} (${model.matched_count})`
-        }
-
-        const badge = (
-          <StatusBadge
-            variant={
-              (config.color === 'error' ? 'danger' : config.color) as
-                | 'neutral'
-                | 'success'
-                | 'warning'
-                | 'danger'
-                | 'info'
-            }
-            size='sm'
-            className='-ml-1.5 max-w-none shrink-0'
-          >
-            {label}
-          </StatusBadge>
-        )
-
-        // Show tooltip with matched models for non-exact rules
-        if (
-          rule !== 0 &&
-          model.matched_models &&
-          model.matched_models.length > 0
-        ) {
-          const matchedBadges = model.matched_models.map((m) => (
-            <StatusBadge key={m} label={m} autoColor={m} size='sm' />
-          ))
-
-          return (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger
-                  render={<div className='inline-flex max-w-full min-w-0' />}
-                >
-                  {badge}
-                </TooltipTrigger>
-                <TooltipContent
-                  side='top'
-                  className='border-border bg-popover max-h-48 max-w-[320px] overflow-y-auto p-2'
-                >
-                  <div className='flex flex-wrap gap-1'>{matchedBadges}</div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )
-        }
-
-        return badge
-      },
-      size: 100,
-      enableSorting: false,
     },
 
     // Status column
@@ -261,43 +181,6 @@ export function useModelsColumns(vendors: Vendor[] = []): ColumnDef<Model>[] {
       enableSorting: false,
     },
 
-    // Description column
-    {
-      accessorKey: 'description',
-      header: t('Description'),
-      meta: { mobileHidden: true },
-      cell: ({ row }) => {
-        const description = row.getValue('description') as string
-        const modelName = row.getValue('model_name') as string
-
-        return (
-          <DescriptionCell modelName={modelName} description={description} />
-        )
-      },
-      size: 150,
-      enableSorting: false,
-    },
-
-    // Tags column
-    {
-      accessorKey: 'tags',
-      header: t('Tags'),
-      meta: { mobileHidden: true },
-      cell: ({ row }) => {
-        const tags = row.getValue('tags') as string
-        const tagArray = parseModelTags(tags)
-        return (
-          <BadgeListCell
-            items={tagArray.map((tag) => (
-              <StatusBadge key={tag} label={tag} autoColor={tag} size='sm' />
-            ))}
-          />
-        )
-      },
-      size: 100,
-      enableSorting: false,
-    },
-
     // Endpoints column
     {
       accessorKey: 'endpoints',
@@ -319,35 +202,6 @@ export function useModelsColumns(vendors: Vendor[] = []): ColumnDef<Model>[] {
       enableSorting: false,
     },
 
-    // Bound Channels column
-    {
-      accessorKey: 'bound_channels',
-      header: t('Bound Channels'),
-      meta: { mobileHidden: true },
-      cell: ({ row }) => {
-        const channels = row.getValue('bound_channels') as Array<{
-          id: number
-          name: string
-          type?: number
-          status?: number
-        }>
-        return (
-          <BadgeListCell
-            items={(channels ?? []).map((c) => (
-              <StatusBadge
-                key={c.id}
-                label={`${c.name} (${c.type})`}
-                autoColor={c.name}
-                size='sm'
-              />
-            ))}
-          />
-        )
-      },
-      size: 150,
-      enableSorting: false,
-    },
-
     // Enable Groups column
     {
       accessorKey: 'enable_groups',
@@ -365,69 +219,6 @@ export function useModelsColumns(vendors: Vendor[] = []): ColumnDef<Model>[] {
         )
       },
       size: 200,
-      enableSorting: false,
-    },
-
-    // Quota Types column
-    {
-      accessorKey: 'quota_types',
-      header: t('Quota Types'),
-      meta: { mobileHidden: true },
-      cell: ({ row }) => {
-        const quotaTypes = row.getValue('quota_types') as number[]
-        return (
-          <BadgeListCell
-            items={(quotaTypes ?? []).map((qt) => {
-              const config = QUOTA_TYPE_CONFIG[qt]
-              return (
-                <StatusBadge
-                  key={qt}
-                  label={config?.label || String(qt)}
-                  variant={
-                    (config?.color === 'error' ? 'danger' : config?.color) as
-                      | 'neutral'
-                      | 'success'
-                      | 'warning'
-                      | 'danger'
-                      | 'info'
-                  }
-                  size='sm'
-                />
-              )
-            })}
-          />
-        )
-      },
-      size: 150,
-      enableSorting: false,
-    },
-
-    // Sync Official column
-    {
-      accessorKey: 'sync_official',
-      header: t('Official Sync'),
-      meta: { mobileHidden: true },
-      cell: ({ row }) => {
-        const syncOfficial = row.getValue('sync_official') as number
-        return (
-          <StatusBadge
-            variant={syncOfficial === 1 ? 'success' : 'warning'}
-            size='sm'
-            copyable={false}
-            className='-ml-1.5 max-w-none shrink-0'
-          >
-            {syncOfficial === 1 ? t('Official Sync') : t('No Sync')}
-          </StatusBadge>
-        )
-      },
-      filterFn: (row, id, value) => {
-        if (!value || value.length === 0 || value.includes('all')) return true
-        const syncOfficial = row.getValue(id) as number
-        if (value.includes('yes')) return syncOfficial === 1
-        if (value.includes('no')) return syncOfficial !== 1
-        return false
-      },
-      size: 100,
       enableSorting: false,
     },
 
