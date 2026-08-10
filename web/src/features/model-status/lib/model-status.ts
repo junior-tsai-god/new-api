@@ -16,6 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { toIntlLocale } from '@/i18n/languages'
+
 import type {
   ModelProbeStatus,
   ModelStatusHistorySlot,
@@ -64,4 +66,14 @@ export function formatProbeCountdown(nextProbeAt: number, now: number): string {
   const hours = Math.floor(remainingMinutes / 60)
   const minutes = remainingMinutes % 60
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+}
+
+export function formatModelStatusCheckedAt(
+  timestamp: number,
+  language?: string | null
+): string {
+  return new Intl.DateTimeFormat(toIntlLocale(language), {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(timestamp * 1000)
 }

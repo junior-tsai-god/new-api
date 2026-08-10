@@ -25,7 +25,10 @@ import { formatEndpointDisplay } from '@/features/models/lib/model-utils'
 import { getLobeIcon } from '@/lib/lobe-icon'
 import { cn } from '@/lib/utils'
 
-import { createModelStatusHistorySlots } from '../lib/model-status'
+import {
+  createModelStatusHistorySlots,
+  formatModelStatusCheckedAt,
+} from '../lib/model-status'
 import type { ModelProbeStatus, ModelStatusItem } from '../types'
 
 const statusStyles: Record<
@@ -84,10 +87,10 @@ export function ModelStatusCard(props: ModelStatusCardProps) {
     .map((endpoint) => formatEndpointDisplay(endpoint))
     .slice(0, 2)
   const checkedAt = model.last_checked_at
-    ? new Intl.DateTimeFormat(i18n.language, {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      }).format(model.last_checked_at * 1000)
+    ? formatModelStatusCheckedAt(
+        model.last_checked_at,
+        i18n.resolvedLanguage || i18n.language
+      )
     : '—'
 
   return (

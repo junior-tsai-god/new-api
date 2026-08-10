@@ -23,6 +23,7 @@ import type { ModelStatusItem } from '../../types'
 import {
   createModelStatusHistorySlots,
   filterModelStatusItems,
+  formatModelStatusCheckedAt,
   formatProbeCountdown,
   MODEL_STATUS_HISTORY_SLOT_COUNT,
 } from '../model-status.ts'
@@ -91,4 +92,21 @@ describe('model status filters', () => {
 test('probe countdown clamps elapsed schedules to zero', () => {
   assert.equal(formatProbeCountdown(100, 101_000), '00:00')
   assert.equal(formatProbeCountdown(3_700, 100_000), '01:00')
+})
+
+test('model status timestamps accept the Chinese interface language codes', () => {
+  const timestamp = 1_720_000_000
+  const options: Intl.DateTimeFormatOptions = {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }
+
+  assert.equal(
+    formatModelStatusCheckedAt(timestamp, 'zhCN'),
+    new Intl.DateTimeFormat('zh-CN', options).format(timestamp * 1000)
+  )
+  assert.equal(
+    formatModelStatusCheckedAt(timestamp, 'zhTW'),
+    new Intl.DateTimeFormat('zh-TW', options).format(timestamp * 1000)
+  )
 })
