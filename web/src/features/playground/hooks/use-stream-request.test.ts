@@ -72,7 +72,7 @@ const payload: ChatCompletionRequest = {
   stream: true,
 }
 
-const sessionAuth: PlaygroundRequestAuth = { mode: 'session' }
+const apiKeyAuth: PlaygroundRequestAuth = { apiKey: 'sk-test' }
 
 const noopCallbacks = {
   onUpdate: () => undefined,
@@ -101,8 +101,8 @@ describe('latest-wins stream request coordination', () => {
       setStreaming: () => undefined,
     })
 
-    const first = controller.send(payload, sessionAuth, noopCallbacks)
-    const second = controller.send(payload, sessionAuth, noopCallbacks)
+    const first = controller.send(payload, apiKeyAuth, noopCallbacks)
+    const second = controller.send(payload, apiKeyAuth, noopCallbacks)
     firstHeaders.resolve({ Authorization: 'Bearer stale' })
     await first
     assert.equal(sources.length, 0)
@@ -125,7 +125,7 @@ describe('latest-wins stream request coordination', () => {
       setStreaming: () => undefined,
     })
 
-    const request = controller.send(payload, sessionAuth, noopCallbacks)
+    const request = controller.send(payload, apiKeyAuth, noopCallbacks)
     controller.stop()
     headers.resolve({ Authorization: 'Bearer ignored' })
     await request
@@ -146,7 +146,7 @@ describe('latest-wins stream request coordination', () => {
       setStreaming: (streaming) => streamingStates.push(streaming),
     })
 
-    const request = controller.send(payload, sessionAuth, noopCallbacks)
+    const request = controller.send(payload, apiKeyAuth, noopCallbacks)
     controller.dispose()
     headers.resolve({ Authorization: 'Bearer ignored' })
     await request
@@ -182,8 +182,8 @@ describe('latest-wins stream request coordination', () => {
       onError: () => undefined,
     }
 
-    await controller.send(payload, sessionAuth, callbacks)
-    const second = controller.send(payload, sessionAuth, callbacks)
+    await controller.send(payload, apiKeyAuth, callbacks)
+    const second = controller.send(payload, apiKeyAuth, callbacks)
     assert.equal(sources[0]?.closed, true)
     sources[0]?.emit(
       'message',

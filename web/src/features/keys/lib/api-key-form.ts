@@ -22,7 +22,7 @@ import { z } from 'zod'
 import { parseQuotaFromDollars, quotaUnitsToDollars } from '@/lib/format'
 
 import { DEFAULT_GROUP } from '../constants'
-import { type ApiKeyFormData, type ApiKey } from '../types'
+import type { ApiKey, ApiKeyFormData } from '../types'
 
 // ============================================================================
 // Form Schema
@@ -85,6 +85,21 @@ export function getApiKeyFormDefaultValues(
     group: defaultUseAutoGroup ? 'auto' : DEFAULT_GROUP,
     cross_group_retry: defaultUseAutoGroup,
   }
+}
+
+export function resolveApiKeyGroup(
+  currentGroup: string | undefined,
+  groups: ReadonlyArray<{ value: string }>
+): string {
+  if (currentGroup && groups.some((group) => group.value === currentGroup)) {
+    return currentGroup
+  }
+
+  return (
+    groups.find((group) => group.value === 'default')?.value ??
+    groups[0]?.value ??
+    ''
+  )
 }
 
 // ============================================================================

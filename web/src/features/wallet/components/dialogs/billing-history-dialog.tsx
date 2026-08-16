@@ -45,10 +45,20 @@ import {
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
-import { formatCurrencyFromUSD } from '@/lib/currency'
-import { formatNumber } from '@/lib/format'
+import { cn } from '@/lib/utils'
+import {
+  DEFAULT_CURRENCY_CONFIG,
+  useSystemConfigStore,
+} from '@/stores/system-config-store'
 
 import { useBillingHistory } from '../../hooks/use-billing-history'
+import {
+  formatPaymentAmount,
+  formatTopupCredit,
+  getBillingPaymentPresentation,
+  getHistoricalPaymentCurrency,
+  getTopupCreditAmountUSD,
+} from '../../lib'
 import {
   getStatusConfig,
   getPaymentMethodName,
@@ -82,6 +92,13 @@ export function BillingHistoryDialog({
 
   const [confirmTradeNo, setConfirmTradeNo] = useState<string | null>(null)
   const { copyToClipboard, copiedText } = useCopyToClipboard({ notify: false })
+  const configuredQuotaPerUnit = useSystemConfigStore(
+    (state) => state.config.currency.quotaPerUnit
+  )
+  const quotaPerUnit =
+    Number.isFinite(configuredQuotaPerUnit) && configuredQuotaPerUnit > 0
+      ? configuredQuotaPerUnit
+      : DEFAULT_CURRENCY_CONFIG.quotaPerUnit
 
   const totalPages = Math.ceil(total / pageSize)
 
@@ -128,7 +145,7 @@ export function BillingHistoryDialog({
               ]}
               value={pageSize.toString()}
               onValueChange={(value) =>
-                value !== null && handlePageSizeChange(parseInt(value))
+                value !== null && handlePageSizeChange(Number.parseInt(value))
               }
             >
               <SelectTrigger className='h-9 w-[92px] sm:w-32'>
@@ -147,10 +164,16 @@ export function BillingHistoryDialog({
 
           {/* Records List */}
           <div className='max-h-[min(54vh,520px)] overflow-y-auto pr-1'>
-            {loading ? (
+            {loading && (
               <div className='space-y-3'>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className='rounded-lg border p-3 sm:p-4'>
+                {[
+                  'billing-skeleton-1',
+                  'billing-skeleton-2',
+                  'billing-skeleton-3',
+                  'billing-skeleton-4',
+                  'billing-skeleton-5',
+                ].map((key) => (
+                  <div key={key} className='rounded-lg border p-3 sm:p-4'>
                     <div className='flex items-start justify-between'>
                       <div className='flex-1 space-y-2'>
                         <Skeleton className='h-4 w-48' />
@@ -166,7 +189,8 @@ export function BillingHistoryDialog({
                   </div>
                 ))}
               </div>
-            ) : records.length === 0 ? (
+            )}
+            {!loading && records.length === 0 && (
               <div className='text-muted-foreground flex min-h-40 flex-col items-center justify-center py-10 text-center'>
                 <p className='text-sm font-medium'>
                   {t('No billing records found')}
@@ -177,10 +201,37 @@ export function BillingHistoryDialog({
                     : t('Your transaction history will appear here')}
                 </p>
               </div>
-            ) : (
+            )}
+            {!loading && records.length > 0 && (
               <div className='space-y-3'>
                 {records.map((record) => {
                   const statusConfig = getStatusConfig(record.status)
+                  const paymentProvider =
+                    record.payment_provider || record.payment_method
+                  const paymentCurrency =
+                    record.payment_currency ||
+                    getHistoricalPaymentCurrency(paymentProvider)
+                  const creditAmountUSD = getTopupCreditAmountUSD({
+                    amount: record.amount,
+                    creditAmount: record.credit_amount,
+                    money: record.money,
+                    paymentProvider,
+                    paymentCurrency: record.payment_currency,
+                    quotaPerUnit,
+                    inferLegacyCreem: false,
+                  })
+                  const isLegacyStripe =
+                    paymentProvider.toLowerCase() === 'stripe' &&
+                    !record.payment_currency
+                  const paymentPresentation = getBillingPaymentPresentation(
+                    record.status
+                  )
+                  let paymentAmountText = t('Not paid')
+                  if (paymentPresentation.showAmount) {
+                    paymentAmountText = isLegacyStripe
+                      ? t('Unavailable')
+                      : formatPaymentAmount(record.money, paymentCurrency)
+                  }
                   return (
                     <div
                       key={record.id}
@@ -219,7 +270,7 @@ export function BillingHistoryDialog({
                           </div>
                         </div>
                         <StatusBadge
-                          label={statusConfig.label}
+                          label={t(statusConfig.label)}
                           variant={statusConfig.variant}
                           showDot
                           copyable={false}
@@ -227,7 +278,14 @@ export function BillingHistoryDialog({
                       </div>
 
                       {/* Details Grid */}
-                      <div className='mt-3 grid grid-cols-2 gap-3 sm:mt-4 sm:grid-cols-3 sm:gap-4'>
+                      <div
+                        className={cn(
+                          'mt-3 grid grid-cols-2 gap-3 sm:mt-4 sm:gap-4',
+                          creditAmountUSD === null
+                            ? 'sm:grid-cols-2'
+                            : 'sm:grid-cols-3'
+                        )}
+                      >
                         <div className='space-y-1'>
                           <Label className='text-muted-foreground text-xs'>
                             {t('Payment Method')}
@@ -236,24 +294,29 @@ export function BillingHistoryDialog({
                             {getPaymentMethodName(record.payment_method, t)}
                           </div>
                         </div>
+                        {creditAmountUSD !== null && (
+                          <div className='space-y-1'>
+                            <Label className='text-muted-foreground text-xs'>
+                              {t('Credit received')}
+                            </Label>
+                            <div className='text-sm font-semibold'>
+                              {formatTopupCredit(creditAmountUSD)}
+                            </div>
+                          </div>
+                        )}
                         <div className='space-y-1'>
                           <Label className='text-muted-foreground text-xs'>
-                            {t('Amount')}
+                            {t(paymentPresentation.label)}
                           </Label>
                           <div className='text-sm font-semibold'>
-                            {formatCurrencyFromUSD(record.amount, {
-                              digitsLarge: 2,
-                              digitsSmall: 2,
-                              abbreviate: false,
-                            })}
-                          </div>
-                        </div>
-                        <div className='space-y-1'>
-                          <Label className='text-muted-foreground text-xs'>
-                            {t('Payment')}
-                          </Label>
-                          <div className='text-sm font-semibold text-red-600'>
-                            {formatNumber(record.money)}
+                            {paymentAmountText}
+                            {paymentPresentation.showAmount &&
+                              !isLegacyStripe &&
+                              !paymentCurrency && (
+                                <span className='text-muted-foreground ml-1 text-xs font-normal'>
+                                  · {t('Currency unknown')}
+                                </span>
+                              )}
                           </div>
                         </div>
                       </div>

@@ -16,14 +16,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { api } from '@/lib/api'
-
 import { API_ENDPOINTS, ERROR_MESSAGES } from './constants'
 import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
   ModelOption,
-  GroupOption,
   PlaygroundRequestAuth,
 } from './types'
 
@@ -56,18 +53,6 @@ export async function sendChatCompletion(
   auth: PlaygroundRequestAuth,
   signal?: AbortSignal
 ): Promise<ChatCompletionResponse> {
-  if (auth.mode === 'session') {
-    const res = await api.post(
-      API_ENDPOINTS.SESSION_CHAT_COMPLETIONS,
-      payload,
-      {
-        signal,
-        skipErrorHandler: true,
-      }
-    )
-    return res.data
-  }
-
   if (!auth.apiKey) {
     throw new Error(ERROR_MESSAGES.API_KEY_REQUIRED)
   }
@@ -83,25 +68,6 @@ export async function sendChatCompletion(
     signal,
   })
   return parseRelayResponse<ChatCompletionResponse>(response)
-}
-
-/**
- * Get user available models
- */
-export async function getUserModels(group: string): Promise<ModelOption[]> {
-  const res = await api.get(API_ENDPOINTS.USER_MODELS, {
-    params: { group },
-  })
-  const { data } = res
-
-  if (!data.success || !Array.isArray(data.data)) {
-    return []
-  }
-
-  return data.data.map((model: string) => ({
-    label: model,
-    value: model,
-  }))
 }
 
 /**
@@ -126,26 +92,4 @@ export async function getApiKeyModels(apiKey: string): Promise<ModelOption[]> {
     const name = model.id?.trim()
     return name ? [{ label: name, value: name }] : []
   })
-}
-
-/**
- * Get user groups
- */
-export async function getUserGroups(): Promise<GroupOption[]> {
-  const res = await api.get(API_ENDPOINTS.USER_GROUPS)
-  const { data } = res
-
-  if (!data.success || !data.data) {
-    return []
-  }
-
-  const groupData = data.data as Record<string, { desc: string; ratio: number }>
-
-  // label is for button display (name only); desc is for dropdown content
-  return Object.entries(groupData).map(([group, info]) => ({
-    label: group,
-    value: group,
-    ratio: info.ratio,
-    desc: info.desc,
-  }))
 }

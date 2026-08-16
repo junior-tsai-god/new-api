@@ -16,6 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { toIntlLocale } from '@/i18n/languages'
 import dayjs from '@/lib/dayjs'
 
 import {
@@ -150,7 +151,8 @@ export function formatTimestampToDate(
  * Format timestamp as relative time, e.g. "30 seconds ago".
  * @param timestamp - Timestamp in seconds or milliseconds
  * @param unit - Unit of the timestamp ('seconds' or 'milliseconds')
- * @param locales - Locale passed to Intl.RelativeTimeFormat
+ * @param locales - Locale passed to Intl.RelativeTimeFormat. Interface
+ * language aliases such as zhCN and zhTW are normalized automatically.
  */
 export function formatTimestampRelative(
   timestamp?: number,
@@ -164,7 +166,9 @@ export function formatTimestampRelative(
   const ms = unit === 'seconds' ? timestamp * 1000 : timestamp
   const diffSeconds = Math.round((ms - Date.now()) / 1000)
   const absSeconds = Math.abs(diffSeconds)
-  const formatter = new Intl.RelativeTimeFormat(locales, {
+  const normalizedLocales =
+    typeof locales === 'string' ? toIntlLocale(locales) : locales
+  const formatter = new Intl.RelativeTimeFormat(normalizedLocales, {
     numeric: 'always',
   })
 

@@ -16,10 +16,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { createFileRoute } from '@tanstack/react-router'
-
-import { PublicModelStatus } from '@/features/model-status'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/model-status/')({
-  component: PublicModelStatus,
+  beforeLoad: () => {
+    throw redirect({ to: '/pricing' })
+  },
 })

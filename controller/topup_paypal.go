@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"strings"
@@ -234,12 +235,25 @@ func getPayPalPayMoney(amount int64, group string) decimal.Decimal {
 		Round(2)
 }
 
-func getPayPalMinTopup() int64 {
-	minTopup := int64(setting.PayPalMinTopUp)
-	if operation_setting.GetQuotaDisplayType() == operation_setting.QuotaDisplayTypeTokens {
-		minTopup = decimal.NewFromInt(minTopup).Mul(decimal.NewFromFloat(common.QuotaPerUnit)).IntPart()
+func getPayPalTopUpBounds(minimum int64, tokenDisplay bool, quotaPerUnit float64) (int64, int64, error) {
+	maximum, err := getTopUpRequestAmountLimit(10000, tokenDisplay, quotaPerUnit)
+	if err != nil {
+		return 0, 0, err
 	}
-	return minTopup
+	minimumAmount := decimal.NewFromInt(minimum)
+	if tokenDisplay {
+		quotaUnit := decimal.NewFromFloat(quotaPerUnit)
+		minimumAmount = minimumAmount.Mul(quotaUnit)
+	}
+	maxInt64 := decimal.NewFromInt(math.MaxInt64)
+	if minimumAmount.GreaterThan(maxInt64) {
+		return 0, 0, errors.New("topup amount bounds exceed integer range")
+	}
+	minTopup := minimumAmount.IntPart()
+	if minTopup < 0 || minTopup > maximum {
+		return 0, 0, errors.New("invalid topup amount bounds")
+	}
+	return minTopup, maximum, nil
 }
 
 func normalizePayPalTopUpAmount(amount int64) int64 {
@@ -259,8 +273,21 @@ func RequestPayPalAmount(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "参数错误"})
 		return
 	}
-	if req.Amount < getPayPalMinTopup() {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("充值数量不能小于 %d", getPayPalMinTopup())})
+	minTopup, maxTopup, err := getPayPalTopUpBounds(
+		int64(setting.PayPalMinTopUp),
+		operation_setting.GetQuotaDisplayType() == operation_setting.QuotaDisplayTypeTokens,
+		common.QuotaPerUnit,
+	)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值额度配置错误"})
+		return
+	}
+	if req.Amount < minTopup {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("充值数量不能小于 %d", minTopup)})
+		return
+	}
+	if req.Amount > maxTopup {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("充值数量不能大于 %d", maxTopup)})
 		return
 	}
 
@@ -274,7 +301,11 @@ func RequestPayPalAmount(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值金额过低"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "success", "data": payMoney.StringFixed(2)})
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "success",
+		"data":     payMoney.StringFixed(2),
+		"currency": payPalCurrency,
+	})
 }
 
 func RequestPayPalPay(c *gin.Context) {
@@ -292,13 +323,18 @@ func RequestPayPalPay(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "不支持的支付渠道"})
 		return
 	}
-	if req.Amount < getPayPalMinTopup() {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("充值数量不能小于 %d", getPayPalMinTopup())})
+	minTopup, maxTopup, err := getPayPalTopUpBounds(
+		int64(setting.PayPalMinTopUp),
+		operation_setting.GetQuotaDisplayType() == operation_setting.QuotaDisplayTypeTokens,
+		common.QuotaPerUnit,
+	)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值额度配置错误"})
 		return
 	}
-	maxTopup := int64(10000)
-	if operation_setting.GetQuotaDisplayType() == operation_setting.QuotaDisplayTypeTokens {
-		maxTopup = decimal.NewFromInt(maxTopup).Mul(decimal.NewFromFloat(common.QuotaPerUnit)).IntPart()
+	if req.Amount < minTopup {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("充值数量不能小于 %d", minTopup)})
+		return
 	}
 	if req.Amount > maxTopup {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("充值数量不能大于 %d", maxTopup)})
@@ -387,6 +423,7 @@ func RequestPayPalPay(c *gin.Context) {
 		TradeNo:         order.ID,
 		PaymentMethod:   model.PaymentMethodPayPal,
 		PaymentProvider: model.PaymentProviderPayPal,
+		PaymentCurrency: payPalCurrency,
 		CreateTime:      time.Now().Unix(),
 		Status:          common.TopUpStatusPending,
 	}

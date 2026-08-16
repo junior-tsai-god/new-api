@@ -32,23 +32,11 @@ const messages: Message[] = [
 ]
 
 describe('playground request authentication payload', () => {
-  test('session requests include the selected playground group', () => {
+  test('requests omit group so the selected API key remains authoritative', () => {
     const payload = buildChatCompletionPayload(
       messages,
-      { ...DEFAULT_CONFIG, group: 'vip' },
-      DEFAULT_PARAMETER_ENABLED,
-      true
-    )
-
-    assert.equal(payload.group, 'vip')
-  })
-
-  test('API key requests omit group so the token access rules remain authoritative', () => {
-    const payload = buildChatCompletionPayload(
-      messages,
-      { ...DEFAULT_CONFIG, group: 'vip' },
-      DEFAULT_PARAMETER_ENABLED,
-      false
+      DEFAULT_CONFIG,
+      DEFAULT_PARAMETER_ENABLED
     )
 
     assert.equal('group' in payload, false)

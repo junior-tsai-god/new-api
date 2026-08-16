@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
 import { defaultTopNavLinks } from '../config/top-nav.config'
+import { isTopNavLinkActive } from '../lib/top-nav'
 import type { TopNavLink } from '../types'
 
 const AUTH_PROMPT_SECONDS = 5
@@ -58,6 +59,7 @@ export interface PublicHeaderProps {
   showNavigation?: boolean
   showAuthButtons?: boolean
   showNotifications?: boolean
+  brandSurface?: boolean
   className?: string
 }
 
@@ -71,6 +73,7 @@ export function PublicHeader(props: PublicHeaderProps) {
     homeUrl = '/',
     showAuthButtons = true,
     showNotifications = true,
+    brandSurface,
   } = props
 
   const { t } = useTranslation()
@@ -94,10 +97,11 @@ export function PublicHeader(props: PublicHeaderProps) {
   const links = dynamicLinks.length > 0 ? dynamicLinks : navLinks
   const isHomePage = pathname === '/'
   const isBrandSurface =
-    isHomePage ||
-    ['/pricing', '/model-status', '/rankings', '/docs', '/about'].some(
-      (prefix) => pathname.startsWith(prefix)
-    )
+    brandSurface ??
+    (isHomePage ||
+      ['/pricing', '/model-status', '/rankings', '/docs', '/about'].some(
+        (prefix) => pathname.startsWith(prefix)
+      ))
 
   let brandContent: React.ReactNode
   if (loading) {
@@ -272,9 +276,7 @@ export function PublicHeader(props: PublicHeaderProps) {
             {/* Desktop nav */}
             <div className='hidden items-center gap-0.5 sm:flex'>
               {links.map((link) => {
-                const isActive =
-                  pathname === link.href ||
-                  (link.href !== '/' && pathname.startsWith(`${link.href}/`))
+                const isActive = isTopNavLinkActive(pathname, link)
                 const linkKey = `${link.href}-${link.title}`
                 let linkStateClassName =
                   'text-muted-foreground hover:text-foreground'
@@ -407,9 +409,7 @@ export function PublicHeader(props: PublicHeaderProps) {
         <div className='flex h-full flex-col justify-between px-8 pt-20 pb-10'>
           <nav className='flex flex-col gap-1'>
             {links.map((link, i) => {
-              const isActive =
-                pathname === link.href ||
-                (link.href !== '/' && pathname.startsWith(`${link.href}/`))
+              const isActive = isTopNavLinkActive(pathname, link)
               const linkKey = `${link.href}-${link.title}`
               const linkClassName = cn(
                 'flex items-center gap-3 py-3 text-base font-medium tracking-tight transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',

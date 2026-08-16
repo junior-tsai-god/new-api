@@ -192,14 +192,14 @@ For commercial licensing, please contact support@quantumnous.com
     --sidebar-ring: var(--deck-signal);
     min-height: 100svh;
     background: var(--deck-canvas);
-    padding-block: 1.5rem;
+    padding-block: 5.5rem 1.5rem;
   }
 
   .routing-deck-shell {
     position: relative;
     isolation: isolate;
-    height: calc(100svh - 3rem);
-    width: min(calc(100% - 2.5rem), 96rem);
+    height: calc(100svh - 7rem);
+    width: min(calc(100% - 2rem), 96rem);
     margin-inline: auto;
     overflow: hidden;
     border: 1px solid var(--deck-line);
@@ -624,12 +624,12 @@ For commercial licensing, please contact support@quantumnous.com
 
   @media (max-width: 767px) {
     .routing-deck {
-      padding-block: 0.5rem;
+      padding-block: 5rem 0.5rem;
     }
 
     .routing-deck-shell {
-      height: calc(100svh - 1rem);
-      width: calc(100% - 1.5rem);
+      height: calc(100svh - 5.5rem);
+      width: calc(100% - 2rem);
       border-radius: 1.5rem;
     }
 

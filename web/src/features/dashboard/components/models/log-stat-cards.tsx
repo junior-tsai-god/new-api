@@ -28,6 +28,7 @@ import {
   calculateDashboardStats,
   getDefaultDays,
 } from '@/features/dashboard/lib'
+import type { UsageDataStatus } from '@/features/dashboard/lib/usage-display-state'
 import type {
   QuotaDataItem,
   DashboardFilters,
@@ -40,7 +41,8 @@ import { useAuthStore } from '@/stores/auth-store'
 
 interface LogStatCardsProps {
   filters?: DashboardFilters
-  onDataUpdate?: (data: QuotaDataItem[], loading: boolean) => void
+  refreshKey?: number
+  onDataUpdate?: (data: QuotaDataItem[], status: UsageDataStatus) => void
 }
 
 const MAX_INLINE_STAT_CHARS = 9
@@ -81,7 +83,7 @@ export function LogStatCards(props: LogStatCardsProps) {
     setLoading(true)
 
     setError(false)
-    onDataUpdate?.([], true)
+    onDataUpdate?.([], 'loading')
 
     const timeRange = computeTimeRange(
       getDefaultDays(filters?.time_granularity),
@@ -94,15 +96,18 @@ export function LogStatCards(props: LogStatCardsProps) {
     void getUserQuotaDates(buildQueryParams(timeRange, filters), isAdmin)
       .then((res) => {
         if (abortController.signal.aborted) return
-        const data = res?.data || []
+        if (!res?.success) {
+          throw new Error(res?.message || 'Failed to load usage data')
+        }
+        const data = res.data || []
         setStats(calculateDashboardStats(data))
-        onDataUpdate?.(data, false)
+        onDataUpdate?.(data, 'ready')
       })
       .catch(() => {
         if (abortController.signal.aborted) return
         setStats(null)
         setError(true)
-        onDataUpdate?.([], false)
+        onDataUpdate?.([], 'error')
       })
       .finally(() => {
         if (!abortController.signal.aborted) {
@@ -113,7 +118,7 @@ export function LogStatCards(props: LogStatCardsProps) {
     return () => {
       abortController.abort()
     }
-  }, [filters, isAdmin, onDataUpdate])
+  }, [filters, isAdmin, onDataUpdate, props.refreshKey])
 
   const adaptedStats = {
     rpm: stats?.totalCount ?? 0,

@@ -88,6 +88,8 @@ interface ModelSelectorProps {
   onModelChange: (value: string) => void
   className?: string
   disabled?: boolean
+  emptyLabel?: string
+  triggerVariant?: 'compact' | 'field'
 }
 
 interface GroupSelectorProps {
@@ -104,33 +106,72 @@ const ModelTriggerButton = React.forwardRef<
     currentLabel: string
     triggerClassName?: string
     isDisabled?: boolean
+    triggerVariant?: 'compact' | 'field'
   }
->(({ currentLabel, triggerClassName, isDisabled, ...props }, ref) => (
-  <Button
-    ref={ref}
-    variant='outline'
-    role='combobox'
-    size='sm'
-    disabled={isDisabled}
-    className={cn(
-      'flex h-8 items-center gap-2 border px-3 font-medium',
-      'justify-center p-0 sm:w-auto sm:justify-start sm:px-3',
-      'w-8',
-      'bg-background text-foreground',
-      'hover:bg-accent transition-colors',
-      'focus:!ring-0 focus:!outline-none',
-      'shadow-none',
-      triggerClassName
-    )}
-    {...props}
-  >
-    <CpuIcon className='text-muted-foreground block size-4 sm:hidden' />
-    <span className='text-muted-foreground sm:text-foreground hidden truncate text-xs sm:block'>
-      {currentLabel}
-    </span>
-    <ChevronsUpDown className='text-muted-foreground hidden h-4 w-4 opacity-50 sm:block' />
-  </Button>
-))
+>(
+  (
+    {
+      currentLabel,
+      triggerClassName,
+      isDisabled,
+      triggerVariant = 'compact',
+      ...props
+    },
+    ref
+  ) => {
+    const isFieldTrigger = triggerVariant === 'field'
+
+    return (
+      <Button
+        {...props}
+        ref={ref}
+        variant='outline'
+        role='combobox'
+        size='sm'
+        disabled={isDisabled}
+        data-layout={triggerVariant}
+        className={cn(
+          'flex items-center border font-medium shadow-none transition-colors',
+          'bg-background text-foreground hover:bg-accent',
+          'focus-visible:ring-ring focus-visible:ring-2',
+          isFieldTrigger
+            ? 'h-11 w-full min-w-0 justify-start gap-2 rounded-md px-3'
+            : 'h-8 w-8 justify-center gap-2 p-0 sm:w-auto sm:justify-start sm:px-3',
+          triggerClassName
+        )}
+      >
+        {isFieldTrigger ? (
+          <>
+            <span
+              className='min-w-0 flex-1 truncate text-left text-sm font-semibold'
+              data-slot='model-selector-current'
+            >
+              {currentLabel}
+            </span>
+            <ChevronsUpDown
+              aria-hidden='true'
+              className='text-muted-foreground size-4 opacity-70'
+            />
+          </>
+        ) : (
+          <>
+            <CpuIcon
+              aria-hidden='true'
+              className='text-muted-foreground block size-4 sm:hidden'
+            />
+            <span className='text-muted-foreground sm:text-foreground hidden truncate text-xs sm:block'>
+              {currentLabel}
+            </span>
+            <ChevronsUpDown
+              aria-hidden='true'
+              className='text-muted-foreground hidden size-4 opacity-50 sm:block'
+            />
+          </>
+        )}
+      </Button>
+    )
+  }
+)
 
 ModelTriggerButton.displayName = 'ModelTriggerButton'
 
@@ -175,16 +216,40 @@ GroupTriggerButton.displayName = 'GroupTriggerButton'
  * Styled following Scira's form-component design patterns
  */
 export const ModelSelector: React.FC<ModelSelectorProps> = React.memo(
-  ({ selectedModel, models, onModelChange, className, disabled = false }) => {
+  ({
+    selectedModel,
+    models,
+    onModelChange,
+    className,
+    disabled = false,
+    emptyLabel,
+    triggerVariant = 'compact',
+  }) => {
     const { t } = useTranslation()
     const [open, setOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
+    const [activeModel, setActiveModel] = useState(selectedModel)
     const isMobile = useIsMobile()
+    const selectedModelOptionRef = useRef<HTMLDivElement | null>(null)
+
+    const handleOpenChange = useCallback(
+      (nextOpen: boolean) => {
+        setOpen(nextOpen)
+        if (nextOpen) {
+          setActiveModel(selectedModel)
+        } else {
+          setSearchQuery('')
+        }
+      },
+      [selectedModel]
+    )
 
     const currentModel = useMemo(
       () => models.find((m) => m.value === selectedModel),
       [models, selectedModel]
     )
+    const fallbackLabel =
+      models.length === 0 && emptyLabel ? emptyLabel : t('Model')
 
     // Group models by category
     const groupedModels = useMemo(
@@ -227,12 +292,28 @@ export const ModelSelector: React.FC<ModelSelectorProps> = React.memo(
 
     const handleModelChange = useCallback(
       (value: string) => {
+        setActiveModel(value)
         onModelChange(value)
-        setOpen(false)
-        setSearchQuery('')
+        handleOpenChange(false)
       },
-      [onModelChange]
+      [handleOpenChange, onModelChange]
     )
+
+    useEffect(() => {
+      if (!open) return
+
+      let secondFrameId = 0
+      const firstFrameId = window.requestAnimationFrame(() => {
+        secondFrameId = window.requestAnimationFrame(() => {
+          scrollSelectedOptionIntoView(selectedModelOptionRef.current)
+        })
+      })
+
+      return () => {
+        window.cancelAnimationFrame(firstFrameId)
+        window.cancelAnimationFrame(secondFrameId)
+      }
+    }, [open, selectedModel])
 
     // Shared command content
     const renderModelCommandContent = () => (
@@ -242,74 +323,75 @@ export const ModelSelector: React.FC<ModelSelectorProps> = React.memo(
             ? 'h-full flex-1 rounded-lg border-0 bg-transparent'
             : 'rounded-lg'
         )}
+        value={activeModel}
+        onValueChange={setActiveModel}
         filter={() => 1}
         shouldFilter={false}
       >
-        {!isMobile && (
-          <CommandInput
-            placeholder={t('Search models...')}
-            className='h-9'
-            value={searchQuery}
-            onValueChange={setSearchQuery}
-          />
-        )}
+        <CommandInput
+          placeholder={t('Search models...')}
+          className={cn('h-9', isMobile && 'h-11')}
+          value={searchQuery}
+          onValueChange={setSearchQuery}
+        />
         <CommandEmpty>{t('No model found.')}</CommandEmpty>
         <CommandList
           className={isMobile ? '!max-h-full flex-1 p-2' : 'max-h-[300px]'}
         >
-          {Object.keys(filteredModels).length === 0 ? (
-            <div className='text-muted-foreground px-3 py-6 text-xs'>
-              {t('No model found.')}
-            </div>
-          ) : (
-            Object.entries(filteredModels).map(
-              ([category, categoryModels], categoryIndex) => (
-                <CommandGroup key={category}>
-                  {categoryIndex > 0 && (
-                    <div className='border-border my-1 border-t' />
+          {Object.entries(filteredModels).map(
+            ([category, categoryModels], categoryIndex) => (
+              <CommandGroup key={category}>
+                {categoryIndex > 0 && (
+                  <div className='border-border my-1 border-t' />
+                )}
+                <div
+                  className={cn(
+                    'text-muted-foreground px-2 py-1 font-medium',
+                    isMobile ? 'text-xs' : 'text-[10px]'
                   )}
-                  <div
+                >
+                  {t('{{category}} Models', { category })}
+                </div>
+                {categoryModels.map((model) => (
+                  <CommandItem
+                    key={model.value}
+                    value={model.value}
+                    onSelect={handleModelChange}
+                    ref={
+                      selectedModel === model.value
+                        ? selectedModelOptionRef
+                        : undefined
+                    }
                     className={cn(
-                      'text-muted-foreground px-2 py-1 font-medium',
-                      isMobile ? 'text-xs' : 'text-[10px]'
+                      'mb-0.5 flex items-center justify-between rounded-lg px-2 py-1.5 text-xs',
+                      'transition-all duration-200',
+                      'hover:bg-muted',
+                      selectedModel === model.value &&
+                        'bg-accent text-foreground data-[selected=true]:bg-accent'
                     )}
+                    data-current={selectedModel === model.value || undefined}
                   >
-                    {t('{{category}} Models', { category })}
-                  </div>
-                  {categoryModels.map((model) => (
-                    <CommandItem
-                      key={model.value}
-                      value={model.value}
-                      onSelect={handleModelChange}
-                      className={cn(
-                        'mb-0.5 flex items-center justify-between rounded-lg px-2 py-1.5 text-xs',
-                        'transition-all duration-200',
-                        'hover:bg-accent',
-                        'data-[selected=true]:bg-accent'
-                      )}
-                    >
-                      <div className='flex min-w-0 flex-1 items-center gap-1'>
-                        <div
-                          className={cn(
-                            'truncate font-medium',
-                            isMobile ? 'text-sm' : 'text-[11px]'
-                          )}
-                        >
-                          <span className='inline'>{model.label}</span>
-                        </div>
-                        <Check
-                          className={cn(
-                            'h-4 w-4 flex-shrink-0',
-                            selectedModel === model.value
-                              ? 'opacity-100'
-                              : 'opacity-0'
-                          )}
-                        />
+                    <div className='flex min-w-0 flex-1 items-center gap-1'>
+                      <div
+                        className={cn(
+                          'truncate font-medium',
+                          isMobile ? 'text-sm' : 'text-[11px]'
+                        )}
+                      >
+                        <span className='inline'>{model.label}</span>
                       </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )
+                      <Check
+                        className={cn(
+                          'size-4 flex-shrink-0',
+                          selectedModel === model.value
+                            ? 'opacity-100'
+                            : 'opacity-0'
+                        )}
+                      />
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
             )
           )}
         </CommandList>
@@ -317,12 +399,14 @@ export const ModelSelector: React.FC<ModelSelectorProps> = React.memo(
     )
 
     return isMobile ? (
-      <Drawer open={open} onOpenChange={setOpen}>
+      <Drawer open={open} onOpenChange={handleOpenChange}>
         <DrawerTrigger asChild>
           <ModelTriggerButton
-            currentLabel={currentModel?.label || t('Model')}
+            currentLabel={currentModel?.label || fallbackLabel}
             triggerClassName={className}
             isDisabled={disabled}
+            triggerVariant={triggerVariant}
+            aria-label={`${t('Select Model')}: ${currentModel?.label || fallbackLabel}`}
             aria-expanded={open}
           />
         </DrawerTrigger>
@@ -338,13 +422,15 @@ export const ModelSelector: React.FC<ModelSelectorProps> = React.memo(
         </DrawerContent>
       </Drawer>
     ) : (
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger
           render={
             <ModelTriggerButton
-              currentLabel={currentModel?.label || t('Model')}
+              currentLabel={currentModel?.label || fallbackLabel}
               triggerClassName={className}
               isDisabled={disabled}
+              triggerVariant={triggerVariant}
+              aria-label={`${t('Select Model')}: ${currentModel?.label || fallbackLabel}`}
               aria-expanded={open}
             />
           }

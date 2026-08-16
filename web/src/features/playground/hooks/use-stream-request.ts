@@ -19,8 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { SSE } from 'sse.js'
 
-import { getFreshAuthHeaders } from '@/lib/api'
-
 import { API_ENDPOINTS, ERROR_MESSAGES } from '../constants'
 import {
   getStreamReadyStateError,
@@ -193,9 +191,6 @@ export function useStreamRequest() {
   if (!controllerRef.current) {
     controllerRef.current = createStreamRequestController({
       getHeaders: (auth) => {
-        if (auth.mode === 'session') {
-          return getFreshAuthHeaders()
-        }
         if (!auth.apiKey) {
           return Promise.reject(new Error(ERROR_MESSAGES.API_KEY_REQUIRED))
         }
@@ -204,17 +199,12 @@ export function useStreamRequest() {
           'Content-Type': 'application/json',
         })
       },
-      createSource: (payload, headers, auth) =>
-        new SSE(
-          auth.mode === 'session'
-            ? API_ENDPOINTS.SESSION_CHAT_COMPLETIONS
-            : API_ENDPOINTS.API_KEY_CHAT_COMPLETIONS,
-          {
-            headers,
-            method: 'POST',
-            payload: JSON.stringify(payload),
-          }
-        ) as StreamEventSource,
+      createSource: (payload, headers) =>
+        new SSE(API_ENDPOINTS.API_KEY_CHAT_COMPLETIONS, {
+          headers,
+          method: 'POST',
+          payload: JSON.stringify(payload),
+        }) as StreamEventSource,
       setStreaming: setIsStreaming,
     })
   }

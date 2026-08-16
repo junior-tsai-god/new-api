@@ -22,9 +22,7 @@ import { describe, test } from 'node:test'
 import type { ModelStatusItem } from '../../types'
 import {
   createModelStatusHistorySlots,
-  filterModelStatusItems,
-  formatModelStatusCheckedAt,
-  formatProbeCountdown,
+  createModelStatusMap,
   MODEL_STATUS_HISTORY_SLOT_COUNT,
 } from '../model-status.ts'
 
@@ -52,6 +50,14 @@ const modelFixture: ModelStatusItem = {
 }
 
 describe('model status history rail', () => {
+  test('supports the twelve compact slots used by catalog cards', () => {
+    const slots = createModelStatusHistorySlots(modelFixture.history, 12)
+
+    assert.equal(slots.length, 12)
+    assert.equal(slots[0].status, 'unknown')
+    assert.equal(slots.at(-1)?.batch_id, 'probe-1')
+  })
+
   test('pads the left side to sixty slots while keeping newest probes on the right', () => {
     const slots = createModelStatusHistorySlots(modelFixture.history)
 
@@ -74,39 +80,13 @@ describe('model status history rail', () => {
   })
 })
 
-describe('model status filters', () => {
-  test('matches vendor search and status together', () => {
-    const result = filterModelStatusItems(
-      [modelFixture, { ...modelFixture, model_name: 'wan2.7', status: 'down' }],
-      'openai',
-      'healthy'
-    )
+test('model status joins catalog cards by exact model name', () => {
+  const statusMap = createModelStatusMap([
+    modelFixture,
+    { ...modelFixture, model_name: 'wan2.7', status: 'down' },
+  ])
 
-    assert.deepEqual(
-      result.map((model) => model.model_name),
-      ['gpt-5.6']
-    )
-  })
-})
-
-test('probe countdown clamps elapsed schedules to zero', () => {
-  assert.equal(formatProbeCountdown(100, 101_000), '00:00')
-  assert.equal(formatProbeCountdown(3_700, 100_000), '01:00')
-})
-
-test('model status timestamps accept the Chinese interface language codes', () => {
-  const timestamp = 1_720_000_000
-  const options: Intl.DateTimeFormatOptions = {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }
-
-  assert.equal(
-    formatModelStatusCheckedAt(timestamp, 'zhCN'),
-    new Intl.DateTimeFormat('zh-CN', options).format(timestamp * 1000)
-  )
-  assert.equal(
-    formatModelStatusCheckedAt(timestamp, 'zhTW'),
-    new Intl.DateTimeFormat('zh-TW', options).format(timestamp * 1000)
-  )
+  assert.equal(statusMap.get('gpt-5.6')?.status, 'healthy')
+  assert.equal(statusMap.get('wan2.7')?.status, 'down')
+  assert.equal(statusMap.get('missing-model'), undefined)
 })

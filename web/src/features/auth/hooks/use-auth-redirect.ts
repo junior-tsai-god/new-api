@@ -23,6 +23,7 @@ import {
   getSavedLanguage,
   sanitizeAuthRedirect,
 } from '@/features/auth/lib/auth-redirect'
+import { createLoginPrefillState } from '@/features/auth/lib/login-prefill'
 import { applyAuthBundle } from '@/lib/api'
 import type { AuthBundle } from '@/stores/auth-store'
 
@@ -62,8 +63,12 @@ export function useAuthRedirect() {
   /**
    * Redirect to login page
    */
-  const redirectToLogin = () => {
-    navigate({ to: '/sign-in', replace: true })
+  const redirectToLogin = (username?: string) => {
+    navigate({
+      to: '/sign-in',
+      replace: true,
+      state: createLoginPrefillState(username),
+    })
   }
 
   /**

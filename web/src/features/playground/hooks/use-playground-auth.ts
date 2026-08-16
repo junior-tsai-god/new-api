@@ -26,14 +26,19 @@ import { API_KEY_STATUS } from '@/features/keys/constants'
 import type { ApiKey } from '@/features/keys/types'
 import { useAuthStore } from '@/stores/auth-store'
 
-import type {
-  PlaygroundAuthMode,
-  PlaygroundConfig,
-  PlaygroundRequestAuth,
-} from '../types'
+import type { PlaygroundConfig, PlaygroundRequestAuth } from '../types'
 
 export function normalizeApiKeySecret(key: string): string {
   return key.startsWith('sk-') ? key : `sk-${key}`
+}
+
+export function selectPlaygroundApiKey<T extends { id: number }>(
+  apiKeys: T[],
+  configuredApiKeyId: number | null
+): T | null {
+  return (
+    apiKeys.find((item) => item.id === configuredApiKeyId) ?? apiKeys[0] ?? null
+  )
 }
 
 async function getEnabledApiKeys(): Promise<ApiKey[]> {
@@ -58,7 +63,6 @@ async function getApiKeySecret(id: number): Promise<string> {
 }
 
 type UsePlaygroundAuthParams = {
-  authMode: PlaygroundAuthMode
   configuredApiKeyId: number | null
   updateConfig: <K extends keyof PlaygroundConfig>(
     key: K,
@@ -69,21 +73,19 @@ type UsePlaygroundAuthParams = {
 export function usePlaygroundAuth(params: UsePlaygroundAuthParams) {
   const { t } = useTranslation()
   const userId = useAuthStore((state) => state.auth.user?.id)
-  const { authMode, configuredApiKeyId, updateConfig } = params
+  const { configuredApiKeyId, updateConfig } = params
 
   const apiKeysQuery = useQuery({
     queryKey: ['playground-api-keys', userId],
     queryFn: getEnabledApiKeys,
     enabled: Boolean(userId),
+    refetchOnMount: 'always',
     staleTime: 30 * 1000,
   })
 
   const apiKeys = useMemo(() => apiKeysQuery.data ?? [], [apiKeysQuery.data])
   const selectedApiKey = useMemo(
-    () =>
-      apiKeys.find((item) => item.id === configuredApiKeyId) ??
-      apiKeys[0] ??
-      null,
+    () => selectPlaygroundApiKey(apiKeys, configuredApiKeyId),
     [apiKeys, configuredApiKeyId]
   )
   const selectedApiKeyId = selectedApiKey?.id
@@ -105,10 +107,7 @@ export function usePlaygroundAuth(params: UsePlaygroundAuthParams) {
       }
       return getApiKeySecret(selectedApiKeyId)
     },
-    enabled:
-      authMode === 'api-key' &&
-      Boolean(userId) &&
-      selectedApiKeyId !== undefined,
+    enabled: Boolean(userId) && selectedApiKeyId !== undefined,
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: 0,
   })
@@ -135,10 +134,9 @@ export function usePlaygroundAuth(params: UsePlaygroundAuthParams) {
 
   const requestAuth = useMemo<PlaygroundRequestAuth>(
     () => ({
-      mode: authMode,
-      apiKey: authMode === 'api-key' ? apiKeySecretQuery.data : undefined,
+      apiKey: apiKeySecretQuery.data,
     }),
-    [apiKeySecretQuery.data, authMode]
+    [apiKeySecretQuery.data]
   )
 
   return {

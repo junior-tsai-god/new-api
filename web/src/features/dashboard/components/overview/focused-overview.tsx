@@ -105,7 +105,23 @@ export function FocusedOverview() {
             <Metric label={t('Requests')} value={formatNumber(requestCount)} />
           </div>
           <div className='flex flex-wrap gap-2 border-t px-4 py-3 sm:px-5 lg:border-t-0 lg:border-l'>
-            <Button render={<Link to='/playground' />} size='sm'>
+            <Button
+              className='bg-[var(--deck-signal)] text-[var(--deck-ink)] hover:bg-[var(--deck-signal)] hover:brightness-95'
+              render={<Link to='/wallet' />}
+              size='sm'
+            >
+              <HugeiconsIcon
+                icon={WalletAdd01Icon}
+                data-icon='inline-start'
+                strokeWidth={2}
+              />
+              {t('Recharge')}
+            </Button>
+            <Button
+              render={<Link to='/playground' />}
+              size='sm'
+              variant='outline'
+            >
               <HugeiconsIcon
                 icon={FlaskConicalIcon}
                 data-icon='inline-start'
@@ -120,14 +136,6 @@ export function FocusedOverview() {
                 strokeWidth={2}
               />
               {t('Create API Key')}
-            </Button>
-            <Button render={<Link to='/wallet' />} size='sm' variant='outline'>
-              <HugeiconsIcon
-                icon={WalletAdd01Icon}
-                data-icon='inline-start'
-                strokeWidth={2}
-              />
-              {t('Add credits')}
             </Button>
           </div>
         </div>
@@ -158,10 +166,10 @@ export function FocusedOverview() {
           />
           <Link
             to='/model-catalog/$section'
-            params={{ section: 'status' }}
+            params={{ section: 'catalog' }}
             className='text-foreground focus-visible:ring-ring ms-auto text-sm font-medium underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none'
           >
-            {t('View status')}
+            {t('Models')}
           </Link>
         </div>
       </section>

@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-export const MODEL_CATALOG_SECTIONS = ['catalog', 'status'] as const
+export const MODEL_CATALOG_SECTIONS = ['catalog'] as const
 
 export type ModelCatalogSection = (typeof MODEL_CATALOG_SECTIONS)[number]
 

@@ -217,9 +217,7 @@ function OverviewSummaryGrid(props: { model: PricingModel }) {
       />
       <OverviewMetric
         icon={Timer}
-        label={
-          props.model.probe_latency ? t('Probe latency') : t('Average latency')
-        }
+        label={t('Latency')}
         value={formatLatency(
           props.model.probe_latency?.avg_latency_ms ?? trafficAvgLatency
         )}

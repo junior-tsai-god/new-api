@@ -34,17 +34,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 import {
-  formatCurrency,
+  calculatePresetPaymentAmount,
+  formatPaymentAmount,
+  formatTopupCredit,
   getDiscountLabel,
   getPaymentIcon,
   getMinTopupAmount,
-  calculatePresetPricing,
 } from '../lib'
 import type {
+  PaymentQuote,
   PaymentMethod,
   PresetAmount,
   TopupInfo,
@@ -60,7 +61,7 @@ interface RechargeFormCardProps {
   onSelectPreset: (preset: PresetAmount) => void
   topupAmount: number
   onTopupAmountChange: (amount: number) => void
-  paymentAmount: number
+  paymentQuote: PaymentQuote | null
   calculating: boolean
   onPaymentMethodSelect: (method: PaymentMethod) => void
   paymentLoading: string | null
@@ -70,8 +71,6 @@ interface RechargeFormCardProps {
   redeeming: boolean
   topupLink?: string
   loading?: boolean
-  priceRatio?: number
-  usdExchangeRate?: number
   onOpenBilling?: () => void
   creemProducts?: CreemProduct[]
   enableCreemTopup?: boolean
@@ -107,7 +106,7 @@ export function RechargeFormCard({
   onSelectPreset,
   topupAmount,
   onTopupAmountChange,
-  paymentAmount,
+  paymentQuote,
   calculating,
   onPaymentMethodSelect,
   paymentLoading,
@@ -117,8 +116,6 @@ export function RechargeFormCard({
   redeeming,
   topupLink,
   loading,
-  priceRatio = 1,
-  usdExchangeRate = 1,
   onOpenBilling,
   creemProducts,
   enableCreemTopup,
@@ -160,6 +157,9 @@ export function RechargeFormCard({
     : topupLink
   const minTopup = getMinTopupAmount(topupInfo)
   const redemptionEnabled = topupInfo?.enable_redemption !== false
+  const quotedDiscount = paymentQuote
+    ? topupInfo?.discount?.[paymentQuote.topupAmount] || 1
+    : 1
 
   if (loading) {
     return (
@@ -250,45 +250,82 @@ export function RechargeFormCard({
                         preset.discount ||
                         topupInfo?.discount?.[preset.value] ||
                         1.0
-                      const {
-                        displayValue,
-                        actualPrice,
-                        savedAmount,
-                        hasDiscount,
-                      } = calculatePresetPricing(
-                        preset.value,
-                        priceRatio,
-                        discount,
-                        usdExchangeRate
-                      )
+                      const hasDiscount = discount < 1
+                      const presetPaymentAmount = paymentQuote
+                        ? calculatePresetPaymentAmount({
+                            presetAmount: preset.value,
+                            presetDiscount: discount,
+                            quotedTopupAmount: paymentQuote.topupAmount,
+                            quotedPaymentAmount: paymentQuote.amount,
+                            quotedDiscount,
+                          })
+                        : null
+                      const isSelected = selectedPreset === preset.value
                       return (
                         <Button
                           key={preset.value}
                           variant='outline'
                           className={cn(
-                            'flex min-h-16 flex-col items-start rounded-2xl px-3 py-2.5 text-left whitespace-normal sm:min-h-[72px] sm:p-4',
-                            selectedPreset === preset.value
+                            'flex min-h-[92px] flex-col items-start rounded-2xl px-3 py-2.5 text-left whitespace-normal sm:min-h-24 sm:p-4',
+                            isSelected
                               ? 'border-warning bg-warning text-warning-foreground hover:bg-warning/90'
                               : 'border-muted'
                           )}
                           onClick={() => onSelectPreset(preset)}
                         >
-                          <div className='flex w-full items-center justify-between'>
-                            <div className='text-base font-semibold sm:text-lg'>
-                              {formatNumber(displayValue)}
-                            </div>
+                          <div className='flex w-full items-center justify-between gap-2'>
+                            <span
+                              className={cn(
+                                'text-[11px] leading-4 font-medium',
+                                isSelected
+                                  ? 'text-warning-foreground/80'
+                                  : 'text-muted-foreground'
+                              )}
+                            >
+                              {t('Credit received')}
+                            </span>
                             {hasDiscount && (
-                              <div className='text-success text-xs font-medium'>
+                              <span
+                                className={cn(
+                                  'text-xs font-medium',
+                                  isSelected
+                                    ? 'text-warning-foreground'
+                                    : 'text-success'
+                                )}
+                              >
                                 {getDiscountLabel(discount)}
-                              </div>
+                              </span>
                             )}
                           </div>
-                          <div className='text-muted-foreground mt-1.5 w-full text-xs sm:mt-2'>
-                            Pay {formatCurrency(actualPrice)}
-                            {hasDiscount && savedAmount > 0 && (
-                              <span className='text-success'>
-                                {' '}
-                                • Save {formatCurrency(savedAmount)}
+                          <div className='mt-0.5 text-base font-semibold sm:text-lg'>
+                            {formatTopupCredit(preset.value)}
+                          </div>
+                          <div
+                            className={cn(
+                              'mt-1.5 flex w-full items-center justify-between gap-2 text-xs',
+                              isSelected
+                                ? 'text-warning-foreground/80'
+                                : 'text-muted-foreground'
+                            )}
+                          >
+                            <span>{t('Actual Amount')}</span>
+                            {calculating ? (
+                              <Skeleton className='h-4 w-14' />
+                            ) : (
+                              <span
+                                className={cn(
+                                  'font-semibold',
+                                  isSelected
+                                    ? 'text-warning-foreground'
+                                    : 'text-foreground'
+                                )}
+                              >
+                                {presetPaymentAmount === null
+                                  ? '—'
+                                  : formatPaymentAmount(
+                                      presetPaymentAmount,
+                                      paymentQuote?.currency
+                                    )}
                               </span>
                             )}
                           </div>
@@ -306,27 +343,44 @@ export function RechargeFormCard({
                 >
                   {t('Custom Amount')}
                 </Label>
-                <div className='grid grid-cols-[minmax(0,1fr)_minmax(110px,0.55fr)] gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center'>
+                <div className='grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(280px,auto)] sm:items-center'>
                   <Input
                     id='topup-amount'
                     type='number'
                     value={localAmount}
                     onChange={(e) => handleAmountChange(e.target.value)}
                     min={minTopup}
-                    placeholder={`Minimum ${minTopup}`}
+                    placeholder={t('Minimum topup amount: {{amount}}', {
+                      amount: minTopup,
+                    })}
                     className='h-9 text-base sm:h-10 sm:text-lg'
                   />
-                  <div className='bg-muted/30 flex min-h-9 items-center justify-between gap-2 rounded-xl border px-3 lg:min-w-52'>
-                    <span className='text-muted-foreground truncate text-xs'>
-                      {t('Amount to pay:')}
-                    </span>
-                    {calculating ? (
-                      <Skeleton className='h-5 w-16' />
-                    ) : (
-                      <span className='text-sm font-semibold'>
-                        {formatCurrency(paymentAmount)}
+                  <div className='bg-muted/30 grid min-h-12 grid-cols-2 divide-x rounded-xl border'>
+                    <div className='flex min-w-0 flex-col justify-center px-3 py-2'>
+                      <span className='text-muted-foreground truncate text-[11px]'>
+                        {t('Credit received')}
                       </span>
-                    )}
+                      <span className='truncate text-sm font-semibold'>
+                        {formatTopupCredit(topupAmount)}
+                      </span>
+                    </div>
+                    <div className='flex min-w-0 flex-col justify-center px-3 py-2'>
+                      <span className='text-muted-foreground truncate text-[11px]'>
+                        {t('Actual Amount')}
+                      </span>
+                      {calculating ? (
+                        <Skeleton className='mt-0.5 h-5 w-16' />
+                      ) : (
+                        <span className='truncate text-sm font-semibold'>
+                          {paymentQuote?.topupAmount === topupAmount
+                            ? formatPaymentAmount(
+                                paymentQuote.amount,
+                                paymentQuote.currency
+                              )
+                            : '—'}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

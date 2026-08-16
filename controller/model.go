@@ -205,17 +205,33 @@ func getModelListGroups(c *gin.Context) (modelListGroups, error) {
 	}, nil
 }
 
-func ListModels(c *gin.Context, modelType int) {
+func acceptsUnsetRatioModels(userId int) bool {
 	acceptUnsetRatioModel := operation_setting.SelfUseModeEnabled
-	if !acceptUnsetRatioModel {
-		userId := c.GetInt("id")
-		if userId > 0 {
-			userSettings, _ := model.GetUserSetting(userId, false)
-			if userSettings.AcceptUnsetRatioModel {
-				acceptUnsetRatioModel = true
-			}
+	if acceptUnsetRatioModel || userId <= 0 {
+		return acceptUnsetRatioModel
+	}
+	userSettings, _ := model.GetUserSetting(userId, false)
+	return userSettings.AcceptUnsetRatioModel
+}
+
+func hasAvailableModelsForGroups(userId int, groups []string) bool {
+	modelNames := service.GetGroupsEnabledModels(groups)
+	if len(modelNames) == 0 {
+		return false
+	}
+	if acceptsUnsetRatioModels(userId) {
+		return true
+	}
+	for _, modelName := range modelNames {
+		if helper.HasModelBillingConfig(modelName) {
+			return true
 		}
 	}
+	return false
+}
+
+func ListModels(c *gin.Context, modelType int) {
+	acceptUnsetRatioModel := acceptsUnsetRatioModels(c.GetInt("id"))
 
 	userModelNames := make([]string, 0)
 	groups, err := getModelListGroups(c)

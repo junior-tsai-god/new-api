@@ -16,13 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { toIntlLocale } from '@/i18n/languages'
-
-import type {
-  ModelProbeStatus,
-  ModelStatusHistorySlot,
-  ModelStatusItem,
-} from '../types'
+import type { ModelStatusHistorySlot, ModelStatusItem } from '../types'
 
 export const MODEL_STATUS_HISTORY_SLOT_COUNT = 60
 
@@ -43,37 +37,8 @@ export function createModelStatusHistorySlots(
   return [...placeholders, ...recentHistory]
 }
 
-export function filterModelStatusItems(
-  models: ModelStatusItem[],
-  search: string,
-  status: ModelProbeStatus | 'all'
-): ModelStatusItem[] {
-  const normalizedSearch = search.trim().toLocaleLowerCase()
-  return models.filter((model) => {
-    if (status !== 'all' && model.status !== status) return false
-    if (!normalizedSearch) return true
-    return [model.model_name, model.vendor_name]
-      .filter((value): value is string => Boolean(value))
-      .some((value) => value.toLocaleLowerCase().includes(normalizedSearch))
-  })
-}
-
-export function formatProbeCountdown(nextProbeAt: number, now: number): string {
-  const remainingMinutes = Math.max(
-    0,
-    Math.ceil((nextProbeAt * 1000 - now) / 60_000)
-  )
-  const hours = Math.floor(remainingMinutes / 60)
-  const minutes = remainingMinutes % 60
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
-}
-
-export function formatModelStatusCheckedAt(
-  timestamp: number,
-  language?: string | null
-): string {
-  return new Intl.DateTimeFormat(toIntlLocale(language), {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(timestamp * 1000)
+export function createModelStatusMap(
+  models: ModelStatusItem[]
+): Map<string, ModelStatusItem> {
+  return new Map(models.map((model) => [model.model_name, model]))
 }

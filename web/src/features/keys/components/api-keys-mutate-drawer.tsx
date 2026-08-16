@@ -73,6 +73,7 @@ import {
   getApiKeyFormSchema,
   type ApiKeyFormValues,
   getApiKeyFormDefaultValues,
+  resolveApiKeyGroup,
   transformFormDataToPayload,
   transformApiKeyToFormDefaults,
 } from '../lib'
@@ -155,12 +156,9 @@ export function ApiKeysMutateDrawer({
   useEffect(() => {
     if (groups.length === 0) return
     const currentGroup = form.getValues('group')
-    if (currentGroup && !groups.some((g) => g.value === currentGroup)) {
-      const fallback =
-        groups.find((g) => g.value === 'default')?.value ??
-        groups[0]?.value ??
-        ''
-      form.setValue('group', fallback)
+    const nextGroup = resolveApiKeyGroup(currentGroup, groups)
+    if (nextGroup !== currentGroup) {
+      form.setValue('group', nextGroup)
       if (currentGroup === 'auto') {
         form.setValue('cross_group_retry', false)
       }

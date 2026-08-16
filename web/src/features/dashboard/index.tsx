@@ -16,8 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { getRouteApi, useNavigate } from '@tanstack/react-router'
-import { Eye, EyeOff } from 'lucide-react'
+import { getRouteApi, Link, useNavigate } from '@tanstack/react-router'
+import { ChartNoAxesCombined, Eye, EyeOff, RefreshCw } from 'lucide-react'
 import {
   lazy,
   Suspense,
@@ -31,6 +31,14 @@ import { useTranslation } from 'react-i18next'
 import { SectionPageLayout } from '@/components/layout'
 import { FadeIn } from '@/components/page-transition'
 import { Button } from '@/components/ui/button'
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -53,6 +61,10 @@ import {
   getSavedGranularity,
   saveChartPreferences,
 } from './lib'
+import {
+  getUsageDisplayState,
+  type UsageDataStatus,
+} from './lib/usage-display-state'
 import {
   type DashboardSectionId,
   DASHBOARD_DEFAULT_SECTION,
@@ -189,7 +201,8 @@ export function Dashboard() {
     DASHBOARD_DEFAULT_SECTION) as DashboardSectionId
 
   const [modelData, setModelData] = useState<QuotaDataItem[]>([])
-  const [dataLoading, setDataLoading] = useState(false)
+  const [dataStatus, setDataStatus] = useState<UsageDataStatus>('loading')
+  const [usageRefreshKey, setUsageRefreshKey] = useState(0)
   const [chartPreferences, setChartPreferences] =
     useState<DashboardChartPreferences>(() => getSavedChartPreferences())
   const [modelFilters, setModelFilters] = useState<DashboardFilters>(() =>
@@ -207,29 +220,47 @@ export function Dashboard() {
   )
   const [flowSensitiveVisible, setFlowSensitiveVisible] = useState(true)
 
-  const handleFilterChange = useCallback((filters: DashboardFilters) => {
-    setModelFilters(filters)
+  const startUsageLoad = useCallback(() => {
+    setModelData([])
+    setDataStatus('loading')
   }, [])
 
+  const handleFilterChange = useCallback(
+    (filters: DashboardFilters) => {
+      startUsageLoad()
+      setModelFilters(filters)
+    },
+    [startUsageLoad]
+  )
+
   const handleResetFilters = useCallback(() => {
+    startUsageLoad()
     setModelFilters(buildDefaultDashboardFilters(chartPreferences))
-  }, [chartPreferences])
+  }, [chartPreferences, startUsageLoad])
 
   const handleDataUpdate = useCallback(
-    (data: QuotaDataItem[], loading: boolean) => {
+    (data: QuotaDataItem[], status: UsageDataStatus) => {
       setModelData(data)
-      setDataLoading(loading)
+      setDataStatus(status)
     },
     []
   )
 
+  const handleUsageRetry = useCallback(() => {
+    startUsageLoad()
+    setUsageRefreshKey((value) => value + 1)
+  }, [startUsageLoad])
+
+  const usageDisplayState = getUsageDisplayState(dataStatus, modelData)
+
   const handleChartPreferencesChange = useCallback(
     (preferences: DashboardChartPreferences) => {
+      startUsageLoad()
       setChartPreferences(preferences)
       setModelFilters(buildDefaultDashboardFilters(preferences))
       saveChartPreferences(preferences)
     },
-    []
+    [startUsageLoad]
   )
 
   const meta = SECTION_META[activeSection] ?? SECTION_META.overview
@@ -344,6 +375,7 @@ export function Dashboard() {
                 <Suspense fallback={<LogStatCardsFallback />}>
                   <LazyLogStatCards
                     filters={modelFilters}
+                    refreshKey={usageRefreshKey}
                     onDataUpdate={handleDataUpdate}
                   />
                 </Suspense>
@@ -355,32 +387,89 @@ export function Dashboard() {
                   </Suspense>
                 </FadeIn>
               )}
-              <FadeIn delay={0.1}>
-                <Suspense fallback={<ModelChartsFallback />}>
-                  <LazyConsumptionDistributionChart
-                    data={modelData}
-                    loading={dataLoading}
-                    defaultChartType={
-                      chartPreferences.consumptionDistributionChart
-                    }
-                    timeGranularity={
-                      modelFilters.time_granularity || DEFAULT_TIME_GRANULARITY
-                    }
-                  />
-                </Suspense>
-              </FadeIn>
-              <FadeIn delay={0.15}>
-                <Suspense fallback={<ModelChartsFallback />}>
-                  <LazyModelCharts
-                    data={modelData}
-                    loading={dataLoading}
-                    defaultChartTab={chartPreferences.modelAnalyticsChart}
-                    timeGranularity={
-                      modelFilters.time_granularity || DEFAULT_TIME_GRANULARITY
-                    }
-                  />
-                </Suspense>
-              </FadeIn>
+              {usageDisplayState === 'loading' ? <ModelChartsFallback /> : null}
+              {usageDisplayState === 'error' ? (
+                <Empty className='min-h-72 border' role='alert'>
+                  <EmptyHeader>
+                    <EmptyMedia variant='icon'>
+                      <RefreshCw aria-hidden='true' />
+                    </EmptyMedia>
+                    <EmptyTitle>
+                      {t('Usage data could not be loaded')}
+                    </EmptyTitle>
+                    <EmptyDescription>
+                      {t('Try again to refresh your usage summary.')}
+                    </EmptyDescription>
+                  </EmptyHeader>
+                  <EmptyContent>
+                    <Button variant='outline' onClick={handleUsageRetry}>
+                      {t('Retry')}
+                    </Button>
+                  </EmptyContent>
+                </Empty>
+              ) : null}
+              {usageDisplayState === 'empty' ? (
+                <Empty className='min-h-72 border' role='status'>
+                  <EmptyHeader>
+                    <EmptyMedia variant='icon'>
+                      <ChartNoAxesCombined aria-hidden='true' />
+                    </EmptyMedia>
+                    <EmptyTitle>{t('No API calls yet')}</EmptyTitle>
+                    <EmptyDescription>
+                      {t(
+                        'Send a test request in the playground or follow the API guide to get started.'
+                      )}
+                    </EmptyDescription>
+                  </EmptyHeader>
+                  <EmptyContent className='justify-center sm:flex-row'>
+                    <Button
+                      className='w-full sm:w-auto'
+                      render={<Link to='/playground' />}
+                      nativeButton={false}
+                    >
+                      {t('Try in Playground')}
+                    </Button>
+                    <Button
+                      className='w-full sm:w-auto'
+                      variant='outline'
+                      render={<Link to='/docs' />}
+                      nativeButton={false}
+                    >
+                      {t('View API Guide')}
+                    </Button>
+                  </EmptyContent>
+                </Empty>
+              ) : null}
+              {usageDisplayState === 'ready' ? (
+                <>
+                  <FadeIn delay={0.1}>
+                    <Suspense fallback={<ModelChartsFallback />}>
+                      <LazyConsumptionDistributionChart
+                        data={modelData}
+                        defaultChartType={
+                          chartPreferences.consumptionDistributionChart
+                        }
+                        timeGranularity={
+                          modelFilters.time_granularity ||
+                          DEFAULT_TIME_GRANULARITY
+                        }
+                      />
+                    </Suspense>
+                  </FadeIn>
+                  <FadeIn delay={0.15}>
+                    <Suspense fallback={<ModelChartsFallback />}>
+                      <LazyModelCharts
+                        data={modelData}
+                        defaultChartTab={chartPreferences.modelAnalyticsChart}
+                        timeGranularity={
+                          modelFilters.time_granularity ||
+                          DEFAULT_TIME_GRANULARITY
+                        }
+                      />
+                    </Suspense>
+                  </FadeIn>
+                </>
+              ) : null}
             </>
           )}
           {activeSection === 'users' && (

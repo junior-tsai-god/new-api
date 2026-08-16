@@ -31,6 +31,13 @@ describe('usage and billing navigation', () => {
     assert.equal(getActiveUsageBillingSection('/usage-logs/task'), 'requests')
   })
 
+  test('keeps account activity separate from request logs', () => {
+    assert.equal(
+      getActiveUsageBillingSection('/usage-logs/activity'),
+      'activity'
+    )
+  })
+
   test('keeps recharge and order history under billing', () => {
     assert.equal(getActiveUsageBillingSection('/wallet'), 'billing')
   })

@@ -26,14 +26,14 @@ import {
 } from '../section-registry.ts'
 
 describe('model catalog sections', () => {
-  test('opens the catalog first and exposes status in the same workspace', () => {
+  test('uses one combined model catalog workspace', () => {
     assert.equal(MODEL_CATALOG_DEFAULT_SECTION, 'catalog')
-    assert.deepEqual(MODEL_CATALOG_SECTIONS, ['catalog', 'status'])
+    assert.deepEqual(MODEL_CATALOG_SECTIONS, ['catalog'])
   })
 
   test('rejects admin model sections from the user model workspace', () => {
     assert.equal(isModelCatalogSection('metadata'), false)
     assert.equal(isModelCatalogSection('deployments'), false)
-    assert.equal(isModelCatalogSection('status'), true)
+    assert.equal(isModelCatalogSection('status'), false)
   })
 })

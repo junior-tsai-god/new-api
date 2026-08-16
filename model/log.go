@@ -92,6 +92,35 @@ const (
 	LogTypeLogin   = 7
 )
 
+const (
+	LogCategoryRequest  = "request"
+	LogCategoryActivity = "activity"
+)
+
+var ErrInvalidLogCategory = errors.New("invalid log category")
+
+func IsValidLogCategory(category string) bool {
+	switch category {
+	case "", LogCategoryRequest, LogCategoryActivity:
+		return true
+	default:
+		return false
+	}
+}
+
+func applyLogCategoryFilter(tx *gorm.DB, category string) (*gorm.DB, error) {
+	switch category {
+	case "":
+		return tx, nil
+	case LogCategoryRequest:
+		return tx.Where("logs.type IN ?", []int{LogTypeConsume, LogTypeError}), nil
+	case LogCategoryActivity:
+		return tx.Where("logs.type IN ?", []int{LogTypeTopup, LogTypeManage, LogTypeSystem, LogTypeRefund, LogTypeLogin}), nil
+	default:
+		return nil, ErrInvalidLogCategory
+	}
+}
+
 func ensureLogRequestId(log *Log) {
 	if log != nil && log.RequestId == "" {
 		log.RequestId = common.NewRequestId()
@@ -465,12 +494,13 @@ func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
 	}
 }
 
-func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, startIdx int, num int, channel int, group string, requestId string, upstreamRequestId string) (logs []*Log, total int64, err error) {
-	var tx *gorm.DB
-	if logType == LogTypeUnknown {
-		tx = LOG_DB
-	} else {
-		tx = LOG_DB.Where("logs.type = ?", logType)
+func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, startIdx int, num int, channel int, group string, requestId string, upstreamRequestId string, category string) (logs []*Log, total int64, err error) {
+	tx, err := applyLogCategoryFilter(LOG_DB, category)
+	if err != nil {
+		return nil, 0, err
+	}
+	if logType != LogTypeUnknown {
+		tx = tx.Where("logs.type = ?", logType)
 	}
 
 	if tx, err = applyExplicitLogTextFilter(tx, "logs.model_name", modelName); err != nil {
@@ -561,12 +591,13 @@ func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName
 
 const logSearchCountLimit = 10000
 
-func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int64, modelName string, tokenName string, startIdx int, num int, group string, requestId string, upstreamRequestId string) (logs []*Log, total int64, err error) {
-	var tx *gorm.DB
-	if logType == LogTypeUnknown {
-		tx = LOG_DB.Where("logs.user_id = ?", userId)
-	} else {
-		tx = LOG_DB.Where("logs.user_id = ? and logs.type = ?", userId, logType)
+func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int64, modelName string, tokenName string, startIdx int, num int, group string, requestId string, upstreamRequestId string, category string) (logs []*Log, total int64, err error) {
+	tx, err := applyLogCategoryFilter(LOG_DB.Where("logs.user_id = ?", userId), category)
+	if err != nil {
+		return nil, 0, err
+	}
+	if logType != LogTypeUnknown {
+		tx = tx.Where("logs.type = ?", logType)
 	}
 
 	if tx, err = applyExplicitLogTextFilter(tx, "logs.model_name", modelName); err != nil {
@@ -615,11 +646,18 @@ type Stat struct {
 	Tpm   int `json:"tpm"`
 }
 
-func SumUsedQuota(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, channel int, group string) (stat Stat, err error) {
+func SumUsedQuota(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, channel int, group string, category string) (stat Stat, err error) {
 	tx := LOG_DB.Table("logs").Select("COALESCE(sum(quota), 0) quota")
 
 	// 为rpm和tpm创建单独的查询
 	rpmTpmQuery := LOG_DB.Table("logs").Select("count(*) rpm, COALESCE(sum(prompt_tokens), 0) + COALESCE(sum(completion_tokens), 0) tpm")
+
+	if !IsValidLogCategory(category) {
+		return stat, ErrInvalidLogCategory
+	}
+	if category == LogCategoryActivity {
+		return stat, nil
+	}
 
 	if tx, err = applyExplicitLogTextFilter(tx, "username", username); err != nil {
 		return stat, err

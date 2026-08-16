@@ -34,6 +34,11 @@ type userModelsResponse struct {
 	Data    []string `json:"data"`
 }
 
+type userGroupsResponse struct {
+	Success bool                              `json:"success"`
+	Data    map[string]map[string]interface{} `json:"data"`
+}
+
 func setupModelListControllerTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
@@ -213,6 +218,116 @@ func TestGetUserModelsFiltersByRequestedGroup(t *testing.T) {
 	GetUserModels(vipContext)
 
 	require.Empty(t, decodeUserModelsResponse(t, vipRecorder))
+}
+
+func TestGetUserGroupsOmitsGroupsWithoutEnabledModels(t *testing.T) {
+	withSelfUseModeEnabled(t)
+
+	originalUsableGroups := setting.UserUsableGroups2JSONString()
+	originalGroupRatios := ratio_setting.GroupRatio2JSONString()
+	t.Cleanup(func() {
+		require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(originalUsableGroups))
+		require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(originalGroupRatios))
+	})
+
+	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"default":"Default","vip":"VIP"}`))
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":1,"vip":1}`))
+
+	db := setupModelListControllerTestDB(t)
+	require.NoError(t, db.Create(&model.User{
+		Id:       1004,
+		Username: "group-model-user",
+		Password: "password",
+		Group:    "default",
+		Status:   common.UserStatusEnabled,
+	}).Error)
+	require.NoError(t, db.Create(&[]model.Ability{
+		{Group: "default", Model: "zz-default-model", ChannelId: 1, Enabled: true},
+		{Group: "vip", Model: "zz-disabled-vip-model", ChannelId: 2, Enabled: false},
+	}).Error)
+
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Request = httptest.NewRequest(http.MethodGet, "/api/user/self/groups", nil)
+	context.Set("id", 1004)
+
+	GetUserGroups(context)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	var payload userGroupsResponse
+	require.NoError(t, common.Unmarshal(recorder.Body.Bytes(), &payload))
+	require.True(t, payload.Success)
+	assert.Contains(t, payload.Data, "default")
+	assert.NotContains(t, payload.Data, "vip")
+}
+
+func TestGetUserGroupsOmitsGroupsWithoutBillableModels(t *testing.T) {
+	withSelfUseModeDisabled(t)
+	withTieredBillingConfig(t, map[string]string{
+		"zz-billable-group-model": "tiered_expr",
+	}, map[string]string{
+		"zz-billable-group-model": `tier("base", p + c)`,
+	})
+
+	originalUsableGroups := setting.UserUsableGroups2JSONString()
+	originalGroupRatios := ratio_setting.GroupRatio2JSONString()
+	t.Cleanup(func() {
+		require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(originalUsableGroups))
+		require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(originalGroupRatios))
+	})
+	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"default":"Default","vip":"VIP"}`))
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":1,"vip":1}`))
+
+	db := setupModelListControllerTestDB(t)
+	require.NoError(t, db.Create(&model.User{
+		Id:       1006,
+		Username: "billable-group-model-user",
+		Password: "password",
+		Group:    "default",
+		Status:   common.UserStatusEnabled,
+	}).Error)
+	require.NoError(t, db.Create(&[]model.Ability{
+		{Group: "default", Model: "zz-billable-group-model", ChannelId: 1, Enabled: true},
+		{Group: "vip", Model: "zz-unpriced-group-model", ChannelId: 2, Enabled: true},
+	}).Error)
+
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Request = httptest.NewRequest(http.MethodGet, "/api/user/self/groups", nil)
+	context.Set("id", 1006)
+
+	GetUserGroups(context)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	var payload userGroupsResponse
+	require.NoError(t, common.Unmarshal(recorder.Body.Bytes(), &payload))
+	require.True(t, payload.Success)
+	assert.Contains(t, payload.Data, "default")
+	assert.NotContains(t, payload.Data, "vip")
+}
+
+func TestResolveInitialTokenGroupUsesAnAvailableFallback(t *testing.T) {
+	originalDefaultUseAutoGroup := setting.DefaultUseAutoGroup
+	originalUsableGroups := setting.UserUsableGroups2JSONString()
+	originalGroupRatios := ratio_setting.GroupRatio2JSONString()
+	t.Cleanup(func() {
+		setting.DefaultUseAutoGroup = originalDefaultUseAutoGroup
+		require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(originalUsableGroups))
+		require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(originalGroupRatios))
+	})
+
+	setting.DefaultUseAutoGroup = false
+	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(`{"default":"Default","vip":"VIP"}`))
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(`{"default":1,"vip":1}`))
+	withSelfUseModeEnabled(t)
+
+	db := setupModelListControllerTestDB(t)
+	require.NoError(t, db.Create(&model.Ability{
+		Group: "default", Model: "zz-default-model", ChannelId: 1, Enabled: true,
+	}).Error)
+
+	assert.Equal(t, "default", resolveInitialTokenGroup(1005, "vip"))
+	assert.Empty(t, resolveInitialTokenGroup(1005, "default"))
 }
 
 func TestGetUserModelsExpandsAutoGroupsInConfiguredOrder(t *testing.T) {

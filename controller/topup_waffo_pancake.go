@@ -33,6 +33,19 @@ func RequestWaffoPancakeAmount(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("充值数量不能小于 %d", setting.WaffoPancakeMinTopUp)})
 		return
 	}
+	maxTopup, err := getTopUpRequestAmountLimit(
+		10000,
+		operation_setting.GetQuotaDisplayType() == operation_setting.QuotaDisplayTypeTokens,
+		common.QuotaPerUnit,
+	)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值额度配置错误"})
+		return
+	}
+	if req.Amount > maxTopup {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("充值数量不能大于 %d", maxTopup)})
+		return
+	}
 
 	id := c.GetInt("id")
 	group, err := model.GetUserGroup(id, true)
@@ -47,7 +60,11 @@ func RequestWaffoPancakeAmount(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "success", "data": fmt.Sprintf("%.2f", payMoney)})
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "success",
+		"data":     fmt.Sprintf("%.2f", payMoney),
+		"currency": "USD",
+	})
 }
 
 func getWaffoPancakePayMoney(amount int64, group string) float64 {
@@ -351,6 +368,19 @@ func RequestWaffoPancakePay(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("充值数量不能小于 %d", setting.WaffoPancakeMinTopUp)})
 		return
 	}
+	maxTopup, err := getTopUpRequestAmountLimit(
+		10000,
+		operation_setting.GetQuotaDisplayType() == operation_setting.QuotaDisplayTypeTokens,
+		common.QuotaPerUnit,
+	)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值额度配置错误"})
+		return
+	}
+	if req.Amount > maxTopup {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("充值数量不能大于 %d", maxTopup)})
+		return
+	}
 
 	id := c.GetInt("id")
 	user, err := model.GetUserById(id, false)
@@ -379,6 +409,7 @@ func RequestWaffoPancakePay(c *gin.Context) {
 		TradeNo:         tradeNo,
 		PaymentMethod:   model.PaymentMethodWaffoPancake,
 		PaymentProvider: model.PaymentProviderWaffoPancake,
+		PaymentCurrency: "USD",
 		CreateTime:      time.Now().Unix(),
 		Status:          common.TopUpStatusPending,
 	}

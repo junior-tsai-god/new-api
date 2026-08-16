@@ -19,17 +19,29 @@ For commercial licensing, please contact support@quantumnous.com
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import type { TopNavLink } from '@/components/layout/types'
 import { useStatus } from '@/hooks/use-status'
 import { parseHeaderNavModulesFromStatus } from '@/lib/nav-modules'
 import { useAuthStore } from '@/stores/auth-store'
 
-export type TopNavLink = {
-  title: string
-  href: string
-  disabled?: boolean
-  requiresAuth?: boolean
-  external?: boolean
-}
+const WORKSPACE_ACTIVE_PREFIXES = [
+  '/dashboard',
+  '/playground',
+  '/keys',
+  '/model-catalog',
+  '/usage',
+  '/usage-logs',
+  '/wallet',
+  '/profile',
+  '/channels',
+  '/models',
+  '/users',
+  '/redemption-codes',
+  '/subscriptions',
+  '/architecture',
+  '/system-info',
+  '/system-settings',
+] as const
 
 /**
  * Generate top navigation links based on HeaderNavModules configuration from backend /api/status
@@ -69,6 +81,7 @@ export function useTopNavLinks(): TopNavLink[] {
     links.push({
       title: t('Workspace'),
       href: '/dashboard/overview',
+      activePrefixes: WORKSPACE_ACTIVE_PREFIXES,
       requiresAuth: !isAuthed,
     })
   }
@@ -79,8 +92,6 @@ export function useTopNavLinks(): TopNavLink[] {
     const requiresAuth = pricing.requireAuth && !isAuthed
     links.push({ title: t('Model Square'), href: '/pricing', requiresAuth })
   }
-
-  links.push({ title: t('Model Status'), href: '/model-status' })
 
   // Docs
   if (modules?.docs !== false) {

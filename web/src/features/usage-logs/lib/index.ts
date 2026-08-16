@@ -46,6 +46,10 @@ export {
   buildApiParams,
   fetchLogsByCategory,
 } from './utils'
+export {
+  getLogTypeFiltersForScope,
+  isLogTypeAllowedForScope,
+} from './log-scope'
 
 // Status mapper utilities
 export { createStatusMapper } from './status'

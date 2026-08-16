@@ -178,13 +178,7 @@ export function Pricing() {
             <div className='w-full max-w-2xl lg:justify-self-end'>
               <p className='flex items-center gap-2 font-mono text-[10px] tracking-[0.14em] uppercase'>
                 <span className='gateway-status-dot size-1.5 rounded-full bg-[var(--aivanta-signal)]' />
-                {modelCount} {modelCount === 1 ? t('model') : t('models')} /{' '}
-                {t('Online')}
-              </p>
-              <p className='mt-2 max-w-xl text-sm leading-6 text-[var(--aivanta-secondary)]'>
-                {t(
-                  'Discover curated AI models, compare pricing and capabilities, and choose the right model for every scenario.'
-                )}
+                {modelCount} {modelCount === 1 ? t('model') : t('models')}
               </p>
               <SearchBar
                 value={searchInput}
@@ -193,7 +187,7 @@ export function Pricing() {
                 placeholder={t(
                   'Search model name, provider, endpoint, or tag...'
                 )}
-                className='mt-4'
+                className='mt-3'
               />
             </div>
           </header>

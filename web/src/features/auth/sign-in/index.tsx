@@ -16,18 +16,22 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Link, useSearch } from '@tanstack/react-router'
+import { Link, useLocation, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { useStatus } from '@/hooks/use-status'
 
 import { AuthLayout } from '../auth-layout'
 import { TermsFooter } from '../components/terms-footer'
+import { readLoginPrefillUsername } from '../lib/login-prefill'
 import { UserAuthForm } from './components/user-auth-form'
 
 export function SignIn() {
   const { t } = useTranslation()
   const { redirect } = useSearch({ from: '/(auth)/sign-in' })
+  const initialUsername = useLocation({
+    select: (location) => readLoginPrefillUsername(location.state),
+  })
   const { status } = useStatus()
 
   return (
@@ -52,7 +56,7 @@ export function SignIn() {
             )}
         </div>
 
-        <UserAuthForm redirectTo={redirect} />
+        <UserAuthForm redirectTo={redirect} initialUsername={initialUsername} />
 
         <TermsFooter
           variant='sign-in'

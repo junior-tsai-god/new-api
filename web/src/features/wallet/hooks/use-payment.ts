@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import i18next from 'i18next'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 
 import {
@@ -39,7 +39,14 @@ import {
   isWaffoPancakePayment,
   submitPaymentForm,
 } from '../lib'
-import type { AmountRequest, AmountResponse } from '../types'
+import type {
+  AmountRequest,
+  AmountResponse,
+  PaymentQuote,
+  PaymentResponse,
+  PayPalPaymentResponse,
+  StripePaymentResponse,
+} from '../types'
 
 // ============================================================================
 // Payment Hook
@@ -67,7 +74,7 @@ export async function requestPaymentAmount(
   topupAmount: number,
   paymentType: string,
   calculators: PaymentAmountCalculators = defaultPaymentAmountCalculators
-): Promise<number> {
+): Promise<PaymentQuote | null> {
   let calculator = calculators.regular
   if (isStripePayment(paymentType)) {
     calculator = calculators.stripe
@@ -81,34 +88,46 @@ export async function requestPaymentAmount(
 
   const response = await calculator({ amount: topupAmount })
   if (!isApiSuccess(response) || !response.data) {
-    return 0
+    return null
   }
 
-  return Number.parseFloat(response.data)
+  const amount = Number.parseFloat(response.data)
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return null
+  }
+
+  const currency = response.currency?.trim().toUpperCase() || undefined
+  return { topupAmount, amount, currency }
 }
 
 export function usePayment() {
-  const [amount, setAmount] = useState<number>(0)
+  const [quote, setQuote] = useState<PaymentQuote | null>(null)
   const [calculating, setCalculating] = useState(false)
   const [processing, setProcessing] = useState(false)
+  const latestQuoteRequest = useRef(0)
 
   // Calculate payment amount
   const calculatePaymentAmount = useCallback(
     async (topupAmount: number, paymentType: string) => {
+      const requestId = latestQuoteRequest.current + 1
+      latestQuoteRequest.current = requestId
+
       try {
         setCalculating(true)
 
-        const calculatedAmount = await requestPaymentAmount(
-          topupAmount,
-          paymentType
-        )
-        setAmount(calculatedAmount)
-        return calculatedAmount
-      } catch (_error) {
-        setAmount(0)
-        return 0
+        const nextQuote = await requestPaymentAmount(topupAmount, paymentType)
+        if (latestQuoteRequest.current !== requestId) return null
+        setQuote(nextQuote)
+        return nextQuote
+      } catch {
+        if (latestQuoteRequest.current === requestId) {
+          setQuote(null)
+        }
+        return null
       } finally {
-        setCalculating(false)
+        if (latestQuoteRequest.current === requestId) {
+          setCalculating(false)
+        }
       }
     },
     []
@@ -124,20 +143,26 @@ export function usePayment() {
         const isPayPal = isPayPalPayment(paymentType)
         const amount = Math.floor(topupAmount)
 
-        const response = isStripe
-          ? await requestStripePayment({
-              amount,
-              payment_method: 'stripe',
-            })
-          : isPayPal
-            ? await requestPayPalPayment({
-                amount,
-                payment_method: 'paypal',
-              })
-            : await requestPayment({
-                amount,
-                payment_method: paymentType,
-              })
+        let response:
+          | PaymentResponse
+          | PayPalPaymentResponse
+          | StripePaymentResponse
+        if (isStripe) {
+          response = await requestStripePayment({
+            amount,
+            payment_method: 'stripe',
+          })
+        } else if (isPayPal) {
+          response = await requestPayPalPayment({
+            amount,
+            payment_method: 'paypal',
+          })
+        } else {
+          response = await requestPayment({
+            amount,
+            payment_method: paymentType,
+          })
+        }
 
         if (!isApiSuccess(response)) {
           toast.error(response.message || i18next.t('Payment request failed'))
@@ -189,7 +214,7 @@ export function usePayment() {
       }
       toast.success(i18next.t('PayPal payment completed'))
       return true
-    } catch (_error) {
+    } catch {
       toast.error(i18next.t('PayPal payment confirmation failed'))
       return false
     } finally {
@@ -198,12 +223,13 @@ export function usePayment() {
   }, [])
 
   return {
-    amount,
+    quote,
+    amount: quote?.amount ?? 0,
+    currency: quote?.currency,
     calculating,
     processing,
     calculatePaymentAmount,
     processPayment,
     capturePayPalPayment,
-    setAmount,
   }
 }

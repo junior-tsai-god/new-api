@@ -34,7 +34,10 @@ export interface ApiResponse<T = unknown> {
  */
 export type TopupInfoResponse = ApiResponse<TopupInfo>
 export type RedemptionResponse = ApiResponse<number>
-export type AmountResponse = ApiResponse<string>
+export type AmountResponse = ApiResponse<string> & {
+  /** ISO currency code returned by the selected payment gateway quote */
+  currency?: string
+}
 export type PaymentResponse = ApiResponse<Record<string, unknown>> & {
   url?: string
 }
@@ -105,6 +108,8 @@ export interface PaymentMethod {
   min_topup?: number
   /** Optional react-icons component name or safe icon URL */
   icon?: string
+  /** ISO currency code used by this payment method, when known */
+  currency?: string
 }
 
 /**
@@ -221,6 +226,16 @@ export interface AmountRequest {
   amount: number
 }
 
+/** A server-calculated payment quote for a specific topup amount. */
+export interface PaymentQuote {
+  /** USD credit amount used to request this quote */
+  topupAmount: number
+  /** Amount that the gateway will charge */
+  amount: number
+  /** ISO currency code returned by the gateway, when known */
+  currency?: string
+}
+
 /**
  * Affiliate quota transfer request
  */
@@ -256,7 +271,7 @@ export interface UserWalletData {
 /**
  * Topup record status
  */
-export type TopupStatus = 'success' | 'pending' | 'expired'
+export type TopupStatus = 'success' | 'pending' | 'expired' | 'failed'
 
 /**
  * Topup billing record
@@ -268,12 +283,18 @@ export interface TopupRecord {
   user_id: number
   /** Topup amount (quota) */
   amount: number
+  /** USD-denominated credit captured when the order was created */
+  credit_amount?: number
   /** Payment amount (actual money paid) */
   money: number
   /** Trade/order number */
   trade_no: string
   /** Payment method type */
   payment_method: string
+  /** Payment provider used to interpret historical amount semantics */
+  payment_provider?: string
+  /** ISO currency code recorded when the order was created */
+  payment_currency?: string
   /** Creation timestamp */
   create_time: number
   /** Completion timestamp */

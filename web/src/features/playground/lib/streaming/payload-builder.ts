@@ -30,8 +30,7 @@ import { formatMessageForAPI, isValidMessage } from '../message/message-utils'
 export function buildChatCompletionPayload(
   messages: Message[],
   config: PlaygroundConfig,
-  parameterEnabled: ParameterEnabled,
-  includeGroup = true
+  parameterEnabled: ParameterEnabled
 ): ChatCompletionRequest {
   // Filter and format valid messages
   const processedMessages = messages
@@ -42,10 +41,6 @@ export function buildChatCompletionPayload(
     model: config.model,
     messages: processedMessages,
     stream: config.stream,
-  }
-
-  if (includeGroup) {
-    payload.group = config.group
   }
 
   if (parameterEnabled.temperature) {

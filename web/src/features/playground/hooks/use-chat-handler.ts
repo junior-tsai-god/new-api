@@ -259,8 +259,7 @@ export function useChatHandler({
       const payload = buildChatCompletionPayload(
         messages,
         config,
-        parameterEnabled,
-        requestAuth.mode === 'session'
+        parameterEnabled
       )
       void sendStreamRequest(
         payload,
@@ -288,8 +287,7 @@ export function useChatHandler({
       const payload = buildChatCompletionPayload(
         messages,
         config,
-        parameterEnabled,
-        requestAuth.mode === 'session'
+        parameterEnabled
       )
       const generation = requestGenerationRef.current + 1
       const abortController = new AbortController()

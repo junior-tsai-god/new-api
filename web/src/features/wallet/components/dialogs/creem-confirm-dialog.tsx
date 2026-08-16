@@ -21,9 +21,16 @@ import { useTranslation } from 'react-i18next'
 
 import { Dialog } from '@/components/dialog'
 import { Button } from '@/components/ui/button'
-import { formatNumber } from '@/lib/format'
+import {
+  DEFAULT_CURRENCY_CONFIG,
+  useSystemConfigStore,
+} from '@/stores/system-config-store'
 
-import { formatCreemPrice } from '../../lib/format'
+import {
+  formatCreemPrice,
+  formatTopupCredit,
+  getTopupCreditAmountUSD,
+} from '../../lib/format'
 import type { CreemProduct } from '../../types'
 
 interface CreemConfirmDialogProps {
@@ -42,8 +49,22 @@ export function CreemConfirmDialog({
   processing,
 }: CreemConfirmDialogProps) {
   const { t } = useTranslation()
+  const configuredQuotaPerUnit = useSystemConfigStore(
+    (state) => state.config.currency.quotaPerUnit
+  )
+  const quotaPerUnit =
+    Number.isFinite(configuredQuotaPerUnit) && configuredQuotaPerUnit > 0
+      ? configuredQuotaPerUnit
+      : DEFAULT_CURRENCY_CONFIG.quotaPerUnit
 
   if (!product) return null
+  const creditAmountUSD = getTopupCreditAmountUSD({
+    amount: product.quota,
+    money: product.price,
+    paymentProvider: 'creem',
+    paymentCurrency: product.currency,
+    quotaPerUnit,
+  })
 
   return (
     <Dialog
@@ -83,8 +104,12 @@ export function CreemConfirmDialog({
           </span>
         </div>
         <div className='flex items-center justify-between'>
-          <span className='text-muted-foreground'>{t('Quota')}</span>
-          <span className='font-medium'>{formatNumber(product.quota)}</span>
+          <span className='text-muted-foreground'>{t('Credit received')}</span>
+          <span className='font-medium'>
+            {creditAmountUSD === null
+              ? '—'
+              : formatTopupCredit(creditAmountUSD)}
+          </span>
         </div>
       </div>
     </Dialog>

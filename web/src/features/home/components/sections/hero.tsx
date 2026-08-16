@@ -172,7 +172,7 @@ export function Hero(props: HeroProps) {
                 POST /v1/chat/completions
               </code>
               <Link
-                to='/model-status'
+                to='/pricing'
                 className='mt-4 inline-flex items-center text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-none'
               >
                 {t('View status')}

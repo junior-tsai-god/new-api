@@ -30,6 +30,8 @@ import type { UsageLog } from './data/schema'
  */
 export type LogCategory = 'common' | 'drawing' | 'task'
 
+export type CommonLogScope = 'request' | 'activity'
+
 // ============================================================================
 // Filter Types
 // ============================================================================
@@ -303,6 +305,7 @@ export interface TaskLog {
 export interface GetLogsParams {
   p?: number
   page_size?: number
+  category?: CommonLogScope
   type?: number
   username?: string
   token_name?: string
@@ -327,6 +330,7 @@ export interface GetLogsResponse {
 }
 
 export interface GetLogStatsParams {
+  category?: CommonLogScope
   type?: number
   username?: string
   token_name?: string
@@ -380,6 +384,7 @@ export interface GetTaskLogsParams {
  */
 export interface FetchLogsConfig {
   logCategory: LogCategory
+  commonLogScope: CommonLogScope
   isAdmin: boolean
   page: number
   pageSize: number

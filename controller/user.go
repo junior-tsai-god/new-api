@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -20,6 +21,7 @@ import (
 	"github.com/QuantumNous/new-api/service/authz"
 	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
+	"github.com/QuantumNous/new-api/setting/ratio_setting"
 
 	"github.com/QuantumNous/new-api/constant"
 
@@ -36,6 +38,43 @@ var (
 	errUserPasswordUnset    = errors.New("user password is not set")
 	errOriginalPasswordFail = errors.New("original password is incorrect")
 )
+
+func resolveInitialTokenGroup(userId int, userGroup string) string {
+	if setting.DefaultUseAutoGroup {
+		autoGroups := service.GetUserAutoGroup(userGroup)
+		if hasAvailableModelsForGroups(userId, autoGroups) {
+			return "auto"
+		}
+	}
+	if hasAvailableModelsForGroups(userId, []string{userGroup}) {
+		return ""
+	}
+
+	usableGroups := service.GetUserUsableGroups(userGroup)
+	groupRatios := ratio_setting.GetGroupRatioCopy()
+	if _, usable := usableGroups["default"]; usable {
+		if _, configured := groupRatios["default"]; configured && hasAvailableModelsForGroups(userId, []string{"default"}) {
+			return "default"
+		}
+	}
+
+	groupNames := make([]string, 0, len(groupRatios))
+	for groupName := range groupRatios {
+		if groupName == "default" {
+			continue
+		}
+		if _, ok := usableGroups[groupName]; ok {
+			groupNames = append(groupNames, groupName)
+		}
+	}
+	sort.Strings(groupNames)
+	for _, groupName := range groupNames {
+		if hasAvailableModelsForGroups(userId, []string{groupName}) {
+			return groupName
+		}
+	}
+	return ""
+}
 
 func Login(c *gin.Context) {
 	if !common.PasswordLoginEnabled {
@@ -307,9 +346,7 @@ func Register(c *gin.Context) {
 			UnlimitedQuota:     true,
 			ModelLimitsEnabled: false,
 		}
-		if setting.DefaultUseAutoGroup {
-			token.Group = "auto"
-		}
+		token.Group = resolveInitialTokenGroup(insertedUser.Id, insertedUser.Group)
 		if err := token.Insert(); err != nil {
 			common.ApiErrorI18n(c, i18n.MsgCreateDefaultTokenErr)
 			return

@@ -40,6 +40,7 @@ import {
   USAGE_LOGS_DEFAULT_SECTION,
   type UsageLogsSectionId,
 } from './section-registry'
+import type { CommonLogScope, LogCategory } from './types'
 
 const route = getRouteApi('/_authenticated/usage-logs/$section')
 const LOG_SECTIONS = ['common', 'drawing', 'task'] as const
@@ -53,6 +54,9 @@ const SECTION_META: Record<UsageLogsSectionId, { titleKey: string }> = {
   },
   task: {
     titleKey: 'Task Logs',
+  },
+  activity: {
+    titleKey: 'Account Activity',
   },
 }
 
@@ -118,7 +122,12 @@ function UsageLogsContent() {
     [setViewScope]
   )
 
-  const showRequestSwitcher = visibleSections.length > 1
+  const showRequestSwitcher =
+    activeCategory !== 'activity' && visibleSections.length > 1
+  const logCategory: LogCategory =
+    activeCategory === 'activity' ? 'common' : activeCategory
+  const commonLogScope: CommonLogScope =
+    activeCategory === 'activity' ? 'activity' : 'request'
 
   return (
     <>
@@ -151,7 +160,10 @@ function UsageLogsContent() {
               </Tabs>
             )}
             <div className='min-h-0 flex-1'>
-              <UsageLogsTable logCategory={activeCategory} />
+              <UsageLogsTable
+                logCategory={logCategory}
+                commonLogScope={commonLogScope}
+              />
             </div>
           </div>
         </SectionPageLayout.Content>

@@ -46,6 +46,7 @@ import { OAuthProviders } from '@/features/auth/components/oauth-providers'
 import { loginFormSchema } from '@/features/auth/constants'
 import { useAuthRedirect } from '@/features/auth/hooks/use-auth-redirect'
 import { useTurnstile } from '@/features/auth/hooks/use-turnstile'
+import { createLoginFormDefaults } from '@/features/auth/lib/login-prefill'
 import { beginPasskeyLogin, finishPasskeyLogin } from '@/features/auth/passkey'
 import type { AuthFormProps } from '@/features/auth/types'
 import { useStatus } from '@/hooks/use-status'
@@ -62,6 +63,7 @@ import { useAuthStore } from '@/stores/auth-store'
 export function UserAuthForm({
   className,
   redirectTo,
+  initialUsername,
   ...props
 }: AuthFormProps) {
   const { t } = useTranslation()
@@ -130,10 +132,7 @@ export function UserAuthForm({
 
   const form = useForm<z.infer<typeof loginFormSchema>>({
     resolver: zodResolver(loginFormSchema),
-    defaultValues: {
-      username: '',
-      password: '',
-    },
+    defaultValues: createLoginFormDefaults(initialUsername),
   })
 
   const wechatQrCodeUrl = useMemo(() => {

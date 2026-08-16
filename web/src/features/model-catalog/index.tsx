@@ -16,61 +16,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { getRouteApi, useNavigate } from '@tanstack/react-router'
-import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { SectionPageLayout } from '@/components/layout'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ModelStatusContent } from '@/features/model-status'
 
 import { ModelCatalogContent } from './model-catalog-content'
-import type { ModelCatalogSection } from './section-registry'
-
-const route = getRouteApi('/_authenticated/model-catalog/$section')
-
-const SECTION_LABELS: Record<ModelCatalogSection, string> = {
-  catalog: 'Model Square',
-  status: 'Model Status',
-}
 
 export function ModelCatalog() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
-  const params = route.useParams()
-  const activeSection = params.section as ModelCatalogSection
-  const handleSectionChange = useCallback(
-    (section: string) => {
-      void navigate({
-        to: '/model-catalog/$section',
-        params: { section: section as ModelCatalogSection },
-      })
-    },
-    [navigate]
-  )
 
   return (
     <SectionPageLayout>
       <SectionPageLayout.Title>{t('Models')}</SectionPageLayout.Title>
       <SectionPageLayout.Content>
-        <div className='flex flex-col gap-4'>
-          <Tabs value={activeSection} onValueChange={handleSectionChange}>
-            <TabsList>
-              {(Object.keys(SECTION_LABELS) as ModelCatalogSection[]).map(
-                (section) => (
-                  <TabsTrigger key={section} value={section}>
-                    {t(SECTION_LABELS[section])}
-                  </TabsTrigger>
-                )
-              )}
-            </TabsList>
-          </Tabs>
-          {activeSection === 'catalog' ? (
-            <ModelCatalogContent />
-          ) : (
-            <ModelStatusContent />
-          )}
-        </div>
+        <ModelCatalogContent />
       </SectionPageLayout.Content>
     </SectionPageLayout>
   )

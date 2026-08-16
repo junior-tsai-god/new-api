@@ -33,7 +33,10 @@ export function WalletStatsCard(props: WalletStatsCardProps) {
   const { t } = useTranslation()
   if (props.loading) {
     return (
-      <div className='bg-card overflow-hidden rounded-3xl border'>
+      <div
+        className='bg-card overflow-hidden rounded-3xl border'
+        data-slot='wallet-stats'
+      >
         <div className='divide-border/60 grid divide-y md:grid-cols-3 md:divide-x md:divide-y-0'>
           {['balance', 'usage', 'requests'].map((key) => (
             <div key={key} className='px-3 py-3 sm:px-5 sm:py-4'>
@@ -69,7 +72,10 @@ export function WalletStatsCard(props: WalletStatsCardProps) {
   ]
 
   return (
-    <div className='bg-card overflow-hidden rounded-3xl border'>
+    <div
+      className='bg-card overflow-hidden rounded-3xl border'
+      data-slot='wallet-stats'
+    >
       <div className='divide-border/60 grid divide-y md:grid-cols-3 md:divide-x md:divide-y-0'>
         {stats.map((item) => (
           <div key={item.label} className='px-5 py-5 sm:px-6 sm:py-6'>

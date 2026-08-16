@@ -18,10 +18,12 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useEffect } from 'react'
 
+import { useAuthStore } from '@/stores/auth-store'
+
 import { PlaygroundChat } from './components/chat/playground-chat'
 import { PlaygroundAuthControl } from './components/input/playground-auth-control'
 import { PlaygroundInput } from './components/input/playground-input'
-import { PlaygroundStatusRail } from './components/playground-status-rail'
+import { PlaygroundModelControl } from './components/input/playground-model-control'
 import {
   useChatHandler,
   usePlaygroundAuth,
@@ -35,6 +37,22 @@ type PlaygroundProps = {
 }
 
 export function Playground(props: PlaygroundProps) {
+  const userId = useAuthStore((state) => state.auth.user?.id)
+
+  return (
+    <UserPlayground
+      key={userId ?? 'signed-out'}
+      initialModel={props.initialModel}
+      userId={userId}
+    />
+  )
+}
+
+type UserPlaygroundProps = PlaygroundProps & {
+  userId: number | undefined
+}
+
+function UserPlayground(props: UserPlaygroundProps) {
   const {
     config,
     parameterEnabled,
@@ -44,7 +62,7 @@ export function Playground(props: PlaygroundProps) {
     updateConfig,
     updateParameterEnabled,
     clearMessages,
-  } = usePlaygroundState()
+  } = usePlaygroundState(props.userId)
 
   const {
     apiKeys,
@@ -53,17 +71,14 @@ export function Playground(props: PlaygroundProps) {
     requestAuth,
     selectedApiKey,
   } = usePlaygroundAuth({
-    authMode: config.auth_mode,
     configuredApiKeyId: config.api_key_id,
     updateConfig,
   })
 
-  const { groups, isLoadingModels, models } = usePlaygroundOptions({
+  const { isLoadingModels, models } = usePlaygroundOptions({
+    apiKeyId: selectedApiKey?.id,
     apiKeySecret: requestAuth.apiKey,
-    authMode: config.auth_mode,
-    currentGroup: config.group,
     currentModel: config.model,
-    selectedApiKey,
     updateConfig,
   })
 
@@ -120,35 +135,31 @@ export function Playground(props: PlaygroundProps) {
 
       {/* Input area: center content and constrain to the same container width */}
       <div className='mx-auto grid w-full max-w-4xl gap-2 px-1 md:pb-4'>
-        <PlaygroundStatusRail
-          authMode={config.auth_mode}
-          isLoading={isLoadingModels || isLoadingApiKeySecret}
-          model={config.model}
-          modelCount={models.length}
-        />
-        <PlaygroundAuthControl
-          apiKeys={apiKeys}
-          authMode={config.auth_mode}
-          disabled={isGenerating}
-          isLoadingApiKeys={isLoadingApiKeys}
-          isLoadingApiKeySecret={isLoadingApiKeySecret}
-          onApiKeyChange={(id) => updateConfig('api_key_id', id)}
-          onAuthModeChange={(mode) => updateConfig('auth_mode', mode)}
-          selectedApiKeyId={selectedApiKey?.id ?? null}
-        />
+        <div className='grid min-w-0 gap-2 md:grid-cols-2'>
+          <PlaygroundModelControl
+            disabled={isGenerating}
+            isLoading={isLoadingModels || isLoadingApiKeySecret}
+            models={models}
+            onModelChange={(value) => updateConfig('model', value)}
+            selectedModel={config.model}
+          />
+          <PlaygroundAuthControl
+            apiKeys={apiKeys}
+            disabled={isGenerating}
+            isLoadingApiKeys={isLoadingApiKeys}
+            isLoadingApiKeySecret={isLoadingApiKeySecret}
+            onApiKeyChange={(id) => updateConfig('api_key_id', id)}
+            selectedApiKeyId={selectedApiKey?.id ?? null}
+          />
+        </div>
         <PlaygroundInput
           config={config}
           disabled={isGenerating}
-          groups={groups}
-          groupValue={config.group}
           isGenerating={isGenerating}
-          isModelLoading={isLoadingModels || isLoadingApiKeySecret}
-          modelValue={config.model}
+          isRequestConfigLoading={isLoadingModels || isLoadingApiKeySecret}
           models={models}
-          onGroupChange={(value) => updateConfig('group', value)}
           onConfigChange={updateConfig}
           onClearMessages={handleClearMessages}
-          onModelChange={(value) => updateConfig('model', value)}
           onParameterEnabledChange={updateParameterEnabled}
           onStop={stopGeneration}
           onSubmit={handleSendMessage}

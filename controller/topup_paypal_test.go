@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,6 +13,23 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
+
+func TestGetPayPalTopUpBounds(t *testing.T) {
+	minimum, maximum, err := getPayPalTopUpBounds(1, false, 1)
+	require.NoError(t, err)
+	require.Equal(t, int64(1), minimum)
+	require.Equal(t, int64(10000), maximum)
+
+	minimum, maximum, err = getPayPalTopUpBounds(1, true, 500000)
+	require.NoError(t, err)
+	require.Equal(t, int64(500000), minimum)
+	require.Equal(t, int64(2_147_000_000), maximum)
+
+	_, _, err = getPayPalTopUpBounds(1, true, math.NaN())
+	require.Error(t, err)
+	_, _, err = getPayPalTopUpBounds(1, true, math.Inf(1))
+	require.Error(t, err)
+}
 
 func TestGetTopUpInfoHidesEpayMethodsWhenEpayIsNotConfigured(t *testing.T) {
 	confirmPaymentComplianceForTest(t)
@@ -77,6 +95,7 @@ func TestGetTopUpInfoHidesEpayMethodsWhenEpayIsNotConfigured(t *testing.T) {
 			"name":      "PayPal",
 			"type":      model.PaymentMethodPayPal,
 			"min_topup": "1",
+			"currency":  "USD",
 		},
 	}, response.Data.PayMethods)
 }

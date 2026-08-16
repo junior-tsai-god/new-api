@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils'
 
 import { AppHeader } from './app-header'
 import { AppSidebar } from './app-sidebar'
+import { PublicHeader } from './public-header'
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode
@@ -34,24 +35,27 @@ export function AuthenticatedLayout(props: AuthenticatedLayoutProps) {
   return (
     <LayoutProvider>
       <SearchProvider>
-        <SidebarProvider defaultOpen={false} className='routing-deck'>
-          <div className='routing-deck-shell'>
-            <SkipToMain />
-            <AppSidebar />
-            <div className='routing-deck-stage flex min-h-0 min-w-0 flex-1 flex-col'>
-              <AppHeader />
-              <div
-                data-slot='sidebar-inset'
-                className={cn(
-                  '@container/content',
-                  'relative flex h-auto min-h-0 w-full flex-1 flex-col overflow-hidden rounded-none shadow-none'
-                )}
-              >
-                {props.children ?? <AnimatedOutlet />}
+        <>
+          <PublicHeader brandSurface />
+          <SidebarProvider defaultOpen={false} className='routing-deck'>
+            <div className='routing-deck-shell'>
+              <SkipToMain />
+              <AppSidebar />
+              <div className='routing-deck-stage flex min-h-0 min-w-0 flex-1 flex-col'>
+                <AppHeader />
+                <div
+                  data-slot='sidebar-inset'
+                  className={cn(
+                    '@container/content',
+                    'relative flex h-auto min-h-0 w-full flex-1 flex-col overflow-hidden rounded-none shadow-none'
+                  )}
+                >
+                  {props.children ?? <AnimatedOutlet />}
+                </div>
               </div>
             </div>
-          </div>
-        </SidebarProvider>
+          </SidebarProvider>
+        </>
       </SearchProvider>
     </LayoutProvider>
   )

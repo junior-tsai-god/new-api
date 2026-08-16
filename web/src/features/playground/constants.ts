@@ -36,21 +36,12 @@ export const MESSAGE_STATUS = {
 export const API_ENDPOINTS = {
   API_KEY_CHAT_COMPLETIONS: '/v1/chat/completions',
   API_KEY_MODELS: '/v1/models',
-  SESSION_CHAT_COMPLETIONS: '/pg/chat/completions',
-  USER_MODELS: '/api/user/models',
-  USER_GROUPS: '/api/user/self/groups',
 } as const
-
-// Default group — uses 'default' as the safe fallback; auto-group is
-// only selected when the backend confirms it is available for the user.
-export const DEFAULT_GROUP = 'default' as const
 
 // Default configuration
 export const DEFAULT_CONFIG: PlaygroundConfig = {
-  auth_mode: 'session',
   api_key_id: null,
   model: 'gpt-4o',
-  group: DEFAULT_GROUP,
   temperature: 0.7,
   top_p: 1,
   max_tokens: 4096,

@@ -19,7 +19,10 @@ For commercial licensing, please contact support@quantumnous.com
 import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 
-import { normalizeApiKeySecret } from '../use-playground-auth'
+import {
+  normalizeApiKeySecret,
+  selectPlaygroundApiKey,
+} from '../use-playground-auth'
 
 describe('playground API key normalization', () => {
   test('adds the public token prefix only when the backend omits it', () => {
@@ -28,5 +31,25 @@ describe('playground API key normalization', () => {
       normalizeApiKeySecret('sk-complete-secret'),
       'sk-complete-secret'
     )
+  })
+})
+
+describe('playground API key selection', () => {
+  const apiKeys = [
+    { id: 11, name: 'Primary' },
+    { id: 7, name: 'Backup' },
+  ]
+
+  test('uses the first enabled key when no saved selection exists', () => {
+    assert.equal(selectPlaygroundApiKey(apiKeys, null)?.id, 11)
+  })
+
+  test('keeps an available saved key and replaces a stale selection', () => {
+    assert.equal(selectPlaygroundApiKey(apiKeys, 7)?.id, 7)
+    assert.equal(selectPlaygroundApiKey(apiKeys, 99)?.id, 11)
+  })
+
+  test('returns null when the user has no enabled keys', () => {
+    assert.equal(selectPlaygroundApiKey([], 7), null)
   })
 })

@@ -40,8 +40,9 @@ import {
 
 import { LOG_TYPE_ALL_VALUE, LOG_TYPE_FILTERS } from '../constants'
 import { buildSearchParams } from '../lib/filter'
+import { getLogTypeFiltersForScope } from '../lib/log-scope'
 import { getDefaultTimeRange } from '../lib/utils'
-import type { CommonLogFilters } from '../types'
+import type { CommonLogFilters, CommonLogScope } from '../types'
 import { CommonLogsStats } from './common-logs-stats'
 import { CompactDateTimeRangePicker } from './compact-date-time-range-picker'
 import {
@@ -68,11 +69,15 @@ function isLogTypeValue(value: string): value is LogTypeValue {
   return logTypeValueSet.has(value)
 }
 
-function getLogTypeValue(value: unknown): LogTypeValue {
+function getLogTypeValue(
+  value: unknown,
+  allowedValues: ReadonlySet<string>
+): LogTypeValue {
   return Array.isArray(value) &&
     value.length === 1 &&
     typeof value[0] === 'string' &&
-    isLogTypeValue(value[0])
+    isLogTypeValue(value[0]) &&
+    allowedValues.has(value[0])
     ? value[0]
     : LOG_TYPE_ALL_VALUE
 }
@@ -107,6 +112,7 @@ function buildSearchSourceKey(values: {
 
 interface CommonLogsFilterBarProps<TData> {
   table: Table<TData>
+  scope: CommonLogScope
 }
 
 export function CommonLogsFilterBar<TData>(
@@ -119,6 +125,14 @@ export function CommonLogsFilterBar<TData>(
   const { isAdminView: isAdmin } = useLogsViewScope()
   const { sensitiveVisible, setSensitiveVisible } = useUsageLogsContext()
   const fetchingLogs = useIsFetching({ queryKey: ['logs'] })
+  const scopedLogTypeFilters = useMemo(
+    () => getLogTypeFiltersForScope(props.scope),
+    [props.scope]
+  )
+  const scopedLogTypeValueSet = useMemo(
+    () => new Set(scopedLogTypeFilters.map((type) => type.value)),
+    [scopedLogTypeFilters]
+  )
 
   const searchState = useMemo<CommonLogDraft>(() => {
     const { start, end } = getDefaultTimeRange()
@@ -150,7 +164,7 @@ export function CommonLogsFilterBar<TData>(
     return {
       sourceKey: buildSearchSourceKey(sourceValues),
       filters,
-      logType: getLogTypeValue(searchParams.type),
+      logType: getLogTypeValue(searchParams.type, scopedLogTypeValueSet),
     }
   }, [
     searchParams.startTime,
@@ -163,6 +177,7 @@ export function CommonLogsFilterBar<TData>(
     searchParams.requestId,
     searchParams.upstreamRequestId,
     searchParams.type,
+    scopedLogTypeValueSet,
   ])
   const [draft, setDraft] = useState<CommonLogDraft>(() => searchState)
   const activeDraft =
@@ -186,10 +201,20 @@ export function CommonLogsFilterBar<TData>(
   )
 
   const handleApply = useCallback(() => {
-    const filterParams = buildSearchParams(filters, 'common')
+    const scopedFilters: CommonLogFilters =
+      props.scope === 'activity'
+        ? {
+            startTime: filters.startTime,
+            endTime: filters.endTime,
+            username: filters.username,
+          }
+        : filters
+    const filterParams = buildSearchParams(scopedFilters, 'common')
     navigate({
       to: '/usage-logs/$section',
-      params: { section: 'common' },
+      params: {
+        section: props.scope === 'activity' ? 'activity' : 'common',
+      },
       search: {
         ...filterParams,
         type: [logType],
@@ -198,7 +223,7 @@ export function CommonLogsFilterBar<TData>(
     })
     queryClient.invalidateQueries({ queryKey: ['logs'] })
     queryClient.invalidateQueries({ queryKey: ['usage-logs-stats'] })
-  }, [filters, logType, navigate, queryClient])
+  }, [filters, logType, navigate, props.scope, queryClient])
 
   const handleReset = useCallback(() => {
     const { start, end } = getDefaultTimeRange()
@@ -216,7 +241,9 @@ export function CommonLogsFilterBar<TData>(
 
     navigate({
       to: '/usage-logs/$section',
-      params: { section: 'common' },
+      params: {
+        section: props.scope === 'activity' ? 'activity' : 'common',
+      },
       search: {
         page: 1,
         ...resetSearch,
@@ -224,7 +251,7 @@ export function CommonLogsFilterBar<TData>(
     })
     queryClient.invalidateQueries({ queryKey: ['logs'] })
     queryClient.invalidateQueries({ queryKey: ['usage-logs-stats'] })
-  }, [navigate, queryClient])
+  }, [navigate, props.scope, queryClient])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -234,40 +261,50 @@ export function CommonLogsFilterBar<TData>(
   )
 
   const hasExpandedFilters =
-    !!filters.token ||
-    !!filters.username ||
-    !!filters.channel ||
-    !!filters.requestId ||
-    !!filters.upstreamRequestId
+    props.scope === 'request' &&
+    (!!filters.token ||
+      !!filters.username ||
+      !!filters.channel ||
+      !!filters.requestId ||
+      !!filters.upstreamRequestId)
 
   const hasTypeFilter = logType !== LOG_TYPE_ALL_VALUE
   const hasAdditionalFilters =
-    !!filters.model || !!filters.group || hasTypeFilter || hasExpandedFilters
+    props.scope === 'activity'
+      ? hasTypeFilter || (isAdmin && !!filters.username)
+      : !!filters.model ||
+        !!filters.group ||
+        hasTypeFilter ||
+        hasExpandedFilters
 
-  const expandedFilterCount = [
-    filters.token,
-    isAdmin ? filters.username : undefined,
-    isAdmin ? filters.channel : undefined,
-    filters.requestId,
-    filters.upstreamRequestId,
-  ].filter(Boolean).length
+  const expandedFilterCount =
+    props.scope === 'request'
+      ? [
+          filters.token,
+          isAdmin ? filters.username : undefined,
+          isAdmin ? filters.channel : undefined,
+          filters.requestId,
+          filters.upstreamRequestId,
+        ].filter(Boolean).length
+      : 0
   const sensitiveType = sensitiveVisible ? 'text' : 'password'
   const logTypeItems = useMemo(
     () =>
-      LOG_TYPE_FILTERS.map((type) => ({
+      scopedLogTypeFilters.map((type) => ({
         value: type.value,
         label: t(type.label),
       })),
-    [t]
+    [scopedLogTypeFilters, t]
   )
   const logTypeLabel =
     logTypeItems.find((type) => type.value === logType)?.label ?? t('All Types')
 
-  const statsBar = (
-    <div className='flex flex-wrap items-center gap-2'>
-      <CommonLogsStats />
-    </div>
-  )
+  const statsBar =
+    props.scope === 'request' ? (
+      <div className='flex flex-wrap items-center gap-2'>
+        <CommonLogsStats scope='request' />
+      </div>
+    ) : undefined
   const sensitiveToggle = (
     <Tooltip>
       <TooltipTrigger
@@ -329,7 +366,11 @@ export function CommonLogsFilterBar<TData>(
         value={logType}
         onValueChange={(value) => {
           const nextLogType =
-            value !== null && isLogTypeValue(value) ? value : LOG_TYPE_ALL_VALUE
+            value !== null &&
+            isLogTypeValue(value) &&
+            scopedLogTypeValueSet.has(value)
+              ? value
+              : LOG_TYPE_ALL_VALUE
           setDraft((current) => {
             const base =
               current.sourceKey === searchState.sourceKey
@@ -348,7 +389,7 @@ export function CommonLogsFilterBar<TData>(
         </SelectTrigger>
         <SelectContent alignItemWithTrigger={false}>
           <SelectGroup>
-            {LOG_TYPE_FILTERS.map((type) => (
+            {scopedLogTypeFilters.map((type) => (
               <SelectItem key={type.value} value={type.value}>
                 {t(type.label)}
               </SelectItem>
@@ -413,28 +454,56 @@ export function CommonLogsFilterBar<TData>(
     <LogsFilterToolbar
       table={props.table}
       stats={statsBar}
-      actionStart={sensitiveToggle}
+      actionStart={
+        props.scope === 'request' || isAdmin ? sensitiveToggle : undefined
+      }
       primaryFilters={
         <>
           {dateRangeFilter}
-          {modelFilter}
-          {groupFilter}
+          {props.scope === 'request' && modelFilter}
+          {props.scope === 'request' && groupFilter}
+          {props.scope === 'activity' && isAdmin && (
+            <LogsFilterField>
+              <LogsFilterInput
+                placeholder={t('Username')}
+                type={sensitiveType}
+                value={filters.username || ''}
+                onChange={(e) => handleChange('username', e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+            </LogsFilterField>
+          )}
           {typeFilter}
         </>
       }
-      advancedFilters={advancedFilters}
+      advancedFilters={props.scope === 'request' ? advancedFilters : undefined}
       mobilePinnedFilters={dateRangeFilter}
       mobileFilters={
         <>
-          {modelFilter}
-          {groupFilter}
+          {props.scope === 'request' && modelFilter}
+          {props.scope === 'request' && groupFilter}
+          {props.scope === 'activity' && isAdmin && (
+            <LogsFilterField>
+              <LogsFilterInput
+                placeholder={t('Username')}
+                type={sensitiveType}
+                value={filters.username || ''}
+                onChange={(e) => handleChange('username', e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+            </LogsFilterField>
+          )}
           {typeFilter}
-          {advancedFilters}
+          {props.scope === 'request' && advancedFilters}
         </>
       }
       mobileFilterCount={
-        [filters.model, filters.group, hasTypeFilter].filter(Boolean).length +
-        expandedFilterCount
+        props.scope === 'activity'
+          ? [isAdmin ? filters.username : undefined, hasTypeFilter].filter(
+              Boolean
+            ).length
+          : [filters.model, filters.group, hasTypeFilter].filter(Boolean)
+              .length + expandedFilterCount
       }
       hasAdvancedActiveFilters={hasExpandedFilters}
       advancedFilterCount={expandedFilterCount}

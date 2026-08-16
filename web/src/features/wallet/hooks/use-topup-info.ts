@@ -67,18 +67,23 @@ function parsePaymentMethods(
       const rawMinTopup = Number(item.min_topup)
       const normalizedMinTopup = Number.isFinite(rawMinTopup) ? rawMinTopup : 0
       const type = typeof item.type === 'string' ? item.type : ''
+      let minTopup = normalizedMinTopup
+      if (type === 'stripe' && minTopup <= 0) {
+        minTopup = stripeMinTopup
+      } else if (type === 'paypal' && minTopup <= 0) {
+        minTopup = payPalMinTopup
+      }
 
       return {
         name: typeof item.name === 'string' ? item.name : '',
         type,
         color: typeof item.color === 'string' ? item.color : undefined,
         icon: typeof item.icon === 'string' ? item.icon : undefined,
-        min_topup:
-          type === 'stripe' && normalizedMinTopup <= 0
-            ? stripeMinTopup
-            : type === 'paypal' && normalizedMinTopup <= 0
-              ? payPalMinTopup
-              : normalizedMinTopup,
+        currency:
+          typeof item.currency === 'string'
+            ? item.currency.trim().toUpperCase()
+            : undefined,
+        min_topup: minTopup,
       }
     })
     .filter((item) => item.name && item.type && item.type !== 'waffo')

@@ -208,7 +208,9 @@ export function PricingSidebar(props: PricingSidebarProps) {
       label: quotaTypeLabels[QUOTA_TYPES.REQUEST],
       count: countBy(props.models, (model) => model.quota_type === 1),
     },
-  ]
+  ].filter(
+    (option) => option.value === QUOTA_TYPES.ALL || (option.count ?? 0) > 0
+  )
 
   const tagOptions: FilterOption[] = [
     {
@@ -242,18 +244,14 @@ export function PricingSidebar(props: PricingSidebarProps) {
           props.models,
           (model) => model.supported_endpoint_types?.includes(value) ?? false
         ),
-      })),
+      }))
+      .filter((option) => option.count > 0),
   ]
 
   return (
     <aside className={cn('aivanta-panel p-3', props.className)}>
       <div className='mb-2.5 flex items-center justify-between gap-2'>
-        <div>
-          <h2 className='text-foreground text-sm font-bold'>{t('Filter')}</h2>
-          <p className='text-muted-foreground mt-1 text-xs'>
-            {t('Refine models by provider, group, type, and tags.')}
-          </p>
-        </div>
+        <h2 className='text-foreground text-sm font-bold'>{t('Filter')}</h2>
         <Button
           type='button'
           variant='ghost'

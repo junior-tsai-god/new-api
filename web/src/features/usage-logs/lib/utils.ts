@@ -33,12 +33,16 @@ import {
   TIMING_LOG_TYPES,
 } from '../constants'
 import type {
+  CommonLogScope,
   GetLogsParams,
   GetLogsResponse,
   FetchLogsConfig,
   GetMidjourneyLogsParams,
   GetTaskLogsParams,
 } from '../types'
+import { isLogTypeAllowedForScope } from './log-scope'
+
+export { buildQueryParams } from './query-params'
 
 // ============================================================================
 // Type Checkers & Utilities
@@ -94,21 +98,6 @@ function timestampToSeconds(ms: number): number {
 /**
  * Build query parameters from filters
  */
-export function buildQueryParams(
-  params: Record<string, unknown>
-): URLSearchParams {
-  const queryParams = new URLSearchParams()
-
-  Object.entries(params).forEach(([key, value]) => {
-    // Keep 0 as a valid value, only filter out undefined, null, and empty string
-    if (value !== undefined && value !== null && value !== '') {
-      queryParams.append(key, String(value))
-    }
-  })
-
-  return queryParams
-}
-
 /**
  * Build time range parameters with default values
  * Shared logic for all log types
@@ -176,14 +165,25 @@ export function buildApiParams(config: {
   searchParams: Record<string, unknown>
   columnFilters?: Array<{ id: string; value: unknown }>
   isAdmin: boolean
+  commonLogScope: CommonLogScope
 }): GetLogsParams {
-  const { page, pageSize, searchParams, columnFilters = [], isAdmin } = config
+  const {
+    page,
+    pageSize,
+    searchParams,
+    columnFilters = [],
+    isAdmin,
+    commonLogScope,
+  } = config
 
   // Helper to process type parameter (single value from array)
   const processType = (value: unknown): number | undefined => {
     const parseType = (raw: unknown): number | undefined => {
       const type = Number(raw)
-      return Number.isFinite(type) ? type : undefined
+      return Number.isFinite(type) &&
+        isLogTypeAllowedForScope(commonLogScope, type)
+        ? type
+        : undefined
     }
 
     if (Array.isArray(value) && value.length === 1) {
@@ -199,21 +199,30 @@ export function buildApiParams(config: {
   const params: GetLogsParams = {
     p: page,
     page_size: pageSize,
+    category: commonLogScope,
     ...(searchParams.type ? { type: processType(searchParams.type) } : {}),
-    ...(searchParams.model ? { model_name: String(searchParams.model) } : {}),
-    ...(searchParams.token ? { token_name: String(searchParams.token) } : {}),
-    ...(searchParams.group ? { group: String(searchParams.group) } : {}),
-    ...(isAdmin && searchParams.channel
-      ? { channel: Number(searchParams.channel) || 0 }
-      : {}),
     ...(isAdmin && searchParams.username
       ? { username: String(searchParams.username) }
       : {}),
-    ...(searchParams.requestId
-      ? { request_id: String(searchParams.requestId) }
-      : {}),
-    ...(searchParams.upstreamRequestId
-      ? { upstream_request_id: String(searchParams.upstreamRequestId) }
+    ...(commonLogScope === 'request'
+      ? {
+          ...(searchParams.model
+            ? { model_name: String(searchParams.model) }
+            : {}),
+          ...(searchParams.token
+            ? { token_name: String(searchParams.token) }
+            : {}),
+          ...(searchParams.group ? { group: String(searchParams.group) } : {}),
+          ...(isAdmin && searchParams.channel
+            ? { channel: Number(searchParams.channel) || 0 }
+            : {}),
+          ...(searchParams.requestId
+            ? { request_id: String(searchParams.requestId) }
+            : {}),
+          ...(searchParams.upstreamRequestId
+            ? { upstream_request_id: String(searchParams.upstreamRequestId) }
+            : {}),
+        }
       : {}),
     ...buildTimeRangeParams(searchParams, false),
   }
@@ -228,16 +237,18 @@ export function buildApiParams(config: {
           params.type = processType(value)
           break
         case 'model_name':
-          params.model_name = String(value)
+          if (commonLogScope === 'request') params.model_name = String(value)
           break
         case 'token_name':
-          params.token_name = String(value)
+          if (commonLogScope === 'request') params.token_name = String(value)
           break
         case 'group':
-          params.group = String(value)
+          if (commonLogScope === 'request') params.group = String(value)
           break
         case 'channel':
-          if (isAdmin) params.channel = Number(value) || 0
+          if (isAdmin && commonLogScope === 'request') {
+            params.channel = Number(value) || 0
+          }
           break
         case 'username':
           if (isAdmin) params.username = String(value)
@@ -259,8 +270,15 @@ export function buildApiParams(config: {
 export async function fetchLogsByCategory(
   config: FetchLogsConfig
 ): Promise<GetLogsResponse> {
-  const { logCategory, isAdmin, page, pageSize, searchParams, columnFilters } =
-    config
+  const {
+    logCategory,
+    commonLogScope,
+    isAdmin,
+    page,
+    pageSize,
+    searchParams,
+    columnFilters,
+  } = config
 
   if (logCategory === 'common') {
     const params = buildApiParams({
@@ -269,6 +287,7 @@ export async function fetchLogsByCategory(
       searchParams,
       columnFilters,
       isAdmin,
+      commonLogScope,
     })
     return isAdmin ? await getAllLogs(params) : await getUserLogs(params)
   }

@@ -46,7 +46,7 @@ import {
   isDisplayableLogType,
   isTimingLogType,
 } from '../lib/utils'
-import type { LogCategory } from '../types'
+import type { CommonLogScope, LogCategory } from '../types'
 import { StreamTpsCell, TimingMetricsCell } from './timing-metrics-cell'
 import { useUsageLogsContext } from './usage-logs-provider'
 
@@ -63,6 +63,7 @@ interface UsageLogsMobileListProps<TData> {
   emptyTitle?: string
   emptyDescription?: string
   logCategory: LogCategory
+  commonLogScope: CommonLogScope
 }
 
 function UsageLogsMobileSkeleton() {
@@ -369,6 +370,43 @@ function CommonLogsCard<TData>({
   )
 }
 
+function ActivityLogsCard<TData>({
+  cells,
+}: {
+  cells: Map<string, Cell<TData, unknown>>
+}) {
+  const { t } = useTranslation()
+  const rowData = cells.get('created_at')?.row.original as UsageLog | undefined
+
+  return (
+    <div className='space-y-2.5'>
+      <div className='flex min-w-0 items-start justify-between gap-3'>
+        <MobileLogTimeStatus
+          createdAt={rowData?.created_at}
+          type={rowData?.type}
+        />
+        <CompactCell
+          cell={cells.get('quota')}
+          className='shrink-0 text-right [&_.flex-col]:items-end'
+        />
+      </div>
+
+      <div className='grid grid-cols-2 gap-1.5'>
+        {rowData && cells.has('user') ? (
+          <MobileUserField log={rowData} />
+        ) : (
+          <SummaryField cell={cells.get('user')} />
+        )}
+        <SummaryField
+          label={t('Details')}
+          cell={cells.get('content')}
+          className='col-span-2 bg-transparent px-0 py-0'
+        />
+      </div>
+    </div>
+  )
+}
+
 function TaskLogsCard<TData>({
   cells,
 }: {
@@ -453,6 +491,7 @@ export function UsageLogsMobileList<TData>({
   emptyTitle,
   emptyDescription,
   logCategory,
+  commonLogScope,
 }: UsageLogsMobileListProps<TData>) {
   const { t } = useTranslation()
 
@@ -503,7 +542,12 @@ export function UsageLogsMobileList<TData>({
               tintClass
             )}
           >
-            {logCategory === 'common' && <CommonLogsCard cells={cells} />}
+            {logCategory === 'common' && commonLogScope === 'request' && (
+              <CommonLogsCard cells={cells} />
+            )}
+            {logCategory === 'common' && commonLogScope === 'activity' && (
+              <ActivityLogsCard cells={cells} />
+            )}
             {logCategory === 'task' && <TaskLogsCard cells={cells} />}
             {logCategory === 'drawing' && <DrawingLogsCard cells={cells} />}
           </div>

@@ -24,6 +24,7 @@ import {
   Key01Icon,
   Settings02Icon,
   Wallet01Icon,
+  WalletAdd01Icon,
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Link, useLocation } from '@tanstack/react-router'
@@ -31,16 +32,12 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ConfigDrawer } from '@/components/config-drawer'
-import { LanguageSwitcher } from '@/components/language-switcher'
-import { NotificationPopover } from '@/components/notification-popover'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { useNotifications } from '@/hooks/use-notifications'
+import { Button } from '@/components/ui/button'
 import { ROLE } from '@/lib/roles'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
 import { Header } from './header'
-import { SystemBrand } from './system-brand'
 
 const ADMIN_PATH_PREFIXES = [
   '/channels',
@@ -60,7 +57,6 @@ export function AppHeader() {
   const { t } = useTranslation()
   const pathname = useLocation({ select: (location) => location.pathname })
   const role = useAuthStore((state) => state.auth.user?.role ?? ROLE.GUEST)
-  const notifications = useNotifications()
   const isAdminWorkspace =
     role >= ROLE.ADMIN &&
     ADMIN_PATH_PREFIXES.some(
@@ -109,10 +105,6 @@ export function AppHeader() {
 
   return (
     <Header>
-      <div className='min-w-0 shrink'>
-        <SystemBrand variant='inline' />
-      </div>
-
       <nav
         className='console-primary-nav mx-auto hidden items-center gap-0.5 rounded-full border p-1 lg:flex'
         aria-label={t('Workspace')}
@@ -175,19 +167,20 @@ export function AppHeader() {
       </nav>
 
       <div className='ms-auto flex items-center gap-1 sm:gap-1.5'>
-        <NotificationPopover
-          open={notifications.popoverOpen}
-          onOpenChange={notifications.setPopoverOpen}
-          unreadCount={notifications.unreadCount}
-          activeTab={notifications.activeTab}
-          onTabChange={notifications.setActiveTab}
-          notice={notifications.notice}
-          announcements={notifications.announcements}
-          loading={notifications.loading}
-        />
-        <LanguageSwitcher />
+        <Button
+          aria-label={t('Recharge')}
+          className='bg-[var(--deck-signal)] text-[var(--deck-ink)] hover:bg-[var(--deck-signal)] hover:brightness-95'
+          render={<Link to='/wallet' />}
+          size='sm'
+        >
+          <HugeiconsIcon
+            icon={WalletAdd01Icon}
+            data-icon='inline-start'
+            strokeWidth={2}
+          />
+          <span className='hidden sm:inline'>{t('Recharge')}</span>
+        </Button>
         <ConfigDrawer />
-        <ProfileDropdown />
       </div>
     </Header>
   )

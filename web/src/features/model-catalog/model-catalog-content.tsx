@@ -39,9 +39,9 @@ import { filterBySearch, sortModels } from '@/features/pricing/lib/filters'
 
 function ModelCatalogSkeleton() {
   return (
-    <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+    <div className='grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3'>
       {Array.from({ length: 6 }, (_, index) => (
-        <Skeleton key={index} className='h-48 rounded-xl' />
+        <Skeleton key={index} className='h-56 rounded-xl' />
       ))}
     </div>
   )
@@ -77,24 +77,18 @@ export function ModelCatalogContent() {
 
   return (
     <div className='flex flex-col gap-4'>
-      <div className='flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-end sm:justify-between'>
-        <div className='max-w-xl'>
-          <p className='text-muted-foreground text-sm leading-6'>
-            {t('Choose a model, compare its price, and open it in Playground.')}
-          </p>
-        </div>
+      <div className='flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between'>
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          onClear={() => setSearch('')}
+          placeholder={t('Search model name or provider...')}
+          className='w-full max-w-xl'
+        />
         <span className='text-muted-foreground text-xs tabular-nums'>
           {filteredModels.length} {t('Models')}
         </span>
       </div>
-
-      <SearchBar
-        value={search}
-        onChange={setSearch}
-        onClear={() => setSearch('')}
-        placeholder={t('Search model name or provider...')}
-        className='max-w-xl'
-      />
 
       {pricing.isLoading ? <ModelCatalogSkeleton /> : null}
 

@@ -38,6 +38,13 @@ export function UsageBillingNavigation() {
         })
         return
       }
+      if (section === 'activity') {
+        void navigate({
+          to: '/usage-logs/$section',
+          params: { section: 'activity' },
+        })
+        return
+      }
       if (section === 'billing') {
         void navigate({ to: '/wallet' })
         return
@@ -55,7 +62,8 @@ export function UsageBillingNavigation() {
       <TabsList aria-label={t('Usage & Billing')}>
         <TabsTrigger value='usage'>{t('Usage')}</TabsTrigger>
         <TabsTrigger value='requests'>{t('Requests')}</TabsTrigger>
-        <TabsTrigger value='billing'>{t('Billing')}</TabsTrigger>
+        <TabsTrigger value='activity'>{t('Account Activity')}</TabsTrigger>
+        <TabsTrigger value='billing'>{t('Recharge')}</TabsTrigger>
       </TabsList>
     </Tabs>
   )

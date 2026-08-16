@@ -25,7 +25,7 @@ import { requestPaymentAmount } from './use-payment'
 describe('payment amount routing', () => {
   test('uses the dedicated Waffo amount calculator', async () => {
     const calls: string[] = []
-    const amount = await requestPaymentAmount(120, PAYMENT_TYPES.WAFFO, {
+    const quote = await requestPaymentAmount(120, PAYMENT_TYPES.WAFFO, {
       regular: async () => {
         calls.push('regular')
         return { success: true, data: '1' }
@@ -40,7 +40,7 @@ describe('payment amount routing', () => {
       },
       waffo: async (request) => {
         calls.push(`waffo:${request.amount}`)
-        return { success: true, data: '18.75' }
+        return { success: true, data: '18.75', currency: 'cny' }
       },
       waffoPancake: async () => {
         calls.push('pancake')
@@ -48,24 +48,48 @@ describe('payment amount routing', () => {
       },
     })
 
-    assert.equal(amount, 18.75)
+    assert.deepEqual(quote, {
+      topupAmount: 120,
+      amount: 18.75,
+      currency: 'CNY',
+    })
     assert.deepEqual(calls, ['waffo:120'])
   })
 
   test('keeps the dedicated PayPal amount calculator', async () => {
     const calls: string[] = []
-    const amount = await requestPaymentAmount(80, PAYMENT_TYPES.PAYPAL, {
+    const quote = await requestPaymentAmount(80, PAYMENT_TYPES.PAYPAL, {
       regular: async () => ({ success: true, data: '1' }),
       stripe: async () => ({ success: true, data: '2' }),
       paypal: async (request) => {
         calls.push(`paypal:${request.amount}`)
-        return { success: true, data: '12.5' }
+        return { success: true, data: '12.5', currency: 'USD' }
       },
       waffo: async () => ({ success: true, data: '3' }),
       waffoPancake: async () => ({ success: true, data: '4' }),
     })
 
-    assert.equal(amount, 12.5)
+    assert.deepEqual(quote, {
+      topupAmount: 80,
+      amount: 12.5,
+      currency: 'USD',
+    })
     assert.deepEqual(calls, ['paypal:80'])
+  })
+
+  test('rejects an invalid amount without guessing a currency', async () => {
+    const quote = await requestPaymentAmount(10, PAYMENT_TYPES.PAYPAL, {
+      regular: async () => ({ success: true, data: '1' }),
+      stripe: async () => ({ success: true, data: '2' }),
+      paypal: async () => ({
+        success: true,
+        data: 'not-a-number',
+        currency: 'USD',
+      }),
+      waffo: async () => ({ success: true, data: '3' }),
+      waffoPancake: async () => ({ success: true, data: '4' }),
+    })
+
+    assert.equal(quote, null)
   })
 })

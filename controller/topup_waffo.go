@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -54,10 +55,15 @@ func getWaffoUserEmail(user *model.User) string {
 }
 
 func getWaffoCurrency() string {
-	if setting.WaffoCurrency != "" {
-		return setting.WaffoCurrency
+	currency := strings.TrimSpace(setting.WaffoCurrency)
+	if currency == "" {
+		currency = "USD"
 	}
-	return "USD"
+	normalized, err := model.NormalizePaymentCurrency(currency)
+	if err != nil {
+		return ""
+	}
+	return normalized
 }
 
 func buildWaffoTopUpGoodsInfo(amount int64) *order.GoodsInfo {
@@ -77,10 +83,29 @@ var zeroDecimalCurrencies = map[string]bool{
 }
 
 func formatWaffoAmount(amount float64, currency string) string {
-	if zeroDecimalCurrencies[currency] {
+	if zeroDecimalCurrencies[strings.ToUpper(strings.TrimSpace(currency))] {
 		return fmt.Sprintf("%.0f", amount)
 	}
 	return fmt.Sprintf("%.2f", amount)
+}
+
+func normalizeWaffoPaymentAmount(amount float64, currency string) (float64, string, error) {
+	if amount <= 0 || math.IsNaN(amount) || math.IsInf(amount, 0) {
+		return 0, "", errors.New("invalid payment amount")
+	}
+	formatted := formatWaffoAmount(amount, currency)
+	normalized, err := strconv.ParseFloat(formatted, 64)
+	if err != nil || normalized <= 0 || math.IsNaN(normalized) || math.IsInf(normalized, 0) {
+		if err == nil {
+			err = errors.New("invalid normalized payment amount")
+		}
+		return 0, "", err
+	}
+	return normalized, formatted, nil
+}
+
+func getWaffoMaxTopUpAmount(tokenDisplay bool, quotaPerUnit float64) (int64, error) {
+	return getTopUpRequestAmountLimit(10000, tokenDisplay, quotaPerUnit)
 }
 
 // getWaffoPayMoney converts the user-facing amount to USD for Waffo payment.
@@ -123,6 +148,18 @@ func RequestWaffoAmount(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("充值数量不能小于 %d", waffoMinTopup)})
 		return
 	}
+	maxTopup, err := getWaffoMaxTopUpAmount(
+		operation_setting.GetQuotaDisplayType() == operation_setting.QuotaDisplayTypeTokens,
+		common.QuotaPerUnit,
+	)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值额度配置错误"})
+		return
+	}
+	if req.Amount > maxTopup {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("充值数量不能大于 %d", maxTopup)})
+		return
+	}
 
 	id := c.GetInt("id")
 	group, err := model.GetUserGroup(id, true)
@@ -131,13 +168,29 @@ func RequestWaffoAmount(c *gin.Context) {
 		return
 	}
 
-	payMoney := getWaffoPayMoney(float64(req.Amount), group)
-	if payMoney <= 0.01 {
+	currency := getWaffoCurrency()
+	if currency == "" {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "支付币种配置错误"})
+		return
+	}
+	payMoney, payMoneyText, err := normalizeWaffoPaymentAmount(
+		getWaffoPayMoney(float64(req.Amount), group),
+		currency,
+	)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "支付金额计算失败"})
+		return
+	}
+	if payMoney < 0.01 {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值金额过低"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "success", "data": strconv.FormatFloat(payMoney, 'f', 2, 64)})
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "success",
+		"data":     payMoneyText,
+		"currency": currency,
+	})
 }
 
 // RequestWaffoPay 创建 Waffo 支付订单
@@ -155,6 +208,18 @@ func RequestWaffoPay(c *gin.Context) {
 	waffoMinTopup := int64(setting.WaffoMinTopUp)
 	if req.Amount < waffoMinTopup {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("充值数量不能小于 %d", waffoMinTopup)})
+		return
+	}
+	maxTopup, err := getWaffoMaxTopUpAmount(
+		operation_setting.GetQuotaDisplayType() == operation_setting.QuotaDisplayTypeTokens,
+		common.QuotaPerUnit,
+	)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值额度配置错误"})
+		return
+	}
+	if req.Amount > maxTopup {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("充值数量不能大于 %d", maxTopup)})
 		return
 	}
 
@@ -197,8 +262,24 @@ func RequestWaffoPay(c *gin.Context) {
 	}
 	// resolvedPayMethodType/Name 为空时，Waffo 自动选择支付方式
 
-	group, _ := model.GetUserGroup(id, true)
-	payMoney := getWaffoPayMoney(float64(req.Amount), group)
+	group, err := model.GetUserGroup(id, true)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "获取用户分组失败"})
+		return
+	}
+	currency := getWaffoCurrency()
+	if currency == "" {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "支付币种配置错误"})
+		return
+	}
+	payMoney, payMoneyText, err := normalizeWaffoPaymentAmount(
+		getWaffoPayMoney(float64(req.Amount), group),
+		currency,
+	)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "支付金额计算失败"})
+		return
+	}
 	if payMoney < 0.01 {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值金额过低"})
 		return
@@ -225,6 +306,7 @@ func RequestWaffoPay(c *gin.Context) {
 		TradeNo:         merchantOrderId,
 		PaymentMethod:   model.PaymentMethodWaffo,
 		PaymentProvider: model.PaymentProviderWaffo,
+		PaymentCurrency: currency,
 		CreateTime:      time.Now().Unix(),
 		Status:          common.TopUpStatusPending,
 	}
@@ -253,12 +335,11 @@ func RequestWaffoPay(c *gin.Context) {
 		returnUrl = setting.WaffoReturnUrl
 	}
 
-	currency := getWaffoCurrency()
 	goodsInfo := buildWaffoTopUpGoodsInfo(req.Amount)
 	createParams := &order.CreateOrderParams{
 		PaymentRequestID: paymentRequestId,
 		MerchantOrderID:  merchantOrderId,
-		OrderAmount:      formatWaffoAmount(payMoney, currency),
+		OrderAmount:      payMoneyText,
 		OrderCurrency:    currency,
 		OrderDescription: goodsInfo.GoodsName,
 		OrderRequestedAt: time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),

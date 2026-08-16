@@ -29,7 +29,6 @@ import {
 import { getSubmittableInputText } from '../../lib'
 import type {
   ModelOption,
-  GroupOption,
   ParameterEnabled,
   PlaygroundConfig,
 } from '../../types'
@@ -42,13 +41,8 @@ interface PlaygroundInputProps {
   onStop?: () => void
   disabled?: boolean
   isGenerating?: boolean
+  isRequestConfigLoading?: boolean
   models: ModelOption[]
-  modelValue: string
-  onModelChange: (value: string) => void
-  isModelLoading?: boolean
-  groups: GroupOption[]
-  groupValue: string
-  onGroupChange: (value: string) => void
   hasMessages?: boolean
   onConfigChange: <K extends keyof PlaygroundConfig>(
     key: K,
@@ -68,13 +62,8 @@ export function PlaygroundInput({
   onStop,
   disabled,
   isGenerating,
+  isRequestConfigLoading = false,
   models,
-  modelValue,
-  onModelChange,
-  isModelLoading = false,
-  groups,
-  groupValue,
-  onGroupChange,
   hasMessages = false,
   onConfigChange,
   onClearMessages,
@@ -114,14 +103,9 @@ export function PlaygroundInput({
         <PromptInputFooter className='border-border/60 bg-muted/20 dark:bg-muted/10 border-t px-3 py-2.5 backdrop-blur'>
           <PlaygroundInputControls
             disabled={disabled}
-            groups={groups}
-            groupValue={groupValue}
             isGenerating={isGenerating}
-            isModelLoading={isModelLoading}
+            isRequestConfigLoading={isRequestConfigLoading}
             models={models}
-            modelValue={modelValue}
-            onGroupChange={onGroupChange}
-            onModelChange={onModelChange}
             onStop={onStop}
             text={text}
             tools={

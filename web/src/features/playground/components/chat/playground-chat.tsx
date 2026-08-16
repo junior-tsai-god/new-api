@@ -32,6 +32,7 @@ import {
   getEditingMessageContent,
   getMessageAlignment,
   getPreviousUserMessage,
+  getPlaygroundScrollPolicy,
   isErrorMessage,
 } from '../../lib'
 import type {
@@ -88,6 +89,10 @@ export function PlaygroundChat({
     messages.length - MAX_RENDERED_HISTORY_MESSAGES
   )
   const visibleMessages = messages.slice(visibleMessageOffset)
+  const scrollPolicy = getPlaygroundScrollPolicy(
+    isLoadingMessages,
+    visibleMessages.length
+  )
 
   function handleToggleMessageSource(message: MessageType): void {
     setSourceMessageKeys((currentKeys) => {
@@ -202,7 +207,7 @@ export function PlaygroundChat({
   if (isLoadingMessages) {
     chatContent = [
       <div
-        className='text-muted-foreground flex min-h-[min(520px,calc(100svh-18rem))] items-center justify-center gap-2 text-sm'
+        className='text-muted-foreground flex min-h-0 flex-1 items-center justify-center gap-2 py-8 text-sm'
         key='loading'
       >
         <Loader />
@@ -212,12 +217,13 @@ export function PlaygroundChat({
   }
 
   return (
-    <Conversation>
-      {/* Remove outer padding; apply padding to inner centered container to align with input */}
-      <ConversationContent className='p-0'>
-        <div className='mx-auto w-full max-w-4xl px-4 py-4'>{chatContent}</div>
+    <Conversation key={scrollPolicy.key} initial={scrollPolicy.initial}>
+      <ConversationContent className='flex min-h-full p-0'>
+        <div className='mx-auto flex min-h-full w-full max-w-4xl flex-col px-4 py-4'>
+          {chatContent}
+        </div>
       </ConversationContent>
-      <ConversationScrollButton />
+      {scrollPolicy.key === 'messages' ? <ConversationScrollButton /> : null}
     </Conversation>
   )
 }

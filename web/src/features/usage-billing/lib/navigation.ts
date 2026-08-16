@@ -16,11 +16,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-export type UsageBillingSection = 'usage' | 'requests' | 'billing'
+export type UsageBillingSection = 'usage' | 'requests' | 'activity' | 'billing'
 
 export function getActiveUsageBillingSection(
   pathname: string
 ): UsageBillingSection {
+  if (pathname.startsWith('/usage-logs/activity')) return 'activity'
   if (pathname.startsWith('/usage-logs')) return 'requests'
   if (pathname.startsWith('/wallet')) return 'billing'
   return 'usage'
