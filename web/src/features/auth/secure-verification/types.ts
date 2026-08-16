@@ -20,6 +20,7 @@ export type VerificationMethod = '2fa' | 'passkey'
 
 export type SecurityProofScope =
   | 'channel.key.read'
+  | 'request_archive.read'
   | 'passkey.register'
   | 'passkey.delete'
 

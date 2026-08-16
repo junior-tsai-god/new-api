@@ -20,10 +20,13 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 import z from 'zod'
 
 import { UsageLogs } from '@/features/usage-logs'
+import { canAccessRequestArchives } from '@/features/usage-logs/lib/request-archive'
 import {
   isUsageLogsSectionId,
   USAGE_LOGS_DEFAULT_SECTION,
 } from '@/features/usage-logs/section-registry'
+import { ROLE } from '@/lib/roles'
+import { useAuthStore } from '@/stores/auth-store'
 
 const logTypeValues = ['0', '1', '2', '3', '4', '5', '6', '7'] as const
 const logTypeSearchSchema = z
@@ -45,6 +48,8 @@ const usageLogsSearchSchema = z.object({
   username: z.string().optional().catch(''),
   requestId: z.string().optional().catch(''),
   upstreamRequestId: z.string().optional().catch(''),
+  path: z.string().optional().catch(''),
+  statusCode: z.number().int().min(100).max(599).optional().catch(undefined),
   startTime: z.number().optional(),
   endTime: z.number().optional(),
 })
@@ -56,6 +61,12 @@ export const Route = createFileRoute('/_authenticated/usage-logs/$section')({
         to: '/usage-logs/$section',
         params: { section: USAGE_LOGS_DEFAULT_SECTION },
       })
+    }
+    if (params.section === 'archive') {
+      const { auth } = useAuthStore.getState()
+      if (!canAccessRequestArchives(auth.user?.role, ROLE.ADMIN)) {
+        throw redirect({ to: '/403' })
+      }
     }
     // type 仅 common/activity 使用，其他分类清掉 URL 里的 type
     const hasTypeSearch = Array.isArray(search?.type)

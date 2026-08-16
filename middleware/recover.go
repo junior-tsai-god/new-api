@@ -9,8 +9,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// RecoveryWithRelayArchive keeps Gin's recovery behavior while allowing an
+// inner relay archive middleware to persist the final panic response after the
+// recovery handler writes it.
+func RecoveryWithRelayArchive(handler func(c *gin.Context, err any)) gin.HandlerFunc {
+	recovery := gin.CustomRecovery(handler)
+	return func(c *gin.Context) {
+		common.MarkRelayArchivePanicRecovery(c)
+		recovery(c)
+		common.FinalizeRelayArchivePanic(c)
+	}
+}
+
 func RelayPanicRecover() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		common.MarkRelayArchivePanicRecovery(c)
 		defer func() {
 			if err := recover(); err != nil {
 				common.SysLog(fmt.Sprintf("panic detected: %v", err))
@@ -21,9 +34,11 @@ func RelayPanicRecover() gin.HandlerFunc {
 						"type":    "new_api_panic",
 					},
 				})
+				common.FinalizeRelayArchivePanic(c)
 				c.Abort()
 			}
 		}()
 		c.Next()
+		common.FinalizeRelayArchivePanic(c)
 	}
 }

@@ -2,6 +2,7 @@ package router
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -23,4 +24,23 @@ func TestRetiredFrontendAPIRoutes(t *testing.T) {
 	assert.True(t, hasAsyncCleanup)
 	assert.False(t, hasDirectDelete)
 	assert.False(t, hasConsoleMigration)
+}
+
+func TestRelayArchiveRoutesRequireAdminAuthentication(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	engine := gin.New()
+	SetApiRouter(engine)
+
+	for _, target := range []struct {
+		method string
+		path   string
+	}{
+		{method: http.MethodGet, path: "/api/log/archive"},
+		{method: http.MethodPost, path: "/api/log/archive/1/reveal"},
+	} {
+		request := httptest.NewRequest(target.method, target.path, nil)
+		response := httptest.NewRecorder()
+		engine.ServeHTTP(response, request)
+		assert.Equal(t, http.StatusUnauthorized, response.Code)
+	}
 }

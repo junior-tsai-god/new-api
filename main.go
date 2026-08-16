@@ -169,7 +169,7 @@ func main() {
 		common.FatalLog("failed to configure trusted proxies: " + err.Error())
 		return
 	}
-	server.Use(gin.CustomRecovery(func(c *gin.Context, err any) {
+	server.Use(middleware.RecoveryWithRelayArchive(func(c *gin.Context, err any) {
 		common.SysLog(fmt.Sprintf("panic detected: %v", err))
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{

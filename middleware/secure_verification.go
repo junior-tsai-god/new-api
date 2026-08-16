@@ -21,6 +21,15 @@ func SecureVerificationRequired() gin.HandlerFunc {
 	}
 }
 
+func RelayArchiveRevealRequired() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !RequireSecurityProof(c, "request_archive.read", []string{"2fa", "passkey"}) {
+			return
+		}
+		c.Next()
+	}
+}
+
 // RequireSecurityProof validates a proof against the authenticated dashboard
 // session and writes the shared proof error contract on failure.
 func RequireSecurityProof(c *gin.Context, requiredScope string, allowedMethods []string) bool {

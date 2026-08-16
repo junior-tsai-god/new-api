@@ -168,7 +168,13 @@ func WssError(c *gin.Context, ws *websocket.Conn, openaiError types.OpenAIError)
 		EventId: GetLocalRealtimeID(c),
 		Error:   &openaiError,
 	}
-	_ = WssObject(c, ws, errorObj)
+	jsonData, err := common.Marshal(errorObj)
+	if err != nil {
+		return
+	}
+	if err := ws.WriteMessage(websocket.TextMessage, jsonData); err == nil {
+		common.RecordRelayArchiveResponseFrame(c, websocket.TextMessage, jsonData)
+	}
 }
 
 func GetResponseID(c *gin.Context) string {

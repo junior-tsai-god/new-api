@@ -1,6 +1,7 @@
 package model
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"errors"
@@ -75,6 +76,7 @@ func TestHardDeleteUserFailsClosedWhenAuthFenceCannotPublish(t *testing.T) {
 
 func TestHardDeleteUserPublishesTombstoneAndPurgesAuthenticationData(t *testing.T) {
 	truncateTables(t)
+	useRelayArchiveTestSecret(t)
 	server := useUserCacheMiniRedis(t)
 
 	user := User{
@@ -99,6 +101,9 @@ func TestHardDeleteUserPublishesTombstoneAndPurgesAuthenticationData(t *testing.
 		TokenHash: "hard-delete-success-flow", Purpose: AuthFlowPurposeTwoFALogin,
 		UserId: user.Id, ExpiresAt: time.Now().Add(time.Minute),
 	}).Error)
+	require.NoError(t, CreateRelayArchive(&RelayArchive{
+		RequestId: "hard-delete-success-archive", UserId: user.Id, StatusCode: 200,
+	}, bytes.NewBufferString("request"), bytes.NewBufferString("response")))
 	require.NoError(t, populateUserCache(user))
 	// Administrative hard deletion commonly targets an already soft-deleted
 	// user; the shared version increment must therefore query unscoped.
@@ -122,6 +127,10 @@ func TestHardDeleteUserPublishesTombstoneAndPurgesAuthenticationData(t *testing.
 		require.NoError(t, DB.Unscoped().Model(record).Where("user_id = ?", user.Id).Count(&count).Error)
 		assert.Zero(t, count)
 	}
+	require.NoError(t, DB.Model(&RelayArchive{}).Where("user_id = ?", user.Id).Count(&count).Error)
+	assert.Zero(t, count)
+	require.NoError(t, DB.Model(&RelayArchiveChunk{}).Count(&count).Error)
+	assert.Zero(t, count)
 	assert.False(t, server.Exists(getUserAuthFenceKey(user.Id)))
 	committed, err := common.RDB.Get(t.Context(), getUserAuthVersionKey(user.Id)).Result()
 	require.NoError(t, err)

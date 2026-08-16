@@ -387,6 +387,8 @@ const AUDIT_TEMPLATES: Record<string, string> = {
   // Logs
   'log.clear': 'Cleared historical logs',
   'log.cleanup_start': 'Log cleanup task started.',
+  'request_archive.read':
+    'Viewed request archive {{archive_id}} ({{request_id}})',
   // Generic middleware fallback
   generic: '{{method}} {{route}}',
 }

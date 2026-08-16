@@ -28,6 +28,7 @@ import { UsageBillingNavigation } from '@/features/usage-billing/usage-billing-n
 import { useSidebarConfig } from '@/hooks/use-sidebar-config'
 
 import { UserInfoDialog } from './components/dialogs/user-info-dialog'
+import { RequestArchiveTable } from './components/request-archive-table'
 import {
   type LogsViewScope,
   UsageLogsProvider,
@@ -43,7 +44,7 @@ import {
 import type { CommonLogScope, LogCategory } from './types'
 
 const route = getRouteApi('/_authenticated/usage-logs/$section')
-const LOG_SECTIONS = ['common', 'drawing', 'task'] as const
+const LOG_SECTIONS = ['common', 'drawing', 'task', 'archive'] as const
 
 const SECTION_META: Record<UsageLogsSectionId, { titleKey: string }> = {
   common: {
@@ -57,6 +58,9 @@ const SECTION_META: Record<UsageLogsSectionId, { titleKey: string }> = {
   },
   activity: {
     titleKey: 'Account Activity',
+  },
+  archive: {
+    titleKey: 'Request Archives',
   },
 }
 
@@ -97,10 +101,12 @@ function UsageLogsContent() {
           if (!('url' in item) || typeof item.url !== 'string') return null
           return item.url.split('/').pop() ?? null
         })
-        .filter((section): section is UsageLogsSectionId =>
-          Boolean(section && isUsageLogsSectionId(section))
+        .filter(
+          (section): section is UsageLogsSectionId =>
+            Boolean(section && isUsageLogsSectionId(section)) &&
+            (section !== 'archive' || canManageScope)
         ),
-    [filteredTabGroups]
+    [canManageScope, filteredTabGroups]
   )
 
   const handleSectionChange = useCallback(
@@ -125,9 +131,20 @@ function UsageLogsContent() {
   const showRequestSwitcher =
     activeCategory !== 'activity' && visibleSections.length > 1
   const logCategory: LogCategory =
-    activeCategory === 'activity' ? 'common' : activeCategory
+    activeCategory === 'drawing' || activeCategory === 'task'
+      ? activeCategory
+      : 'common'
   const commonLogScope: CommonLogScope =
     activeCategory === 'activity' ? 'activity' : 'request'
+  const tableContent =
+    activeCategory === 'archive' ? (
+      canManageScope && <RequestArchiveTable />
+    ) : (
+      <UsageLogsTable
+        logCategory={logCategory}
+        commonLogScope={commonLogScope}
+      />
+    )
 
   return (
     <>
@@ -135,7 +152,7 @@ function UsageLogsContent() {
         <SectionPageLayout.Title>
           {t('Usage & Billing')}
         </SectionPageLayout.Title>
-        {canManageScope && (
+        {canManageScope && activeCategory !== 'archive' && (
           <SectionPageLayout.Actions>
             <Tabs value={viewScope} onValueChange={handleViewScopeChange}>
               <TabsList>
@@ -159,12 +176,7 @@ function UsageLogsContent() {
                 </TabsList>
               </Tabs>
             )}
-            <div className='min-h-0 flex-1'>
-              <UsageLogsTable
-                logCategory={logCategory}
-                commonLogScope={commonLogScope}
-              />
-            </div>
+            <div className='min-h-0 flex-1'>{tableContent}</div>
           </div>
         </SectionPageLayout.Content>
       </SectionPageLayout>

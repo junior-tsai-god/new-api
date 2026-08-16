@@ -25,7 +25,10 @@ import type {
   GetLogStatsParams,
   GetLogStatsResponse,
   GetMidjourneyLogsParams,
+  GetRequestArchivesParams,
+  GetRequestArchivesResponse,
   GetTaskLogsParams,
+  RevealRequestArchiveResponse,
   UserInfo,
 } from './types'
 
@@ -110,3 +113,31 @@ export const getAllTaskLogs = (params: GetTaskLogsParams) =>
 
 export const getUserTaskLogs = (params: GetTaskLogsParams) =>
   fetchLogs('/api/task', params, false)
+
+// ============================================================================
+// Request Archive APIs (administrator only)
+// ============================================================================
+
+export async function getRequestArchives(
+  params: GetRequestArchivesParams = {}
+): Promise<GetRequestArchivesResponse> {
+  const queryParams = buildQueryParams({
+    p: params.p || 1,
+    page_size: params.page_size || 20,
+    ...params,
+  })
+  const res = await api.get(`/api/log/archive?${queryParams}`)
+  return res.data
+}
+
+export async function revealRequestArchive(
+  id: number,
+  proofToken?: string
+): Promise<RevealRequestArchiveResponse> {
+  const res = await api.post(`/api/log/archive/${id}/reveal`, undefined, {
+    headers: proofToken ? { 'X-Security-Proof': proofToken } : undefined,
+    skipBusinessError: true,
+    skipErrorHandler: true,
+  })
+  return res.data
+}

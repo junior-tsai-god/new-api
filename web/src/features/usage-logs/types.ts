@@ -32,6 +32,8 @@ export type LogCategory = 'common' | 'drawing' | 'task'
 
 export type CommonLogScope = 'request' | 'activity'
 
+export type RequestArchiveBodyEncoding = 'utf-8' | 'base64'
+
 // ============================================================================
 // Filter Types
 // ============================================================================
@@ -347,6 +349,72 @@ export interface GetLogStatsResponse {
   success: boolean
   message?: string
   data?: LogStatistics
+}
+
+// ============================================================================
+// Request Archive Types
+// ============================================================================
+
+export interface RequestArchiveRecord {
+  id: number
+  user_id: number
+  username: string
+  token_id: number
+  token_name: string
+  request_id: string
+  created_at: number
+  method: string
+  path: string
+  model_name: string
+  channel_id: number
+  status_code: number
+  is_stream: boolean
+  duration_ms: number
+  request_content_type: string
+  response_content_type: string
+  request_size: number
+  response_size: number
+  request_stored_size: number
+  response_stored_size: number
+  request_truncated: boolean
+  response_truncated: boolean
+  capture_error: string
+}
+
+export interface RequestArchiveDetail extends RequestArchiveRecord {
+  request_body: string
+  request_body_encoding: RequestArchiveBodyEncoding
+  response_body: string
+  response_body_encoding: RequestArchiveBodyEncoding
+}
+
+export interface GetRequestArchivesParams {
+  p?: number
+  page_size?: number
+  username?: string
+  model_name?: string
+  request_id?: string
+  path?: string
+  status_code?: number
+  start_timestamp?: number
+  end_timestamp?: number
+}
+
+export interface GetRequestArchivesResponse {
+  success: boolean
+  message?: string
+  data?: {
+    items: RequestArchiveRecord[]
+    total: number
+    page: number
+    page_size: number
+  }
+}
+
+export interface RevealRequestArchiveResponse {
+  success: boolean
+  message?: string
+  data?: RequestArchiveDetail
 }
 
 // ============================================================================

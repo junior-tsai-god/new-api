@@ -2,8 +2,10 @@ package openai
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/logger"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
@@ -24,18 +26,27 @@ func OpenaiRealtimeHandler(c *gin.Context, info *relaycommon.RelayInfo) (*types.
 	info.IsStream = true
 	clientConn := info.ClientWs
 	targetConn := info.TargetWs
+	frameReadLimit := int64(constant.MaxRequestBodyMB) << 20
+	if frameReadLimit <= 0 {
+		frameReadLimit = 128 << 20
+	}
+	clientConn.SetReadLimit(frameReadLimit)
+	targetConn.SetReadLimit(frameReadLimit)
 
 	clientClosed := make(chan struct{})
 	targetClosed := make(chan struct{})
 	sendChan := make(chan []byte, 100)
 	receiveChan := make(chan []byte, 100)
 	errChan := make(chan error, 2)
+	var workers sync.WaitGroup
+	workers.Add(2)
 
 	usage := &dto.RealtimeUsage{}
 	localUsage := &dto.RealtimeUsage{}
 	sumUsage := &dto.RealtimeUsage{}
 
 	gopool.Go(func() {
+		defer workers.Done()
 		defer func() {
 			if r := recover(); r != nil {
 				errChan <- fmt.Errorf("panic in client reader: %v", r)
@@ -46,7 +57,7 @@ func OpenaiRealtimeHandler(c *gin.Context, info *relaycommon.RelayInfo) (*types.
 			case <-c.Done():
 				return
 			default:
-				_, message, err := clientConn.ReadMessage()
+				messageType, message, err := clientConn.ReadMessage()
 				if err != nil {
 					if !websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
 						errChan <- fmt.Errorf("error reading from client: %v", err)
@@ -54,6 +65,8 @@ func OpenaiRealtimeHandler(c *gin.Context, info *relaycommon.RelayInfo) (*types.
 					close(clientClosed)
 					return
 				}
+
+				common.RecordRelayArchiveRequestFrame(c, messageType, message)
 
 				realtimeEvent := &dto.RealtimeEvent{}
 				err = common.Unmarshal(message, realtimeEvent)
@@ -96,6 +109,7 @@ func OpenaiRealtimeHandler(c *gin.Context, info *relaycommon.RelayInfo) (*types.
 	})
 
 	gopool.Go(func() {
+		defer workers.Done()
 		defer func() {
 			if r := recover(); r != nil {
 				errChan <- fmt.Errorf("panic in target reader: %v", r)
@@ -192,6 +206,9 @@ func OpenaiRealtimeHandler(c *gin.Context, info *relaycommon.RelayInfo) (*types.
 					errChan <- fmt.Errorf("error writing to client: %v", err)
 					return
 				}
+				// WssString always writes a text frame, so archive the frame type the
+				// client actually received rather than the upstream frame type.
+				common.RecordRelayArchiveResponseFrame(c, websocket.TextMessage, message)
 
 				select {
 				case receiveChan <- message:
@@ -209,6 +226,12 @@ func OpenaiRealtimeHandler(c *gin.Context, info *relaycommon.RelayInfo) (*types.
 		logger.LogError(c, "realtime error: "+err.Error())
 	case <-c.Done():
 	}
+	// Stop and join both readers before returning. Otherwise the archive
+	// middleware can persist and close its frame spools while the other reader
+	// is still recording tail frames.
+	_ = clientConn.Close()
+	_ = targetConn.Close()
+	workers.Wait()
 
 	if usage.TotalTokens != 0 {
 		_ = preConsumeUsage(c, info, usage, sumUsage)

@@ -62,6 +62,37 @@ func InitEnv() {
 	} else {
 		CryptoSecret = SessionSecret
 	}
+	relayArchiveSecret := strings.TrimSpace(os.Getenv("RELAY_ARCHIVE_SECRET"))
+	switch {
+	case relayArchiveSecret != "":
+		RelayArchiveSecret = relayArchiveSecret
+	case strings.TrimSpace(os.Getenv("CRYPTO_SECRET")) != "":
+		RelayArchiveSecret = CryptoSecret
+	case strings.TrimSpace(os.Getenv("SESSION_SECRET")) != "":
+		RelayArchiveSecret = SessionSecret
+	default:
+		// A process-random fallback would make every historical archive
+		// unreadable after restart (and across nodes), so leave capture disabled
+		// until the operator supplies a stable secret.
+		RelayArchiveSecret = ""
+		log.Println("WARNING: relay request archive is disabled because no stable RELAY_ARCHIVE_SECRET, CRYPTO_SECRET, or SESSION_SECRET is configured")
+	}
+	if value := strings.TrimSpace(os.Getenv("RELAY_ARCHIVE_MAX_BODY_MB")); value != "" {
+		maxBodyMB, err := strconv.Atoi(value)
+		if err != nil || maxBodyMB < 1 || maxBodyMB > 8 {
+			log.Printf("WARNING: invalid RELAY_ARCHIVE_MAX_BODY_MB %q; using %d MiB", value, RelayArchiveMaxBodyBytes>>20)
+		} else {
+			RelayArchiveMaxBodyBytes = int64(maxBodyMB) << 20
+		}
+	}
+	if value := strings.TrimSpace(os.Getenv("RELAY_ARCHIVE_RETENTION_DAYS")); value != "" {
+		retentionDays, err := strconv.Atoi(value)
+		if err != nil || retentionDays < 1 || retentionDays > 90 {
+			log.Printf("WARNING: invalid RELAY_ARCHIVE_RETENTION_DAYS %q; using %d days", value, RelayArchiveRetentionDays)
+		} else {
+			RelayArchiveRetentionDays = retentionDays
+		}
+	}
 	if err := InitSessionCookieSettings(); err != nil {
 		log.Fatal(err)
 	}

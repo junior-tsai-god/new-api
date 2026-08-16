@@ -153,6 +153,39 @@ func TestInsertKeepsBlankPasswordForPasswordlessUser(t *testing.T) {
 	assert.Empty(t, stored.Password)
 }
 
+func TestNewUsersReceiveConfiguredSignupQuota(t *testing.T) {
+	setupUserUpdateTestState(t)
+
+	passwordUser := &User{
+		Username: "signup-quota-password-user",
+		Password: "Password123!",
+		Quota:    1,
+		Role:     common.RoleCommonUser,
+		Status:   common.UserStatusEnabled,
+	}
+	require.NoError(t, passwordUser.Insert(0))
+
+	oauthUser := &User{
+		Username: "signup-quota-oauth-user",
+		Quota:    1,
+		Role:     common.RoleCommonUser,
+		Status:   common.UserStatusEnabled,
+	}
+	require.NoError(t, DB.Transaction(func(tx *gorm.DB) error {
+		return oauthUser.InsertWithTx(tx, 0)
+	}))
+
+	var storedUsers []User
+	require.NoError(t, DB.Where("username IN ?", []string{
+		passwordUser.Username,
+		oauthUser.Username,
+	}).Order("username ASC").Find(&storedUsers).Error)
+	require.Len(t, storedUsers, 2)
+	for _, storedUser := range storedUsers {
+		assert.Equal(t, 5_000_000, storedUser.Quota)
+	}
+}
+
 func TestValidateAndFillRejectsPasswordlessUser(t *testing.T) {
 	setupUserUpdateTestState(t)
 

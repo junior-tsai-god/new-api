@@ -34,6 +34,9 @@ var DefaultCollapseSidebar = false // default value of collapse sidebar
 
 var SessionSecret = uuid.New().String()
 var CryptoSecret = uuid.New().String()
+var RelayArchiveSecret = ""
+var RelayArchiveMaxBodyBytes int64 = 8 << 20
+var RelayArchiveRetentionDays = 7
 var SessionCookieSecure = false
 var SessionCookieTrustedURLs []string
 
@@ -121,7 +124,9 @@ var TurnstileSecretKey = ""
 var TelegramBotToken = ""
 var TelegramBotName = ""
 
-var QuotaForNewUser = 0
+// QuotaForNewUser defaults to $10 at the default $1 = 500,000 quota conversion.
+// Existing installations can still override this value through the options table.
+var QuotaForNewUser = 5_000_000
 var QuotaForInviter = 0
 var QuotaForInvitee = 0
 var ChannelDisableThreshold = 5.0
