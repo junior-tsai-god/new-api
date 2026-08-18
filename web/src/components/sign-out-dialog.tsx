@@ -24,7 +24,10 @@ import { toast } from 'sonner'
 
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { logout } from '@/features/auth/api'
-import { clearAuthenticatedClientState } from '@/lib/auth-session'
+import {
+  clearAuthenticatedClientState,
+  runIntentionalSignOut,
+} from '@/lib/auth-session'
 
 interface SignOutDialogProps {
   open: boolean
@@ -40,15 +43,16 @@ export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
   const handleSignOut = async () => {
     setIsSigningOut(true)
     try {
-      const response = await logout()
-      if (!response.success) {
-        toast.error(response.message || t('Failed to sign out session'))
-        return
-      }
+      await runIntentionalSignOut(queryClient, async () => {
+        const response = await logout()
+        if (!response.success) {
+          throw new Error(response.message || t('Failed to sign out session'))
+        }
 
-      clearAuthenticatedClientState(queryClient)
-      toast.success(t('Signed out'))
-      void navigate({ to: '/sign-in', replace: true })
+        clearAuthenticatedClientState(queryClient)
+        toast.success(t('Signed out'))
+        await navigate({ to: '/sign-in', replace: true })
+      })
     } catch (error: unknown) {
       toast.error(
         error instanceof Error ? error.message : t('Failed to sign out session')

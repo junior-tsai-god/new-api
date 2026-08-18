@@ -75,13 +75,19 @@ export async function executeLogout(
   try {
     return await runtime.request(runtime.getExpectedSID())
   } catch (error: unknown) {
+    const status = axios.isAxiosError(error)
+      ? error.response?.status
+      : undefined
     const code = axios.isAxiosError(error)
       ? error.response?.data?.code
       : undefined
+    if (status === 401) {
+      return { success: true, message: '' }
+    }
     if (
       allowMismatchRecovery &&
       axios.isAxiosError(error) &&
-      error.response?.status === 409 &&
+      status === 409 &&
       code === 'AUTH_SESSION_MISMATCH'
     ) {
       const outcome = await runtime.refresh()
@@ -104,7 +110,9 @@ export async function logout(): Promise<ApiResponse> {
       const res = await api.post('/api/user/auth/logout', undefined, {
         headers: sid ? { 'X-Auth-Session': sid } : undefined,
         skipAuthRefresh: true,
+        skipBusinessError: true,
         skipErrorHandler: true,
+        preserveUnauthorizedResponse: true,
       })
       return res.data
     },

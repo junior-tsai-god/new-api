@@ -27,7 +27,7 @@ export function ModelCatalog() {
 
   return (
     <SectionPageLayout>
-      <SectionPageLayout.Title>{t('Models')}</SectionPageLayout.Title>
+      <SectionPageLayout.Title>{t('Model Center')}</SectionPageLayout.Title>
       <SectionPageLayout.Content>
         <ModelCatalogContent />
       </SectionPageLayout.Content>

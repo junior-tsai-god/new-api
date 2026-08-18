@@ -27,9 +27,11 @@ import {
   loadConfig,
   loadMessages,
   loadParameterEnabled,
+  loadSessionRequestIds,
   saveConfig,
   saveMessages,
   saveParameterEnabled,
+  saveSessionRequestIds,
 } from '../storage'
 
 class MemoryStorage {
@@ -80,31 +82,45 @@ beforeEach(() => {
 })
 
 describe('playground user storage isolation', () => {
-  test('keeps messages, key selection, model, and parameters separated by user', () => {
+  test('keeps messages, endpoint, key selection, model, and parameters separated by user', () => {
     const aliceMessage = createMessage('alice-message', 'private from alice')
     const bobMessage = createMessage('bob-message', 'private from bob')
 
-    saveConfig(11, { api_key_id: 101, model: 'alice-model' })
+    saveConfig(11, {
+      api_key_id: 101,
+      endpoint_id: 'responses',
+      model: 'alice-model',
+    })
     saveParameterEnabled(11, { temperature: true })
     saveMessages(11, [aliceMessage])
+    saveSessionRequestIds(11, ['req-alice'])
 
-    saveConfig(22, { api_key_id: 202, model: 'bob-model' })
+    saveConfig(22, {
+      api_key_id: 202,
+      endpoint_id: 'embeddings',
+      model: 'bob-model',
+    })
     saveParameterEnabled(22, { temperature: false })
     saveMessages(22, [bobMessage])
+    saveSessionRequestIds(22, ['req-bob'])
 
     assert.deepEqual(loadConfig(11), {
       api_key_id: 101,
+      endpoint_id: 'responses',
       model: 'alice-model',
     })
     assert.deepEqual(loadParameterEnabled(11), { temperature: true })
     assert.deepEqual(loadMessages(11), [aliceMessage])
+    assert.deepEqual(loadSessionRequestIds(11), ['req-alice'])
 
     assert.deepEqual(loadConfig(22), {
       api_key_id: 202,
+      endpoint_id: 'embeddings',
       model: 'bob-model',
     })
     assert.deepEqual(loadParameterEnabled(22), { temperature: false })
     assert.deepEqual(loadMessages(22), [bobMessage])
+    assert.deepEqual(loadSessionRequestIds(22), ['req-bob'])
   })
 
   test('discards ownerless legacy data instead of assigning it to the next user', () => {
@@ -129,6 +145,7 @@ describe('playground user storage isolation', () => {
     saveConfig(undefined, { api_key_id: 101, model: 'ownerless-model' })
     saveParameterEnabled(undefined, { temperature: true })
     saveMessages(undefined, [createMessage('ownerless-message', 'private')])
+    saveSessionRequestIds(undefined, ['ownerless-request'])
 
     assert.equal(storage.length, 0)
   })
@@ -138,10 +155,14 @@ describe('playground user storage isolation', () => {
     const bobMessage = createMessage('bob-message', 'bob')
     saveMessages(11, [aliceMessage])
     saveMessages(22, [bobMessage])
+    saveSessionRequestIds(11, ['req-alice'])
+    saveSessionRequestIds(22, ['req-bob'])
 
     clearPlaygroundData(11)
 
     assert.equal(loadMessages(11), null)
+    assert.deepEqual(loadSessionRequestIds(11), [])
     assert.deepEqual(loadMessages(22), [bobMessage])
+    assert.deepEqual(loadSessionRequestIds(22), ['req-bob'])
   })
 })

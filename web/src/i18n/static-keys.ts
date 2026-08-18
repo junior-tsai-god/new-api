@@ -22,7 +22,8 @@ export const STATIC_I18N_KEYS = [
   // Header navigation
   'Home',
   'Console',
-  'Model Square',
+  'Model Center',
+  'Model Management',
   'Rankings',
   'Docs',
   'About',

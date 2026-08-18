@@ -50,7 +50,7 @@ function getAdminNavGroups(t: TFunction): NavGroup[] {
           icon: Radio,
         },
         {
-          title: t('Models'),
+          title: t('Model Management'),
           url: '/models/metadata',
           activeUrls: ['/models/deployments'],
           icon: Box,

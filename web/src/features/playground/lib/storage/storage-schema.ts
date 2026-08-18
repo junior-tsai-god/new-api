@@ -18,6 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { z } from 'zod'
 
+import { PLAYGROUND_ENDPOINT_IDS } from '../endpoints'
+
 export const STORAGE_VERSION = 1
 export const MAX_STORED_MESSAGES = 100
 export const MAX_STORED_MESSAGES_BYTES = 1024 * 1024
@@ -26,6 +28,7 @@ export const MAX_LOADED_MESSAGE_CHARS = 40_000
 
 export const playgroundConfigSchema = z.object({
   api_key_id: z.number().int().positive().nullable().optional(),
+  endpoint_id: z.enum(PLAYGROUND_ENDPOINT_IDS).optional(),
   model: z.string().optional(),
   temperature: z.number().optional(),
   top_p: z.number().optional(),
@@ -89,3 +92,5 @@ const messageSchema = z.object({
 })
 
 export const messagesSchema = z.array(messageSchema)
+
+export const sessionRequestIdsSchema = z.array(z.string().trim().min(1).max(64))

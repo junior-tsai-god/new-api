@@ -49,6 +49,7 @@ export async function updateUserProfile(
 ): Promise<ApiResponse> {
   const res = await api.put('/api/user/self', data, {
     acceptAuthRotation: Boolean(data.password),
+    skipBusinessError: Boolean(data.password),
   })
   return res.data
 }
@@ -79,7 +80,12 @@ export async function updateUserLanguage(
 export async function deleteUserAccount(
   data?: DeleteAccountRequest
 ): Promise<ApiResponse> {
-  const res = await api.delete('/api/user/self', { data })
+  const res = await api.delete('/api/user/self', {
+    data,
+    skipBusinessError: true,
+    skipErrorHandler: true,
+    preserveUnauthorizedResponse: true,
+  })
   return res.data
 }
 
@@ -158,8 +164,21 @@ export async function getLoginSessions(): Promise<ApiResponse<LoginSession[]>> {
   return res.data
 }
 
-export async function revokeLoginSession(sid: string): Promise<ApiResponse> {
-  const res = await api.delete(`/api/user/sessions/${encodeURIComponent(sid)}`)
+export async function revokeLoginSession(
+  sid: string,
+  options: { current?: boolean } = {}
+): Promise<ApiResponse> {
+  const preserveUnauthorizedResponse = options.current === true
+  const res = await api.delete(
+    `/api/user/sessions/${encodeURIComponent(sid)}`,
+    preserveUnauthorizedResponse
+      ? {
+          skipBusinessError: true,
+          skipErrorHandler: true,
+          preserveUnauthorizedResponse: true,
+        }
+      : undefined
+  )
   return res.data
 }
 

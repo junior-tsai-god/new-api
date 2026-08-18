@@ -16,7 +16,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
+import axios from 'axios'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -28,7 +30,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { logout } from '@/features/auth/api'
-import { clearAuthentication } from '@/lib/api'
+import { clearAuthenticatedClientState, runIntentionalSignOut } from '@/lib/api'
 
 import { deleteUserAccount } from '../../api'
 
@@ -49,6 +51,7 @@ export function DeleteAccountDialog({
 }: DeleteAccountDialogProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [loading, setLoading] = useState(false)
   const [confirmation, setConfirmation] = useState('')
 
@@ -60,25 +63,35 @@ export function DeleteAccountDialog({
 
     try {
       setLoading(true)
-      const response = await deleteUserAccount()
+      await runIntentionalSignOut(queryClient, async () => {
+        const response = await deleteUserAccount()
+        if (!response.success) {
+          throw new Error(response.message || t('Failed to delete account'))
+        }
 
-      if (response.success) {
         toast.success(t('Account deleted successfully'))
 
-        // Logout and redirect
         try {
           await logout()
         } catch {
-          // Ignore logout errors
+          // Account deletion already revoked the session; logout only clears
+          // any remaining browser cookie.
         }
 
-        clearAuthentication()
-        navigate({ to: '/sign-in' })
-      } else {
-        toast.error(response.message || t('Failed to delete account'))
+        clearAuthenticatedClientState(queryClient)
+        await navigate({ to: '/sign-in', replace: true })
+      })
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        clearAuthenticatedClientState(queryClient)
+        await navigate({ to: '/sign-in', replace: true })
+        return
       }
-    } catch {
-      toast.error(t('Failed to delete account'))
+      toast.error(
+        error instanceof Error && !axios.isAxiosError(error)
+          ? error.message
+          : t('Failed to delete account')
+      )
     } finally {
       setLoading(false)
     }

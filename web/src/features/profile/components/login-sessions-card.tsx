@@ -20,6 +20,7 @@ import { Logout01Icon, SmartPhone01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
+import axios from 'axios'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -42,7 +43,7 @@ import {
 } from '@/components/ui/empty'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
-import { clearAuthenticatedClientState } from '@/lib/api'
+import { clearAuthenticatedClientState, runIntentionalSignOut } from '@/lib/api'
 import type { LoginSession } from '@/stores/auth-store'
 
 import {
@@ -74,27 +75,50 @@ export function LoginSessionsCard() {
   })
 
   const revokeMutation = useMutation({
-    mutationFn: async (sid: string) => {
-      const response = await revokeLoginSession(sid)
+    mutationFn: async (session: LoginSession) => {
+      if (session.current) {
+        await runIntentionalSignOut(queryClient, async () => {
+          const response = await revokeLoginSession(session.sid, {
+            current: true,
+          })
+          if (!response.success) {
+            throw new Error(response.message || t('Failed to sign out session'))
+          }
+          clearAuthenticatedClientState(queryClient)
+          await navigate({ to: '/sign-in', replace: true })
+        })
+        return session
+      }
+
+      const response = await revokeLoginSession(session.sid)
       if (!response.success) {
         throw new Error(response.message || t('Failed to sign out session'))
       }
-      return sid
+      return session
     },
-    onSuccess: async (sid) => {
-      const revokedCurrent = sessionsQuery.data?.some(
-        (session) => session.sid === sid && session.current
-      )
+    onSuccess: async (session) => {
       setRevokeTarget(null)
-      if (revokedCurrent) {
-        clearAuthenticatedClientState(queryClient)
-        void navigate({ to: '/sign-in', replace: true })
-        return
-      }
+      if (session.current) return
+
       toast.success(t('Session signed out'))
       await queryClient.invalidateQueries({ queryKey: sessionQueryKey })
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: async (error: Error, session) => {
+      if (
+        session.current &&
+        axios.isAxiosError(error) &&
+        error.response?.status === 401
+      ) {
+        clearAuthenticatedClientState(queryClient)
+        await navigate({ to: '/sign-in', replace: true })
+        return
+      }
+      toast.error(
+        axios.isAxiosError(error)
+          ? t('Failed to sign out session')
+          : error.message
+      )
+    },
   })
 
   const revokeOthersMutation = useMutation({
@@ -205,7 +229,7 @@ export function LoginSessionsCard() {
         onRevokeTargetChange={setRevokeTarget}
         onConfirmOthersChange={setConfirmOthers}
         onRevoke={() => {
-          if (revokeTarget) revokeMutation.mutate(revokeTarget.sid)
+          if (revokeTarget) revokeMutation.mutate(revokeTarget)
         }}
         onRevokeOthers={() => revokeOthersMutation.mutate()}
       />

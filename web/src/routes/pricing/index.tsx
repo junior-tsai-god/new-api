@@ -39,12 +39,21 @@ const pricingSearchSchema = z.object({
 export const Route = createFileRoute('/pricing/')({
   validateSearch: pricingSearchSchema,
   beforeLoad: async ({ location }) => {
+    const { auth } = useAuthStore.getState()
+    if (auth.user) {
+      throw redirect({
+        to: '/model-catalog/$section',
+        params: { section: 'catalog' },
+        search: location.search,
+        replace: true,
+      })
+    }
+
     const access = await getFreshModuleAccess('pricing')
     if (!access.enabled) {
       throw redirect({ to: '/' })
     }
     if (access.requireAuth) {
-      const { auth } = useAuthStore.getState()
       if (!auth.user) {
         throw redirect({
           to: '/sign-in',

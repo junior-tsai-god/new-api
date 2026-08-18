@@ -80,6 +80,25 @@ type RelayArchiveFilter struct {
 	EndTimestamp   int64
 }
 
+func GetUserCompletedWithoutConsumeRelayArchiveRequestIds(userId int, requestIds []string) ([]string, error) {
+	if userId <= 0 || len(requestIds) == 0 {
+		return []string{}, nil
+	}
+	settledRequestIds := make([]string, 0, len(requestIds))
+	err := DB.Model(&RelayArchive{}).
+		Where(
+			"user_id = ? AND request_id IN ? AND (status_code >= ? OR capture_error LIKE ? OR capture_error LIKE ? OR capture_error LIKE ?)",
+			userId,
+			requestIds,
+			400,
+			"%client_disconnected%",
+			"%handler_panicked%",
+			"%response_write_failed%",
+		).
+		Pluck("request_id", &settledRequestIds).Error
+	return settledRequestIds, err
+}
+
 func CreateRelayArchive(archive *RelayArchive, requestBody io.Reader, responseBody io.Reader) error {
 	if archive == nil {
 		return errors.New("relay archive is nil")

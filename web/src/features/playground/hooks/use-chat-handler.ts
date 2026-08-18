@@ -34,19 +34,14 @@ import {
   isAssistantMessageFinal,
   isAssistantMessagePending,
 } from '../lib'
-import type {
-  Message,
-  PlaygroundConfig,
-  ParameterEnabled,
-  PlaygroundRequestAuth,
-} from '../types'
+import type { Message, PlaygroundConfig, ParameterEnabled } from '../types'
 import { useStreamRequest } from './use-stream-request'
 
 interface UseChatHandlerOptions {
   config: PlaygroundConfig
   parameterEnabled: ParameterEnabled
-  requestAuth: PlaygroundRequestAuth
   onMessageUpdate: (updater: (prev: Message[]) => Message[]) => void
+  onRequestComplete?: (requestId: string) => void
 }
 
 const KNOWN_ERROR_MESSAGES = new Set<string>(Object.values(ERROR_MESSAGES))
@@ -75,8 +70,8 @@ function mergePendingStreamChunk(
 export function useChatHandler({
   config,
   parameterEnabled,
-  requestAuth,
   onMessageUpdate,
+  onRequestComplete,
 }: UseChatHandlerOptions) {
   const { t } = useTranslation()
   const { sendStreamRequest, stopStream, isStreaming } = useStreamRequest()
@@ -263,7 +258,8 @@ export function useChatHandler({
       )
       void sendStreamRequest(
         payload,
-        requestAuth,
+        config.api_key_id,
+        (requestId) => onRequestComplete?.(requestId),
         (type, chunk) => handleStreamUpdate(generation, type, chunk),
         () => handleStreamComplete(generation),
         (error, errorCode) => handleStreamError(generation, error, errorCode)
@@ -272,12 +268,12 @@ export function useChatHandler({
     [
       config,
       parameterEnabled,
-      requestAuth,
       sendStreamRequest,
       discardPendingStreamUpdates,
       handleStreamUpdate,
       handleStreamComplete,
       handleStreamError,
+      onRequestComplete,
     ]
   )
 
@@ -300,10 +296,11 @@ export function useChatHandler({
 
       try {
         setIsRequesting(true)
-        const response = await sendChatCompletion(
+        const result = await sendChatCompletion(
           payload,
-          requestAuth,
-          abortController.signal
+          config.api_key_id,
+          abortController.signal,
+          onRequestComplete
         )
         if (
           abortController.signal.aborted ||
@@ -312,7 +309,7 @@ export function useChatHandler({
           return
         }
 
-        if (!hasChatCompletionChoice(response)) {
+        if (!hasChatCompletionChoice(result.data)) {
           handleStreamError(generation, ERROR_MESSAGES.API_REQUEST_ERROR)
           return
         }
@@ -322,7 +319,7 @@ export function useChatHandler({
           return updateLastAssistantMessage(prev, (message) => {
             const updatedMessage = applyChatCompletionResponse(
               message,
-              response
+              result.data
             )
 
             return updatedMessage ?? message
@@ -348,10 +345,10 @@ export function useChatHandler({
     [
       config,
       parameterEnabled,
-      requestAuth,
       stopStream,
       discardPendingStreamUpdates,
       onMessageUpdate,
+      onRequestComplete,
       handleStreamError,
     ]
   )
@@ -368,35 +365,54 @@ export function useChatHandler({
     [config.stream, sendStreamingChat, sendNonStreamingChat]
   )
 
-  // Stop generation
+  const cancelGeneration = useCallback(
+    (preservePartialResponse: boolean) => {
+      const stoppedGeneration = requestGenerationRef.current
+      if (preservePartialResponse) {
+        flushStreamUpdates(stoppedGeneration)
+      }
+      const idleGeneration = stoppedGeneration + 1
+      requestGenerationRef.current = idleGeneration
+      discardPendingStreamUpdates(idleGeneration)
+      stopStream()
+      abortControllerRef.current?.abort()
+      abortControllerRef.current = null
+      setIsRequesting(false)
+      if (!preservePartialResponse) {
+        return
+      }
+      onMessageUpdate((prev) => {
+        if (requestGenerationRef.current !== idleGeneration) return prev
+        return updateLastAssistantMessage(prev, (message) =>
+          isAssistantMessagePending(message)
+            ? completeAssistantMessage(message)
+            : message
+        )
+      })
+    },
+    [
+      stopStream,
+      flushStreamUpdates,
+      discardPendingStreamUpdates,
+      onMessageUpdate,
+    ]
+  )
+
+  // Stop generation while keeping the partial answer already shown.
   const stopGeneration = useCallback(() => {
-    const stoppedGeneration = requestGenerationRef.current
-    flushStreamUpdates(stoppedGeneration)
-    const idleGeneration = stoppedGeneration + 1
-    requestGenerationRef.current = idleGeneration
-    discardPendingStreamUpdates(idleGeneration)
-    stopStream()
-    abortControllerRef.current?.abort()
-    abortControllerRef.current = null
-    setIsRequesting(false)
-    onMessageUpdate((prev) => {
-      if (requestGenerationRef.current !== idleGeneration) return prev
-      return updateLastAssistantMessage(prev, (message) =>
-        isAssistantMessagePending(message)
-          ? completeAssistantMessage(message)
-          : message
-      )
-    })
-  }, [
-    stopStream,
-    flushStreamUpdates,
-    discardPendingStreamUpdates,
-    onMessageUpdate,
-  ])
+    cancelGeneration(true)
+  }, [cancelGeneration])
+
+  // Resetting a conversation must not enqueue a stale message save after the
+  // empty conversation has already been persisted.
+  const discardGeneration = useCallback(() => {
+    cancelGeneration(false)
+  }, [cancelGeneration])
 
   return {
     sendChat,
     stopGeneration,
+    discardGeneration,
     isGenerating: isStreaming || isRequesting,
   }
 }

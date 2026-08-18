@@ -21,6 +21,10 @@ import { t } from 'i18next'
 import { toast } from 'sonner'
 
 import {
+  isIntentionalSignOutInProgress,
+  shouldSilenceUnauthorizedResponse,
+} from '@/lib/auth-response-policy'
+import {
   applyAuthRotation,
   clearAuthentication,
   refreshAuthentication,
@@ -36,6 +40,8 @@ declare module 'axios' {
     skipAuthRefresh?: boolean
     authRetry?: boolean
     acceptAuthRotation?: boolean
+    authSessionSIDAtDispatch?: string
+    preserveUnauthorizedResponse?: boolean
   }
 }
 
@@ -77,6 +83,12 @@ function redirectToSignIn(): void {
   }
 }
 
+function cancelSupersededAuthenticationRequest(): never {
+  throw new axios.CanceledError(
+    'Authentication request canceled after session change'
+  )
+}
+
 api.interceptors.response.use(
   (response) => {
     if (response.config.acceptAuthRotation && response.data?.success === true) {
@@ -107,10 +119,33 @@ api.interceptors.response.use(
     const status = error?.response?.status
 
     if (status === 401) {
+      const currentSessionSID = useAuthStore.getState().auth.session?.sid
+      if (
+        shouldSilenceUnauthorizedResponse({
+          signOutInProgress: isIntentionalSignOutInProgress(),
+          requestSessionSID: config?.authSessionSIDAtDispatch,
+          currentSessionSID,
+        })
+      ) {
+        if (config?.preserveUnauthorizedResponse) throw error
+        cancelSupersededAuthenticationRequest()
+      }
+
       if (config && !config.skipAuthRefresh && !config.authRetry) {
         config.authRetry = true
         const outcome = await refreshAuthentication()
         if (outcome.kind === 'authenticated') {
+          const refreshedSessionSID = useAuthStore.getState().auth.session?.sid
+          if (
+            shouldSilenceUnauthorizedResponse({
+              signOutInProgress: isIntentionalSignOutInProgress(),
+              requestSessionSID: config.authSessionSIDAtDispatch,
+              currentSessionSID: refreshedSessionSID,
+            })
+          ) {
+            cancelSupersededAuthenticationRequest()
+          }
+
           const token = useAuthStore.getState().auth.accessToken
           if (token) {
             config.headers = {
@@ -146,7 +181,9 @@ api.interceptors.response.use(
 )
 
 api.interceptors.request.use((config) => {
-  const accessToken = useAuthStore.getState().auth.accessToken
+  const auth = useAuthStore.getState().auth
+  const accessToken = auth.accessToken
+  config.authSessionSIDAtDispatch = auth.session?.sid
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`
   }

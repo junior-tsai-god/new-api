@@ -16,6 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import type { PlaygroundEndpointId } from './lib/endpoints'
+
 // Message types
 export type MessageRole = 'user' | 'assistant' | 'system'
 
@@ -117,6 +119,7 @@ export interface ChatCompletionResponse {
 // Configuration types
 export interface PlaygroundConfig {
   api_key_id: number | null
+  endpoint_id: PlaygroundEndpointId
   model: string
   temperature: number
   top_p: number
@@ -139,9 +142,25 @@ export interface ParameterEnabled {
 // Model and group options
 export interface ModelOption {
   label: string
+  supportedEndpointTypes?: string[]
   value: string
 }
 
 export interface PlaygroundRequestAuth {
   apiKey?: string
+}
+
+export interface PlaygroundSessionStats {
+  settled: boolean
+  requested_request_count: number
+  settled_request_count: number
+  input_tokens: number
+  output_tokens: number
+  total_tokens: number
+  cache_read_tokens: number
+  cache_write_tokens: number
+  cached_tokens: number
+  cache_hit_rate: number
+  quota: number
+  cost_usd: number
 }

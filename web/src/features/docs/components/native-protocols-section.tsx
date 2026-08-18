@@ -35,7 +35,7 @@ export function NativeProtocolsSection(props: NativeProtocolsSectionProps) {
   return (
     <DocsSection
       id='native-protocols'
-      index='07 / NATIVE'
+      index='08 / NATIVE'
       title={t('Native protocols')}
       description={t(
         'Use a native request shape when your client already speaks Anthropic Messages or Gemini Generate Content.'

@@ -112,9 +112,18 @@ export function Hero(props: HeroProps) {
                 size='lg'
                 variant='outline'
                 className='sm:min-w-36'
-                render={<Link to='/pricing' />}
+                render={
+                  props.isAuthenticated ? (
+                    <Link
+                      to='/model-catalog/$section'
+                      params={{ section: 'catalog' }}
+                    />
+                  ) : (
+                    <Link to='/pricing' />
+                  )
+                }
               >
-                {t('Model Square')}
+                {t('Model Center')}
               </Button>
             </div>
           </div>
@@ -172,7 +181,12 @@ export function Hero(props: HeroProps) {
                 POST /v1/chat/completions
               </code>
               <Link
-                to='/pricing'
+                to={
+                  props.isAuthenticated ? '/model-catalog/$section' : '/pricing'
+                }
+                params={
+                  props.isAuthenticated ? { section: 'catalog' } : undefined
+                }
                 className='mt-4 inline-flex items-center text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-none'
               >
                 {t('View status')}

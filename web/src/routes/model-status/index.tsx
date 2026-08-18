@@ -18,8 +18,18 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
+import { useAuthStore } from '@/stores/auth-store'
+
 export const Route = createFileRoute('/model-status/')({
   beforeLoad: () => {
-    throw redirect({ to: '/pricing' })
+    const { auth } = useAuthStore.getState()
+    if (auth.user) {
+      throw redirect({
+        to: '/model-catalog/$section',
+        params: { section: 'catalog' },
+        replace: true,
+      })
+    }
+    throw redirect({ to: '/pricing', replace: true })
   },
 })

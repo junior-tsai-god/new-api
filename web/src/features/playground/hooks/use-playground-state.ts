@@ -28,6 +28,9 @@ import {
   getInitialParameterEnabled,
   getInitialPlaygroundConfig,
   loadMessages,
+  loadSessionRequestIds,
+  saveSessionRequestIds,
+  appendSessionRequestId,
   type MessageStateUpdater,
 } from '../lib'
 import type { Message, PlaygroundConfig, ParameterEnabled } from '../types'
@@ -48,6 +51,7 @@ export function usePlaygroundState(userId?: number) {
   )
 
   const [messages, setMessages] = useState<Message[]>([])
+  const [sessionRequestIds, setSessionRequestIds] = useState<string[]>([])
   const [isLoadingMessages, setIsLoadingMessages] = useState(true)
   const messagesSaveTimerRef = useRef<number | null>(null)
   const latestMessagesRef = useRef<Message[]>(messages)
@@ -80,6 +84,7 @@ export function usePlaygroundState(userId?: number) {
 
     window.setTimeout(() => {
       const loadedMessages = loadMessages(userId) ?? []
+      const loadedSessionRequestIds = loadSessionRequestIds(userId)
       if (cancelled) {
         return
       }
@@ -87,6 +92,7 @@ export function usePlaygroundState(userId?: number) {
       latestMessagesRef.current = loadedMessages
       hasLoadedMessagesRef.current = true
       setMessages(loadedMessages)
+      setSessionRequestIds(loadedSessionRequestIds)
       setIsLoadingMessages(false)
     }, 0)
 
@@ -141,10 +147,36 @@ export function usePlaygroundState(userId?: number) {
     [persistMessages]
   )
 
-  // Clear all messages
-  const clearMessages = useCallback(() => {
-    updateMessages([])
-  }, [updateMessages])
+  const recordCompletedRequestId = useCallback(
+    (requestId: string) => {
+      setSessionRequestIds((currentRequestIds) => {
+        const nextRequestIds = appendSessionRequestId(
+          currentRequestIds,
+          requestId
+        )
+        if (nextRequestIds === currentRequestIds) {
+          return currentRequestIds
+        }
+
+        saveSessionRequestIds(userId, nextRequestIds)
+        return nextRequestIds
+      })
+    },
+    [userId]
+  )
+
+  const resetConversation = useCallback(() => {
+    if (messagesSaveTimerRef.current !== null) {
+      window.clearTimeout(messagesSaveTimerRef.current)
+      messagesSaveTimerRef.current = null
+    }
+
+    latestMessagesRef.current = []
+    setMessages([])
+    setSessionRequestIds([])
+    saveMessages(userId, [])
+    saveSessionRequestIds(userId, [])
+  }, [userId])
 
   // Reset config to defaults
   const resetConfig = useCallback(() => {
@@ -159,12 +191,14 @@ export function usePlaygroundState(userId?: number) {
     config,
     parameterEnabled,
     messages,
+    sessionRequestIds,
     isLoadingMessages,
     // Actions
     updateConfig,
     updateParameterEnabled,
     updateMessages,
-    clearMessages,
+    recordCompletedRequestId,
+    resetConversation,
     resetConfig,
   }
 }

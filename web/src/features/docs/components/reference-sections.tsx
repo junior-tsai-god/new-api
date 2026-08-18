@@ -94,7 +94,7 @@ export function ReferenceSections() {
     <>
       <DocsSection
         id='reference'
-        index='08 / REFERENCE'
+        index='09 / REFERENCE'
         title={t('Endpoint reference')}
         description={t(
           'These routes are served by this gateway. Actual availability still depends on the selected model and your key permissions.'
@@ -133,7 +133,7 @@ export function ReferenceSections() {
 
       <DocsSection
         id='troubleshooting'
-        index='09 / ERRORS'
+        index='10 / ERRORS'
         title={t('Errors and troubleshooting')}
         description={t(
           'Use the HTTP status, response message, and request ID together. They are more useful than the status code alone.'

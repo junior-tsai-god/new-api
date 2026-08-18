@@ -59,7 +59,7 @@ export function useSidebarData(): SidebarData {
             icon: Key,
           },
           {
-            title: t('Models'),
+            title: t('Model Center'),
             url: '/model-catalog/catalog',
             activeUrls: ['/model-catalog', '/model-status', '/pricing'],
             icon: Boxes,

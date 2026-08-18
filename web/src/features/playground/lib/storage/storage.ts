@@ -34,6 +34,7 @@ import {
   messagesSchema,
   parameterEnabledSchema,
   playgroundConfigSchema,
+  sessionRequestIdsSchema,
 } from './storage-schema'
 
 type StoredEnvelope<T> = {
@@ -41,7 +42,11 @@ type StoredEnvelope<T> = {
   data: T
 }
 
-type PlaygroundStorageKind = 'config' | 'messages' | 'parameter-enabled'
+type PlaygroundStorageKind =
+  | 'config'
+  | 'messages'
+  | 'parameter-enabled'
+  | 'session-request-ids'
 
 type PlaygroundUserId = number | null | undefined
 
@@ -433,6 +438,38 @@ export function saveMessages(
   }
 }
 
+export function loadSessionRequestIds(userId: PlaygroundUserId): string[] {
+  const key = getUserStorageKey(userId, 'session-request-ids')
+  if (!key) return []
+
+  try {
+    const saved = readStoredValue(key)
+    if (!saved) return []
+
+    return sessionRequestIdsSchema.parse(unwrapStoredValue(saved))
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to load playground session request IDs:', error)
+  }
+  return []
+}
+
+export function saveSessionRequestIds(
+  userId: PlaygroundUserId,
+  requestIds: string[]
+): void {
+  const key = getUserStorageKey(userId, 'session-request-ids')
+  if (!key) return
+
+  try {
+    const parsed = sessionRequestIdsSchema.parse(requestIds)
+    writeStoredValue(key, parsed)
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to save playground session request IDs:', error)
+  }
+}
+
 /**
  * Clear all playground data
  */
@@ -440,13 +477,22 @@ export function clearPlaygroundData(userId: PlaygroundUserId): void {
   const configKey = getUserStorageKey(userId, 'config')
   const parameterEnabledKey = getUserStorageKey(userId, 'parameter-enabled')
   const messagesKey = getUserStorageKey(userId, 'messages')
+  const sessionRequestIdsKey = getUserStorageKey(userId, 'session-request-ids')
 
-  if (!configKey || !parameterEnabledKey || !messagesKey) return
+  if (
+    !configKey ||
+    !parameterEnabledKey ||
+    !messagesKey ||
+    !sessionRequestIdsKey
+  ) {
+    return
+  }
 
   try {
     localStorage.removeItem(configKey)
     localStorage.removeItem(parameterEnabledKey)
     localStorage.removeItem(messagesKey)
+    localStorage.removeItem(sessionRequestIdsKey)
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('Failed to clear playground data:', error)

@@ -65,7 +65,16 @@ export function CTA(props: CTAProps) {
             size='lg'
             variant='outline'
             className='w-full justify-between'
-            render={<Link to='/pricing' />}
+            render={
+              props.isAuthenticated ? (
+                <Link
+                  to='/model-catalog/$section'
+                  params={{ section: 'catalog' }}
+                />
+              ) : (
+                <Link to='/pricing' />
+              )
+            }
           >
             {t('View Pricing')}
             <HugeiconsIcon

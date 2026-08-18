@@ -34,6 +34,7 @@ describe('self-contained usage documentation', () => {
       'models',
       'chat-completions',
       'responses',
+      'prompt-caching',
       'streaming',
       'native-protocols',
       'reference',
@@ -71,6 +72,24 @@ describe('self-contained usage documentation', () => {
     for (const sample of Object.values(samples)) {
       assert.match(sample, /https:\/\/gateway\.example/)
       assert.doesNotMatch(sample, /platform\.openai\.com|docs\.[^/\s]+/i)
+    }
+  })
+
+  test('documents explicit prompt cache configuration for supported protocols', () => {
+    const samples = createDocsCodeSamples('https://gateway.example')
+
+    assert.match(samples.cacheChat, /"prompt_cache_key": "support-kb-v1"/)
+    assert.match(samples.cacheResponses, /"prompt_cache_key": "support-kb-v1"/)
+    assert.match(
+      samples.cacheAnthropic,
+      /"cache_control": \{ "type": "ephemeral" \}/
+    )
+    for (const sample of [
+      samples.cacheChat,
+      samples.cacheResponses,
+      samples.cacheAnthropic,
+    ]) {
+      assert.match(sample, /AIVANTA_API_KEY/)
     }
   })
 })

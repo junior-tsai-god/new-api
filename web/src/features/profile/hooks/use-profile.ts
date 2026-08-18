@@ -16,6 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import axios from 'axios'
 import i18next from 'i18next'
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
@@ -48,6 +49,8 @@ export function useProfile() {
         setProfile(response.data)
       }
     } catch (error) {
+      if (axios.isCancel(error)) return
+
       // eslint-disable-next-line no-console
       console.error('Failed to fetch profile:', error)
       if (!silent) {

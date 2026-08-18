@@ -51,6 +51,15 @@ function mismatchError() {
   }
 }
 
+function unauthorizedError() {
+  return {
+    isAxiosError: true,
+    response: {
+      status: 401,
+    },
+  }
+}
+
 describe('logout coordination', () => {
   test('returns an unsuccessful response without pretending to sign out', async () => {
     let refreshCount = 0
@@ -92,6 +101,18 @@ describe('logout coordination', () => {
       getExpectedSID: () => 'session-a',
       request: async () => {
         throw mismatchError()
+      },
+      refresh: async () => ({ kind: 'anonymous' }),
+    })
+
+    assert.deepEqual(result, { success: true, message: '' })
+  })
+
+  test('treats an already unauthorized session as signed out', async () => {
+    const result = await executeLogout({
+      getExpectedSID: () => 'session-a',
+      request: async () => {
+        throw unauthorizedError()
       },
       refresh: async () => ({ kind: 'anonymous' }),
     })

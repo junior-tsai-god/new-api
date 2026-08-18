@@ -28,6 +28,7 @@ export {
   getFreshAuthHeaders,
   isAuthBundle,
   refreshAuthentication,
+  runIntentionalSignOut,
   AuthRotationError,
 } from '@/lib/auth-session'
 export type { AuthTokenRotation, RefreshOutcome } from '@/lib/auth-session'

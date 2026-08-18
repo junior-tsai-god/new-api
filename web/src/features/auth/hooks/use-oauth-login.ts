@@ -16,11 +16,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { useQueryClient } from '@tanstack/react-query'
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import { clearAuthentication, isAuthBundle } from '@/lib/api'
+import {
+  clearAuthenticatedClientState,
+  isAuthBundle,
+  runIntentionalSignOut,
+} from '@/lib/api'
 
 import { createOAuthFlow, logout, telegramLogin } from '../api'
 import {
@@ -42,6 +47,7 @@ export function useOAuthLogin(
 ) {
   const { t } = useTranslation()
   const { handleLoginSuccess } = useAuthRedirect()
+  const queryClient = useQueryClient()
   const [isLoading, setIsLoading] = useState(false)
   const [isTelegramDialogOpen, setIsTelegramDialogOpen] = useState(false)
   const [isTelegramPending, setIsTelegramPending] = useState(false)
@@ -60,11 +66,13 @@ export function useOAuthLogin(
   }, [t])
 
   const resetSession = async () => {
-    const response = await logout()
-    if (!response.success) {
-      throw new Error(response.message || t('Failed to sign out session'))
-    }
-    clearAuthentication()
+    await runIntentionalSignOut(queryClient, async () => {
+      const response = await logout()
+      if (!response.success) {
+        throw new Error(response.message || t('Failed to sign out session'))
+      }
+      clearAuthenticatedClientState(queryClient)
+    })
   }
 
   const handleGitHubLogin = async () => {

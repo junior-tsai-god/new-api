@@ -87,7 +87,7 @@ export function AppHeader() {
       },
       {
         id: 'models',
-        title: t('Models'),
+        title: t('Model Center'),
         to: '/model-catalog' as const,
         icon: AiBrain01Icon,
         matches: ['/model-catalog', '/model-status', '/pricing'],

@@ -640,6 +640,17 @@ func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int
 	return logs, total, err
 }
 
+func GetUserConsumeLogsByRequestIds(userId int, requestIds []string) ([]*Log, error) {
+	if userId <= 0 || len(requestIds) == 0 {
+		return []*Log{}, nil
+	}
+	logs := make([]*Log, 0, len(requestIds))
+	err := LOG_DB.Model(&Log{}).
+		Where("user_id = ? AND type = ? AND request_id IN ?", userId, LogTypeConsume, requestIds).
+		Find(&logs).Error
+	return logs, err
+}
+
 type Stat struct {
 	Quota int `json:"quota"`
 	Rpm   int `json:"rpm"`

@@ -17,6 +17,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { ModelOption } from '../../types'
+import type { PlaygroundEndpointCapabilityType } from '../endpoints'
+
+export function getModelsForEndpoint(
+  models: ModelOption[],
+  capabilityType?: PlaygroundEndpointCapabilityType
+): ModelOption[] {
+  if (!capabilityType) {
+    return models
+  }
+
+  const compatibleModels = models.filter((model) =>
+    model.supportedEndpointTypes?.includes(capabilityType)
+  )
+
+  // Older model-list responses may omit capability metadata. Keep the
+  // server-authoritative list available instead of presenting an empty field.
+  return compatibleModels.length > 0 ? compatibleModels : models
+}
 
 export function getModelFallback(
   models: ModelOption[],

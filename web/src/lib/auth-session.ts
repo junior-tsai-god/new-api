@@ -20,6 +20,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { t } from 'i18next'
 
+import { beginIntentionalSignOut } from '@/lib/auth-response-policy'
 import { publishAuthSessionEvent } from '@/lib/auth-session-sync'
 import {
   useAuthStore,
@@ -200,6 +201,22 @@ export function clearAuthenticatedClientState(
 ): void {
   queryClient.clear()
   clearAuthentication(synchronizeTabs)
+}
+
+export async function runIntentionalSignOut<T>(
+  queryClient: QueryClient,
+  operation: () => Promise<T>
+): Promise<T> {
+  const finishSignOut = beginIntentionalSignOut()
+  try {
+    await queryClient.cancelQueries()
+    return await operation()
+  } catch (error: unknown) {
+    void queryClient.refetchQueries({ type: 'active' })
+    throw error
+  } finally {
+    finishSignOut()
+  }
 }
 
 function waitForRefreshRace(delay: number): Promise<void> {

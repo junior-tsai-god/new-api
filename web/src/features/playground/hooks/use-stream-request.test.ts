@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 
-import type { ChatCompletionRequest, PlaygroundRequestAuth } from '../types'
+import type { ChatCompletionRequest } from '../types'
 import { createStreamRequestController } from './use-stream-request'
 
 function deferred<T>() {
@@ -36,12 +36,28 @@ class FakeStreamSource {
   streamed = false
   private listeners = new Map<
     string,
-    Array<(event: Event & { data?: string; readyState?: number }) => void>
+    Array<
+      (
+        event: Event & {
+          data?: string
+          headers?: Record<string, string[]>
+          readyState?: number
+          responseCode?: number
+        }
+      ) => void
+    >
   >()
 
   addEventListener(
     type: string,
-    listener: (event: Event & { data?: string; readyState?: number }) => void
+    listener: (
+      event: Event & {
+        data?: string
+        headers?: Record<string, string[]>
+        readyState?: number
+        responseCode?: number
+      }
+    ) => void
   ) {
     const listeners = this.listeners.get(type) ?? []
     listeners.push(listener)
@@ -56,11 +72,23 @@ class FakeStreamSource {
     this.streamed = true
   }
 
-  emit(type: string, data?: string) {
+  emit(
+    type: string,
+    data?: string,
+    headers?: Record<string, string[]>,
+    responseCode?: number
+  ) {
     for (const listener of this.listeners.get(type) ?? []) {
-      listener({ data, readyState: this.readyState } as Event & {
+      listener({
+        data,
+        headers,
+        readyState: this.readyState,
+        responseCode,
+      } as Event & {
         data?: string
+        headers?: Record<string, string[]>
         readyState?: number
+        responseCode?: number
       })
     }
   }
@@ -72,7 +100,7 @@ const payload: ChatCompletionRequest = {
   stream: true,
 }
 
-const apiKeyAuth: PlaygroundRequestAuth = { apiKey: 'sk-test' }
+const selectedTokenId = 42
 
 const noopCallbacks = {
   onUpdate: () => undefined,
@@ -101,8 +129,8 @@ describe('latest-wins stream request coordination', () => {
       setStreaming: () => undefined,
     })
 
-    const first = controller.send(payload, apiKeyAuth, noopCallbacks)
-    const second = controller.send(payload, apiKeyAuth, noopCallbacks)
+    const first = controller.send(payload, selectedTokenId, noopCallbacks)
+    const second = controller.send(payload, selectedTokenId, noopCallbacks)
     firstHeaders.resolve({ Authorization: 'Bearer stale' })
     await first
     assert.equal(sources.length, 0)
@@ -125,7 +153,7 @@ describe('latest-wins stream request coordination', () => {
       setStreaming: () => undefined,
     })
 
-    const request = controller.send(payload, apiKeyAuth, noopCallbacks)
+    const request = controller.send(payload, selectedTokenId, noopCallbacks)
     controller.stop()
     headers.resolve({ Authorization: 'Bearer ignored' })
     await request
@@ -146,7 +174,7 @@ describe('latest-wins stream request coordination', () => {
       setStreaming: (streaming) => streamingStates.push(streaming),
     })
 
-    const request = controller.send(payload, apiKeyAuth, noopCallbacks)
+    const request = controller.send(payload, selectedTokenId, noopCallbacks)
     controller.dispose()
     headers.resolve({ Authorization: 'Bearer ignored' })
     await request
@@ -182,8 +210,8 @@ describe('latest-wins stream request coordination', () => {
       onError: () => undefined,
     }
 
-    await controller.send(payload, apiKeyAuth, callbacks)
-    const second = controller.send(payload, apiKeyAuth, callbacks)
+    await controller.send(payload, selectedTokenId, callbacks)
+    const second = controller.send(payload, selectedTokenId, callbacks)
     assert.equal(sources[0]?.closed, true)
     sources[0]?.emit(
       'message',
@@ -198,5 +226,80 @@ describe('latest-wins stream request coordination', () => {
     )
 
     assert.deepEqual(updates, ['current'])
+  })
+
+  test('captures the request ID as soon as response headers open', async () => {
+    const source = new FakeStreamSource()
+    let capturedRequestId: string | undefined
+    let completed = false
+    const controller = createStreamRequestController({
+      getHeaders: () => Promise.resolve({ Authorization: 'Bearer session' }),
+      createSource: () => source,
+      setStreaming: () => undefined,
+    })
+
+    await controller.send(payload, selectedTokenId, {
+      onRequestId: (requestId) => {
+        capturedRequestId = requestId
+      },
+      onUpdate: () => undefined,
+      onComplete: () => {
+        completed = true
+      },
+      onError: () => undefined,
+    })
+    source.emit(
+      'open',
+      undefined,
+      {
+        'x-oneapi-request-id': ['req-stream-123'],
+      },
+      200
+    )
+
+    assert.equal(capturedRequestId, 'req-stream-123')
+    assert.equal(completed, false)
+    source.emit('message', '[DONE]')
+    assert.equal(completed, true)
+    assert.equal(source.closed, false)
+  })
+
+  test('does not record a request ID from a rejected stream response', async () => {
+    const source = new FakeStreamSource()
+    let capturedRequestId: string | undefined
+    const controller = createStreamRequestController({
+      getHeaders: () => Promise.resolve({ Authorization: 'Bearer session' }),
+      createSource: () => source,
+      setStreaming: () => undefined,
+    })
+
+    await controller.send(payload, selectedTokenId, {
+      ...noopCallbacks,
+      onRequestId: (requestId) => {
+        capturedRequestId = requestId
+      },
+    })
+    source.emit(
+      'open',
+      undefined,
+      { 'x-oneapi-request-id': ['rejected-request'] },
+      503
+    )
+
+    assert.equal(capturedRequestId, undefined)
+  })
+
+  test('explicit stop aborts an active stream', async () => {
+    const source = new FakeStreamSource()
+    const controller = createStreamRequestController({
+      getHeaders: () => Promise.resolve({ Authorization: 'Bearer session' }),
+      createSource: () => source,
+      setStreaming: () => undefined,
+    })
+
+    await controller.send(payload, selectedTokenId, noopCallbacks)
+    controller.stop()
+
+    assert.equal(source.closed, true)
   })
 })

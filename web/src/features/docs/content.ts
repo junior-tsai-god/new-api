@@ -24,6 +24,7 @@ export const DOCS_SECTION_IDS = [
   'models',
   'chat-completions',
   'responses',
+  'prompt-caching',
   'streaming',
   'native-protocols',
   'reference',
@@ -71,6 +72,7 @@ export function getDocsSectionLinks(
     { id: 'models', label: t('Model discovery') },
     { id: 'chat-completions', label: t('Chat Completions') },
     { id: 'responses', label: t('Responses API') },
+    { id: 'prompt-caching', label: t('Prompt caching') },
     { id: 'streaming', label: t('Streaming') },
     { id: 'native-protocols', label: t('Native protocols') },
     { id: 'reference', label: t('Endpoint reference') },
@@ -84,6 +86,9 @@ export type DocsCodeSamples = {
   chatPython: string
   chatJavaScript: string
   responses: string
+  cacheChat: string
+  cacheResponses: string
+  cacheAnthropic: string
   streaming: string
   anthropic: string
   gemini: string
@@ -142,6 +147,44 @@ console.log(response.choices[0].message.content);`,
   -d '{
     "model": "<MODEL_ID>",
     "input": "Return a three-item checklist for testing an API integration."
+  }'`,
+    cacheChat: `curl -sS ${normalizedOrigin}/v1/chat/completions \\
+  -H "Authorization: Bearer $AIVANTA_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "<MODEL_ID>",
+    "prompt_cache_key": "support-kb-v1",
+    "messages": [
+      { "role": "system", "content": "<LONG_STABLE_PREFIX>" },
+      { "role": "user", "content": "Answer using the knowledge above." }
+    ]
+  }'`,
+    cacheResponses: `curl -sS ${normalizedOrigin}/v1/responses \\
+  -H "Authorization: Bearer $AIVANTA_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "<MODEL_ID>",
+    "prompt_cache_key": "support-kb-v1",
+    "instructions": "<LONG_STABLE_PREFIX>",
+    "input": "Answer using the knowledge above."
+  }'`,
+    cacheAnthropic: `curl -sS ${normalizedOrigin}/v1/messages \\
+  -H "x-api-key: $AIVANTA_API_KEY" \\
+  -H "anthropic-version: 2023-06-01" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "<MODEL_ID>",
+    "max_tokens": 512,
+    "system": [
+      {
+        "type": "text",
+        "text": "<LONG_STABLE_PREFIX>",
+        "cache_control": { "type": "ephemeral" }
+      }
+    ],
+    "messages": [
+      { "role": "user", "content": "Answer using the knowledge above." }
+    ]
   }'`,
     streaming: `curl -N ${normalizedOrigin}/v1/chat/completions \\
   -H "Authorization: Bearer $AIVANTA_API_KEY" \\

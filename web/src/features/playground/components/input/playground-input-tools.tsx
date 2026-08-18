@@ -16,7 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Trash2Icon } from 'lucide-react'
+import { MessageAdd01Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -38,8 +39,8 @@ import { PlaygroundParameterPanel } from './playground-parameter-panel'
 type PlaygroundInputToolsProps = {
   config: PlaygroundConfig
   disabled?: boolean
-  hasMessages?: boolean
-  onClearMessages?: () => void
+  hasConversation?: boolean
+  onResetConversation?: () => void
   onConfigChange: <K extends keyof PlaygroundConfig>(
     key: K,
     value: PlaygroundConfig[K]
@@ -54,19 +55,19 @@ type PlaygroundInputToolsProps = {
 export function PlaygroundInputTools({
   config,
   disabled,
-  hasMessages = false,
-  onClearMessages,
+  hasConversation = false,
+  onResetConversation,
   onConfigChange,
   onParameterEnabledChange,
   parameterEnabled,
 }: PlaygroundInputToolsProps) {
   const { t } = useTranslation()
-  const [clearConfirmOpen, setClearConfirmOpen] = useState(false)
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
 
-  const handleClearMessages = () => {
-    onClearMessages?.()
-    setClearConfirmOpen(false)
-    toast.success(t('Conversation cleared'))
+  const handleResetConversation = () => {
+    onResetConversation?.()
+    setResetConfirmOpen(false)
+    toast.success(t('New conversation started'))
   }
 
   return (
@@ -84,32 +85,32 @@ export function PlaygroundInputTools({
           <TooltipTrigger
             render={
               <PromptInputButton
-                aria-label={t('Clear chat history')}
-                className='text-muted-foreground hover:text-destructive hover:bg-destructive/10 font-medium'
-                disabled={disabled || !hasMessages || !onClearMessages}
-                onClick={() => setClearConfirmOpen(true)}
+                aria-label={t('New conversation')}
+                className='text-muted-foreground hover:text-foreground gap-1.5 px-2 font-medium'
+                disabled={!hasConversation || !onResetConversation}
+                onClick={() => setResetConfirmOpen(true)}
                 variant='ghost'
               >
-                <Trash2Icon size={16} />
+                <HugeiconsIcon icon={MessageAdd01Icon} size={16} />
+                <span>{t('New conversation')}</span>
               </PromptInputButton>
             }
           />
           <TooltipContent>
-            <p>{t('Clear chat history')}</p>
+            <p>{t('New conversation')}</p>
           </TooltipContent>
         </Tooltip>
       </PromptInputTools>
 
       <ConfirmDialog
-        destructive
         desc={t(
-          'All playground messages saved in this browser will be removed. This cannot be undone.'
+          'Messages and the usage totals shown here will be cleared. Charges already applied to your account will not be reversed.'
         )}
-        confirmText={t('Clear')}
-        handleConfirm={handleClearMessages}
-        open={clearConfirmOpen}
-        onOpenChange={setClearConfirmOpen}
-        title={t('Clear chat history?')}
+        confirmText={t('Start new conversation')}
+        handleConfirm={handleResetConversation}
+        open={resetConfirmOpen}
+        onOpenChange={setResetConfirmOpen}
+        title={t('Start a new conversation?')}
       />
     </>
   )

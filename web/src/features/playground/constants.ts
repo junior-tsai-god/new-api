@@ -34,13 +34,15 @@ export const MESSAGE_STATUS = {
 
 // API endpoints
 export const API_ENDPOINTS = {
-  API_KEY_CHAT_COMPLETIONS: '/v1/chat/completions',
   API_KEY_MODELS: '/v1/models',
+  PLAYGROUND_CHAT_COMPLETIONS: '/pg/chat/completions',
+  PLAYGROUND_SESSION_STATS: '/api/playground/session/stats',
 } as const
 
 // Default configuration
 export const DEFAULT_CONFIG: PlaygroundConfig = {
   api_key_id: null,
+  endpoint_id: 'chat-completions',
   model: 'gpt-4o',
   temperature: 0.7,
   top_p: 1,

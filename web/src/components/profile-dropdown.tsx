@@ -17,10 +17,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useNavigate } from '@tanstack/react-router'
-import { LogOut, Settings, User } from 'lucide-react'
+import { LockKeyhole, LogOut, Settings, User } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import {
+  getProfileDropdownActions,
+  type ProfileDropdownActionId,
+} from '@/components/profile-dropdown-actions'
 import { SignOutDialog } from '@/components/sign-out-dialog'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -32,6 +36,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { ChangePasswordDialog } from '@/features/profile/components/dialogs/change-password-dialog'
 import useDialogState from '@/hooks/use-dialog'
 import { useUserDisplay } from '@/hooks/use-user-display'
 import { getUserAvatarFallback, getUserAvatarStyle } from '@/lib/avatar'
@@ -39,11 +44,17 @@ import { ROLE } from '@/lib/roles'
 import { useAuthStore } from '@/stores/auth-store'
 
 const avatarFallbackClassName = 'font-semibold text-white'
+const profileActionIcons = {
+  profile: User,
+  'change-password': LockKeyhole,
+  administration: Settings,
+} satisfies Record<ProfileDropdownActionId, typeof User>
 
 export function ProfileDropdown() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [open, setOpen] = useDialogState()
+  const [signOutOpen, setSignOutOpen] = useDialogState()
+  const [changePasswordOpen, setChangePasswordOpen] = useDialogState()
   const user = useAuthStore((state) => state.auth.user)
   const { displayName, roleLabel } = useUserDisplay(user)
   const isAdmin = Boolean(user?.role && user.role >= ROLE.ADMIN)
@@ -53,6 +64,7 @@ export function ProfileDropdown() {
     () => getUserAvatarStyle(avatarName),
     [avatarName]
   )
+  const accountActions = getProfileDropdownActions(isAdmin)
 
   return (
     <>
@@ -102,17 +114,31 @@ export function ProfileDropdown() {
           <DropdownMenuSeparator />
 
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => navigate({ to: '/profile' })}>
-              <User />
-              {t('Profile')}
-            </DropdownMenuItem>
+            {accountActions.map((action) => {
+              const ActionIcon = profileActionIcons[action.id]
 
-            {isAdmin ? (
-              <DropdownMenuItem onClick={() => navigate({ to: '/channels' })}>
-                <Settings />
-                {t('Administration')}
-              </DropdownMenuItem>
-            ) : null}
+              return (
+                <DropdownMenuItem
+                  key={action.id}
+                  onClick={() => {
+                    if (action.id === 'profile') {
+                      navigate({ to: '/profile' })
+                      return
+                    }
+
+                    if (action.id === 'change-password') {
+                      setChangePasswordOpen(true)
+                      return
+                    }
+
+                    navigate({ to: '/channels' })
+                  }}
+                >
+                  <ActionIcon aria-hidden='true' />
+                  {t(action.labelKey)}
+                </DropdownMenuItem>
+              )
+            })}
           </DropdownMenuGroup>
 
           <DropdownMenuSeparator />
@@ -120,16 +146,24 @@ export function ProfileDropdown() {
           <DropdownMenuGroup>
             <DropdownMenuItem
               variant='destructive'
-              onClick={() => setOpen(true)}
+              onClick={() => setSignOutOpen(true)}
             >
-              <LogOut />
+              <LogOut aria-hidden='true' />
               {t('Sign out')}
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <SignOutDialog open={!!open} onOpenChange={setOpen} />
+      <ChangePasswordDialog
+        open={Boolean(changePasswordOpen)}
+        onOpenChange={setChangePasswordOpen}
+        username={user?.username ?? ''}
+      />
+      <SignOutDialog
+        open={Boolean(signOutOpen)}
+        onOpenChange={setSignOutOpen}
+      />
     </>
   )
 }
