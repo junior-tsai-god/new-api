@@ -29,7 +29,11 @@ type PlaygroundSessionStatsProps = {
   onRetry?: () => void
   stats?: Pick<
     SessionStats,
-    'cache_hit_rate' | 'cached_tokens' | 'cost_usd' | 'total_tokens'
+    | 'cache_hit_rate'
+    | 'cached_tokens'
+    | 'cost_usd'
+    | 'requested_request_count'
+    | 'total_tokens'
   >
 }
 
@@ -56,6 +60,12 @@ export function PlaygroundSessionStats({
     fallbackValue = '—'
   }
   const metrics = [
+    {
+      label: t('Requests'),
+      value:
+        fallbackValue ??
+        numberFormatter.format(stats?.requested_request_count ?? 0),
+    },
     {
       label: t('Total Tokens'),
       value: fallbackValue ?? numberFormatter.format(stats?.total_tokens ?? 0),

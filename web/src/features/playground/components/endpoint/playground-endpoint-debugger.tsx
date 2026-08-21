@@ -47,6 +47,7 @@ type PlaygroundEndpointDebuggerProps = {
   disabled?: boolean
   endpointId: PlaygroundEndpointId
   model: string
+  onRequestComplete?: (requestId: string) => void
   requestAuth: PlaygroundRequestAuth
 }
 
@@ -132,24 +133,27 @@ export function PlaygroundEndpointDebugger(
         parsedBody && endpoint.requiresModel
           ? applySelectedModel(props.endpointId, parsedBody, props.model)
           : parsedBody
-      const response = await sendPlaygroundEndpointRequest({
-        auth: props.requestAuth,
-        body:
-          endpoint.bodyMode === 'json' && normalizedBody
-            ? JSON.stringify(normalizedBody)
-            : undefined,
-        file:
-          endpoint.bodyMode === 'multipart'
-            ? (selectedFile ?? undefined)
-            : undefined,
-        formFields:
-          endpoint.bodyMode === 'multipart' && normalizedBody
-            ? createFormFields(normalizedBody)
-            : undefined,
-        endpointId: props.endpointId,
-        model: props.model,
-        signal: abortController.signal,
-      })
+      const response = await sendPlaygroundEndpointRequest(
+        {
+          auth: props.requestAuth,
+          body:
+            endpoint.bodyMode === 'json' && normalizedBody
+              ? JSON.stringify(normalizedBody)
+              : undefined,
+          file:
+            endpoint.bodyMode === 'multipart'
+              ? (selectedFile ?? undefined)
+              : undefined,
+          formFields:
+            endpoint.bodyMode === 'multipart' && normalizedBody
+              ? createFormFields(normalizedBody)
+              : undefined,
+          endpointId: props.endpointId,
+          model: props.model,
+          signal: abortController.signal,
+        },
+        endpoint.requiresModel ? props.onRequestComplete : undefined
+      )
       if (!abortController.signal.aborted) {
         setResult(response)
       }

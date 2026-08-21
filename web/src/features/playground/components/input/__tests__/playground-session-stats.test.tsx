@@ -35,6 +35,7 @@ test('renders authoritative playground usage in a compact scrolling row', async 
           'Actual Cost': 'Actual Cost',
           'Cache Hit Rate': 'Cache Hit Rate',
           'Cached Tokens': 'Cached Tokens',
+          Requests: 'Requests',
           'Total Tokens': 'Total Tokens',
         },
       },
@@ -48,6 +49,7 @@ test('renders authoritative playground usage in a compact scrolling row', async 
           cache_hit_rate: 0.25,
           cached_tokens: 128,
           cost_usd: 0.0042,
+          requested_request_count: 3,
           total_tokens: 512,
         }}
       />
@@ -56,6 +58,8 @@ test('renders authoritative playground usage in a compact scrolling row', async 
 
   assert.match(html, /data-slot="playground-session-stats"/)
   assert.match(html, /data-layout="single-line-scroll"/)
+  assert.match(html, />Requests</)
+  assert.match(html, />3</)
   assert.match(html, />Total Tokens</)
   assert.match(html, />512</)
   assert.match(html, />Cached Tokens</)
@@ -77,6 +81,7 @@ test('does not present a failed stats request as zero usage', async () => {
           'Cache Hit Rate': 'Cache Hit Rate',
           'Cached Tokens': 'Cached Tokens',
           'Failed to fetch usage': 'Failed to fetch usage',
+          Requests: 'Requests',
           Retry: 'Retry',
           'Total Tokens': 'Total Tokens',
         },

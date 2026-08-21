@@ -27,6 +27,7 @@ import { PlaygroundAuthControl } from './components/input/playground-auth-contro
 import { PlaygroundEndpointControl } from './components/input/playground-endpoint-control'
 import { PlaygroundInput } from './components/input/playground-input'
 import { PlaygroundModelControl } from './components/input/playground-model-control'
+import { PlaygroundResetControl } from './components/input/playground-reset-control'
 import { PlaygroundSessionStats } from './components/input/playground-session-stats'
 import {
   useChatHandler,
@@ -125,6 +126,7 @@ function UserPlayground(props: UserPlaygroundProps) {
     discardGeneration()
     handleEditOpenChange(false)
     resetConversation()
+    updateConfig('endpoint_id', 'chat-completions')
     setConversationResetNonce((nonce) => nonce + 1)
   }
 
@@ -144,6 +146,8 @@ function UserPlayground(props: UserPlaygroundProps) {
 
   const endpoint = getPlaygroundEndpoint(config.endpoint_id)
   const isChatEndpoint = config.endpoint_id === 'chat-completions'
+  const hasConversation = messages.length > 0 || sessionRequestIds.length > 0
+  const canResetPlayground = hasConversation || !isChatEndpoint
   const endpointModels = useMemo(
     () => getModelsForEndpoint(models, endpoint.capabilityType),
     [endpoint.capabilityType, models]
@@ -185,6 +189,7 @@ function UserPlayground(props: UserPlaygroundProps) {
             disabled={isRequestConfigLoading}
             endpointId={config.endpoint_id}
             model={config.model}
+            onRequestComplete={recordCompletedRequestId}
             requestAuth={requestAuth}
           />
         )}
@@ -192,11 +197,17 @@ function UserPlayground(props: UserPlaygroundProps) {
 
       {/* Input area: center content and constrain to the same container width */}
       <div className='mx-auto grid w-full max-w-4xl shrink-0 gap-2 px-1 md:pb-4'>
-        <PlaygroundEndpointControl
-          disabled={isGenerating}
-          endpointId={config.endpoint_id}
-          onEndpointChange={(value) => updateConfig('endpoint_id', value)}
-        />
+        <div className='grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]'>
+          <PlaygroundEndpointControl
+            disabled={isGenerating}
+            endpointId={config.endpoint_id}
+            onEndpointChange={(value) => updateConfig('endpoint_id', value)}
+          />
+          <PlaygroundResetControl
+            disabled={isGenerating || !canResetPlayground}
+            onReset={handleResetConversation}
+          />
+        </div>
         <div
           className={cn(
             'grid min-w-0 gap-2',
@@ -221,15 +232,13 @@ function UserPlayground(props: UserPlaygroundProps) {
             selectedApiKeyId={selectedApiKey?.id ?? null}
           />
         </div>
-        {isChatEndpoint ? (
-          <PlaygroundSessionStats
-            hasError={hasStatsError}
-            isLoading={isLoadingStats}
-            isSettling={isSettlingStats}
-            onRetry={() => void retryStats()}
-            stats={stats}
-          />
-        ) : null}
+        <PlaygroundSessionStats
+          hasError={hasStatsError}
+          isLoading={isLoadingStats}
+          isSettling={isSettlingStats}
+          onRetry={() => void retryStats()}
+          stats={stats}
+        />
         {isChatEndpoint ? (
           <PlaygroundInput
             key={`input:${conversationResetNonce}`}
@@ -239,14 +248,10 @@ function UserPlayground(props: UserPlaygroundProps) {
             isRequestConfigLoading={isRequestConfigLoading}
             models={endpointModels}
             onConfigChange={updateConfig}
-            onResetConversation={handleResetConversation}
             onParameterEnabledChange={updateParameterEnabled}
             onStop={stopGeneration}
             onSubmit={handleSendMessage}
             parameterEnabled={parameterEnabled}
-            hasConversation={
-              messages.length > 0 || sessionRequestIds.length > 0
-            }
           />
         ) : null}
       </div>

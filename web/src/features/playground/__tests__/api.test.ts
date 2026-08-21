@@ -175,17 +175,26 @@ test('endpoint requests use the selected API key and expose the raw response', a
     requestedPath = String(input)
     requestedInit = init
     return new Response(JSON.stringify({ data: [{ embedding: [0.1] }] }), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Oneapi-Request-Id': 'req-embedding-123',
+      },
       status: 200,
     })
   }
 
-  const result = await sendPlaygroundEndpointRequest({
-    auth: { apiKey: 'selected-key' },
-    body: '{"model":"embed-model","input":"hello"}',
-    endpointId: 'embeddings',
-    model: 'embed-model',
-  })
+  let acceptedRequestId: string | undefined
+  const result = await sendPlaygroundEndpointRequest(
+    {
+      auth: { apiKey: 'selected-key' },
+      body: '{"model":"embed-model","input":"hello"}',
+      endpointId: 'embeddings',
+      model: 'embed-model',
+    },
+    (requestId) => {
+      acceptedRequestId = requestId
+    }
+  )
 
   assert.equal(requestedPath, '/v1/embeddings')
   assert.equal(
@@ -196,7 +205,72 @@ test('endpoint requests use the selected API key and expose the raw response', a
   assert.equal(requestedInit?.body, '{"model":"embed-model","input":"hello"}')
   assert.equal(result.status, 200)
   assert.equal(result.ok, true)
+  assert.equal(result.requestId, 'req-embedding-123')
+  assert.equal(acceptedRequestId, 'req-embedding-123')
   assert.match(result.body, /"embedding": \[/)
+})
+
+test('records an accepted endpoint request before its response body fails', async () => {
+  globalThis.fetch = async () =>
+    new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.error(new Error('response stream failed'))
+        },
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Oneapi-Request-Id': 'req-stream-failed-123',
+        },
+        status: 200,
+      }
+    )
+
+  let acceptedRequestId: string | undefined
+  await assert.rejects(
+    sendPlaygroundEndpointRequest(
+      {
+        auth: { apiKey: 'selected-key' },
+        body: '{"model":"response-model","input":"hello"}',
+        endpointId: 'responses',
+        model: 'response-model',
+      },
+      (requestId) => {
+        acceptedRequestId = requestId
+      }
+    ),
+    /response stream failed/
+  )
+
+  assert.equal(acceptedRequestId, 'req-stream-failed-123')
+})
+
+test('does not record a rejected endpoint request', async () => {
+  globalThis.fetch = async () =>
+    new Response(JSON.stringify({ error: { message: 'invalid request' } }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Oneapi-Request-Id': 'req-rejected-123',
+      },
+      status: 400,
+    })
+
+  let acceptedRequestId: string | undefined
+  const result = await sendPlaygroundEndpointRequest(
+    {
+      auth: { apiKey: 'selected-key' },
+      body: '{"model":"embed-model","input":"hello"}',
+      endpointId: 'embeddings',
+      model: 'embed-model',
+    },
+    (requestId) => {
+      acceptedRequestId = requestId
+    }
+  )
+
+  assert.equal(result.ok, false)
+  assert.equal(acceptedRequestId, undefined)
 })
 
 test('session stats retain and aggregate conversations longer than 200 requests', async () => {

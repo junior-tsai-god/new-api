@@ -1,5 +1,3 @@
-import { api, getFreshAuthHeaders } from '@/lib/api'
-
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -18,6 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { api, getFreshAuthHeaders } from '@/lib/api'
+
 import { API_ENDPOINTS, ERROR_MESSAGES } from './constants'
 import {
   buildEndpointPath,
@@ -48,6 +48,7 @@ export type PlaygroundEndpointResult = {
   contentType: string
   durationMs: number
   ok: boolean
+  requestId?: string
   status: number
   truncated: boolean
 }
@@ -281,7 +282,8 @@ function formatPlaygroundEndpointBody(
 }
 
 export async function sendPlaygroundEndpointRequest(
-  request: PlaygroundEndpointRequest
+  request: PlaygroundEndpointRequest,
+  onRequestAccepted?: (requestId: string) => void
 ): Promise<PlaygroundEndpointResult> {
   if (!request.auth.apiKey) {
     throw new Error(ERROR_MESSAGES.API_KEY_REQUIRED)
@@ -318,6 +320,10 @@ export async function sendPlaygroundEndpointRequest(
   )
   const durationMs = Math.max(0, Math.round(performance.now() - startedAt))
   const contentType = response.headers.get('Content-Type') ?? ''
+  const requestId = response.headers.get('X-Oneapi-Request-Id')?.trim()
+  if (response.ok && requestId) {
+    onRequestAccepted?.(requestId)
+  }
   const result = await readPlaygroundEndpointBody(response)
 
   return {
@@ -325,6 +331,7 @@ export async function sendPlaygroundEndpointRequest(
     contentType,
     durationMs,
     ok: response.ok,
+    requestId: requestId || undefined,
     status: response.status,
     truncated: result.truncated,
   }

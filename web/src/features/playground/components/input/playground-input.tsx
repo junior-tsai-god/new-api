@@ -43,12 +43,10 @@ interface PlaygroundInputProps {
   isGenerating?: boolean
   isRequestConfigLoading?: boolean
   models: ModelOption[]
-  hasConversation?: boolean
   onConfigChange: <K extends keyof PlaygroundConfig>(
     key: K,
     value: PlaygroundConfig[K]
   ) => void
-  onResetConversation?: () => void
   onParameterEnabledChange: (
     key: keyof ParameterEnabled,
     value: boolean
@@ -64,9 +62,7 @@ export function PlaygroundInput({
   isGenerating,
   isRequestConfigLoading = false,
   models,
-  hasConversation = false,
   onConfigChange,
-  onResetConversation,
   onParameterEnabledChange,
   parameterEnabled,
 }: PlaygroundInputProps) {
@@ -112,9 +108,7 @@ export function PlaygroundInput({
               <PlaygroundInputTools
                 config={config}
                 disabled={disabled}
-                hasConversation={hasConversation}
                 onConfigChange={onConfigChange}
-                onResetConversation={onResetConversation}
                 onParameterEnabledChange={onParameterEnabledChange}
                 parameterEnabled={parameterEnabled}
               />
